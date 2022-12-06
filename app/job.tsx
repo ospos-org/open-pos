@@ -1,7 +1,9 @@
 export default function Job() {
     return (
         <>
-            <div>
+            <div className="p-12">
+                <h2 className="text-white font-semibold text-xl">Jobs</h2>
+
                 <div>
                     {/* Tiles */}
                 </div>

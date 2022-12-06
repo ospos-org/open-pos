@@ -1,7 +1,9 @@
 export default function Inventory() {
     return (
         <>
-            <div>
+            <div className="p-12">
+                <h2 className="text-white font-semibold text-xl">Inventory</h2>
+
                 <div>
                     {/* Tiles */}
                 </div>
