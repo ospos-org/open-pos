@@ -13,9 +13,25 @@ const ICON_SIZE = 30
 
 export default function App() {
 	const [ page, setPage ] = useState(0);
+	const [ authCookie, setAuthCookie ] = useState("");
 
 	// Handle user authentication and pass it to child elements.
-	useEffect(() => {})
+	useEffect(() => {
+		fetch('http://127.0.0.1:8000/employee/auth/79f21ac3-5890-4359-9caa-7bcbde071f93', {
+			method: "POST",
+			body: JSON.stringify({
+				pass: "1232"
+			}),
+			credentials: "include",
+			redirect: "follow"
+		}).then(async e => {
+			const cookie = await e.text();
+			console.log(cookie);
+			setAuthCookie(cookie);
+
+			// document.cookie = `key=${cookie.replace("\"", "")};Path=/;SameSite=\"None\";Secure=True`;
+		})
+	}, []);
 
 	return (
 		<div className="flex flex-row h-screen flex-shrink-0">

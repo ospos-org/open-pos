@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { debounce } from "lodash";
 
 type KioskState = {
     customer: string | null,
@@ -73,6 +74,7 @@ type Variant = {
     stock_information: string
 }
 
+
 export default function Kiosk() {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
@@ -90,15 +92,54 @@ export default function Kiosk() {
         till: null
     });
 
+
+    async function fetchData(searchTerm: string) {
+        var myHeaders = new Headers();
+        myHeaders.append("Cookie", `${document.cookie}`);
+
+        const fetchResult = await fetch(`http://127.0.0.1:8000/product/name/${searchTerm}`, {
+            method: "GET",
+            headers: myHeaders,
+            redirect: "follow",
+            credentials: "include"
+        });
+
+        console.log(fetchResult);
+
+        const data = await fetchResult.json();
+
+        setResult(data);
+    }
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [result, setResult] = useState([]);
+
+    const debouncedResults = useMemo(() => {
+        return debounce(fetchData, 300);
+    }, []);
+    
+    useEffect(() => {
+        return () => {
+            debouncedResults.cancel();
+        };
+    });
+
     return (
         <>
             <div className="flex flex-col justify-between h-screen min-h-screen flex-1">
                 <div className="flex flex-col p-4 gap-4">
                     <div className="flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4">
                         <Image width="20" height="20" src="/icons/search-sm.svg" alt={''}></Image>
-                        <input placeholder="Search" className="bg-transparent focus:outline-none text-white flex-1"/>
+                        <input placeholder="Search" className="bg-transparent focus:outline-none text-white flex-1" onChange={(e) => debouncedResults(e.target.value)}/>
                         <Image width="20" height="20" src="/icons/scan.svg" alt={''}></Image>
                     </div>
+
+                    <div className="flex flex-1 flex-row flex-wrap gap-4 ">
+                        {
+                            JSON.stringify(result)
+                        }
+                    </div>
+
                     <div className="flex flex-1 flex-row flex-wrap gap-4 ">
                         {/* Tiles */}
                         {

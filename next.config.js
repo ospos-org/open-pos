@@ -5,7 +5,7 @@ const nextConfig = {
   },
   images: {
     domains: ["www.torpedo7.co.nz"]
-  }
+  },
 }
 
 module.exports = nextConfig
