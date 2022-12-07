@@ -15,8 +15,7 @@ export default function App() {
 	const [ page, setPage ] = useState(0);
 	const [ authCookie, setAuthCookie ] = useState("");
 
-	// Handle user authentication and pass it to child elements.
-	useEffect(() => {
+	const fetch_cookie = async () => {
 		fetch('http://127.0.0.1:8000/employee/auth/79f21ac3-5890-4359-9caa-7bcbde071f93', {
 			method: "POST",
 			body: JSON.stringify({
@@ -30,6 +29,13 @@ export default function App() {
 			setAuthCookie(cookie);
 
 			// document.cookie = `key=${cookie.replace("\"", "")};Path=/;SameSite=\"None\";Secure=True`;
+		})
+	}
+
+	// Handle user authentication and pass it to child elements.
+	useEffect(() => {
+		fetch_cookie().then(() => {
+			setTimeout(fetch_cookie, 9 * 60 * 1000)
 		})
 	}, []);
 
