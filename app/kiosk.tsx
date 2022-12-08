@@ -75,7 +75,7 @@ type Variant = {
 }
 
 type StockInfo = {
-    store: string,
+    store: Store,
     quantity: Quantity
 }
 
@@ -85,7 +85,14 @@ type Quantity = {
     quantity_on_floor: number
 }
 
-export default function Kiosk() {
+type Store = {
+    code: string,
+    contact: string
+}
+
+export default function Kiosk(state: { master_state: {
+    store_id: string
+} }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
         transaction_type: "OUT",
@@ -102,10 +109,11 @@ export default function Kiosk() {
         till: null
     });
 
-
     async function fetchData(searchTerm: string) {
         var myHeaders = new Headers();
         myHeaders.append("Cookie", `${document.cookie}`);
+
+        setSearchTermState(searchTerm);
 
         const fetchResult = await fetch(`http://127.0.0.1:8000/product/name/${searchTerm}`, {
             method: "GET",
@@ -121,7 +129,9 @@ export default function Kiosk() {
         setResult(data);
     }
 
-    const [ searchTerm, setSearchTerm ] = useState("");
+    const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
+    const [ activeVariants, setActiveVariants ] = useState<Variant[] | null>(null);
+    const [ searchTermState, setSearchTermState ] = useState("");
     const [ result, setResult ] = useState([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
 
@@ -142,7 +152,9 @@ export default function Kiosk() {
                     <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
                         <Image width="20" height="20" src="/icons/search-sm.svg" alt={''}></Image>
                         <input placeholder="Search" className="bg-transparent focus:outline-none text-white flex-1" 
-                            onChange={(e) => debouncedResults(e.target.value)}
+                            onChange={(e) => {
+                                debouncedResults(e.target.value);
+                            }}
                             onFocus={() => setSearchFocused(true)}
                             tabIndex={0}
                             // onBlur={() => setSearchFocused(false)}
@@ -156,168 +168,239 @@ export default function Kiosk() {
 
                         {
                             searchFocused ? 
-                            <Image width="20" height="20" src="/icons/x.svg" alt={''}></Image>
+                            <Image width="20" height="20" src="/icons/x.svg" alt={''} onClick={() => setSearchFocused(false)}></Image>
                             :
                             <Image width="20" height="20" src="/icons/scan.svg" alt={''}></Image>
                         }
                     </div>
                     
                     {
-                        searchFocused ?
-                        <div className="flex flex-1 flex-col flex-wrap gap-4 bg-gray-700 p-4 rounded-sm text-white">
-                            {
-                                result.map((e: Product, indx) => {
-                                    return (
-                                        <div key={e.sku}>
-                                            {
-                                                (indx == e.variants.length-1) ? <></> : <hr className="mb-4 border-gray-500" />
-                                            }
+                        searchFocused && (searchTermState !== "") ?
+                            <div className="flex flex-1 flex-col flex-wrap gap-4 bg-gray-700 p-4 rounded-sm text-white">
+                                {
+                                    result.map((e: Product, indx) => {
+                                        return (
+                                            <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
+                                                setActiveProduct(e);
+                                                setSearchFocused(false);
 
-                                            <div className="flex flex-row items-center gap-4">
-                                                <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
-                                                
-                                                <div className="flex flex-row items-center gap-2 max-w-md w-full flex-1">
-                                                    <p>{e.company}</p>
-                                                    <p>{e.name}</p>
-                                                </div>
+                                                setActiveVariants([e.variants[0].variants[0]]);
+                                            }}>
+                                                <div className="flex flex-row items-center gap-4">
+                                                    <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
+                                                    
+                                                    <div className="flex flex-row items-center gap-2 max-w-md w-full flex-1">
+                                                        <p>{e.company}</p>
+                                                        <p>{e.name}</p>
+                                                    </div>
 
-                                                <div>
-                                                    {
-                                                        e.variants.map(e => {
-                                                            return (
-                                                                <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2">
-                                                                    <p>{e.category}(s) </p>
+                                                    <div className="flex flex-row items-center gap-2 flex-1">
+                                                        {
+                                                            e.variants.map(e => {
+                                                                return (
+                                                                    <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2">
+                                                                        <p>{e.category}(s) </p>
 
-                                                                    <div className="text-gray-300">
-                                                                        {
-                                                                            e.variants.map((k, i) => {
-                                                                                return (i == e.variants.length-1) ? k.name : (k.name+", ")
-                                                                            })
-                                                                        }
+                                                                        <div className="text-gray-300">
+                                                                            {
+                                                                                e.variants.map((k, i) => {
+                                                                                    return (i == e.variants.length-1) ? k.name : (k.name+", ")
+                                                                                })
+                                                                            }
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )
-                                                        })
-                                                    }
-                                                </div>
+                                                                )
+                                                            })
+                                                        }
+                                                    </div>
 
-                                                <div>
-                                                    {
-                                                        (() => {
-                                                            const total_stock = e.variants.map(k => {
-                                                                return k.variants.map(b => {
-                                                                    let total = 0;
+                                                    <div>
+                                                        {
+                                                            (() => {
+                                                                let total_stock = e.variants.map(k => {
+                                                                    return k.variants.map(b => {
+                                                                        let total = 0;
 
-                                                                    for(let i = 0; i < b.stock.length; i++) {
-                                                                        total += b.stock[i].quantity.quantity_on_hand;
-                                                                    }
+                                                                        for(let i = 0; i < b.stock.length; i++) {
+                                                                            total += b.stock[i].quantity.quantity_on_hand;
+                                                                        }
 
-                                                                    return total;
+                                                                        return total;
+                                                                    }).reduce(function (accumVariable, curValue) {
+                                                                        return accumVariable + curValue
+                                                                    }, 0);
                                                                 }).reduce(function (accumVariable, curValue) {
                                                                     return accumVariable + curValue
                                                                 }, 0);
-                                                            })
 
-                                                            return (
-                                                                e.variants.map(k => {
+                                                                let total_stock_in_store = e.variants.map(k => {
                                                                     return k.variants.map(b => {
-                                                                        return (
-                                                                            <p key={`${e.sku}-${b.variant_code}`}>{total_stock} in stores</p>
-                                                                        ) 
-                                                                    })
-                                                                })
-                                                            )
-                                                        })()
-                                                    }
+                                                                        let total = 0;
+
+                                                                        for(let i = 0; i < b.stock.length; i++) {
+                                                                            if(b.stock[i].store.code == state.master_state.store_id) {
+                                                                                total += b.stock[i].quantity.quantity_on_hand;
+                                                                            }
+                                                                        }
+
+                                                                        return total;
+                                                                    }).reduce(function (accumVariable, curValue) {
+                                                                        return accumVariable + curValue
+                                                                    }, 0);
+                                                                }).reduce(function (accumVariable, curValue) {
+                                                                    return accumVariable + curValue
+                                                                }, 0);
+
+                                                                return (
+                                                                    <div className="flex flex-row items-center gap-1">
+                                                                        <p>{total_stock_in_store} instore,</p>
+                                                                        <p className="text-gray-400">{total_stock - total_stock_in_store} in other stores</p>
+                                                                    </div>
+                                                                )
+                                                            })()
+                                                        }
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center px-2 font-medium">
+                                                        {
+                                                            (() => {
+                                                                let flat_map = e.variants.map(k => k.variants.flatMap(b => b.marginal_price));
+
+                                                                let flat = [];
+
+                                                                for (var i = 0; i < flat_map.length; ++i) {
+                                                                    for (var j = 0; j < flat_map[i].length; ++j)
+                                                                        flat.push(flat_map[i][j]);
+                                                                }
+
+                                                                let min = Math.min.apply(null, flat),
+                                                                    max = Math.max.apply(null, flat);
+
+                                                                if(min == max) {
+                                                                    return (
+                                                                        <p>${max.toFixed(2)}</p>
+                                                                    )
+                                                                }else {
+                                                                    return (
+                                                                        <p>${min.toFixed(2)}-{max.toFixed(2)}</p>
+                                                                    )
+                                                                }
+                                                            })()
+                                                        }
+                                                    </div>
                                                 </div>
 
-                                                <div>
-                                                    {
-                                                        (() => {
-                                                            let flat_map = e.variants.map(k => k.variants.flatMap(b => b.marginal_price));
+                                                {
+                                                    (indx == result.length-1) ? <></> : <hr className="mt-4 border-gray-500" />
+                                                }
+                                            </div>
+                                        )
+                                    })
+                                }
+                            </div>
+                            :
+                            activeProduct ? 
+                                <div className="p-4 text-white flex flex-col gap-8">
+                                    <div className="flex flex-row items-start    gap-4">
+                                        <Image src={activeProduct.images[0]} height={150} width={150} alt={activeProduct.name}></Image>
+                                        <div className="flex flex-col items-start">
+                                            <div className="flex flex-col">
+                                                <h2 className="text-xl font-medium">{activeProduct.name}</h2>
+                                                <p className="text-gray-400">{activeProduct.company}</p>
 
-                                                            let flat = [];
+                                                <br />
 
-                                                            for (var i = 0; i < flat_map.length; ++i) {
-                                                                for (var j = 0; j < flat_map[i].length; ++j)
-                                                                    flat.push(flat_map[i][j]);
-                                                            }
-
-                                                            let min = Math.min.apply(null, flat),
-                                                                max = Math.max.apply(null, flat);
-
-                                                            if(min == max) {
-                                                                return (
-                                                                    <p>${max.toFixed(2)}</p>
-                                                                )
-                                                            }else {
-                                                                return (
-                                                                    <p>${min.toFixed(2)}-{max.toFixed(2)}</p>
-                                                                )
-                                                            }
-                                                        })()
-                                                    }
-                                                </div>
+                                                <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p>
                                             </div>
 
-                                            
+                                            <div>
+                                                {/* <p>{activeProduct.}</p> */}
+                                            </div>
                                         </div>
-                                        
-                                    )
-                                })
-                            }
-                        </div>
-                        :
-                        <div className="flex flex-1 flex-row flex-wrap gap-4 ">
-                            {/* Tiles */}
-                            {
-                                kioskState.customer ? 
-                                <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
-                                    onClick={() => setKioskState({
-                                        ...kioskState,
-                                        customer: null
-                                    })}
-                                >
-                                    <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
-                                    <p className="font-medium select-none">Remove Customer</p>
+                                    </div>
+
+                                    <div>
+                                        {
+                                            activeProduct.variants.map(e => {
+                                                return (
+                                                    <div className="flex flex-col gap-2" key={e.category}>
+                                                        <p className="text-sm text-gray-400">{e.category.toLocaleUpperCase()}</p>
+                                                        <div className="flex flex-row items-center">
+                                                            {
+                                                                e.variants.map(k => {
+                                                                    return (
+                                                                        <>
+                                                                            {
+                                                                                activeVariants?.includes(k) ? 
+                                                                                <p className="bg-gray-600 text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                                :
+                                                                                <p className="bg-gray-700 text-gray-500 py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                            }
+                                                                        </>
+                                                                    )
+                                                                })
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+                                    
+                                    {/* As the price of a product is generated by the marginal increase from every variant, we must sum each variants prices to obtain the cost of the product with all variant codes applied. */}
+                                    <p>${activeVariants?.reduce((prev, curr) => { return prev += curr.marginal_price }, 0)}</p>
                                 </div>
-                                :
-                                <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit" 
-                                    onClick={() => setKioskState({
-                                        ...kioskState,
-                                        customer: "a"
-                                    })}
-                                >
-                                    <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
-                                    <p className="font-medium select-none">Select Customer</p>
+                            :
+                                <div className="flex flex-1 flex-row flex-wrap gap-4 ">
+                                    {/* Tiles */}
+                                    {
+                                        kioskState.customer ? 
+                                        <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
+                                            onClick={() => setKioskState({
+                                                ...kioskState,
+                                                customer: null
+                                            })}
+                                        >
+                                            <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
+                                            <p className="font-medium select-none">Remove Customer</p>
+                                        </div>
+                                        :
+                                        <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit" 
+                                            onClick={() => setKioskState({
+                                                ...kioskState,
+                                                customer: "a"
+                                            })}
+                                        >
+                                            <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                            <p className="font-medium select-none">Select Customer</p>
+                                        </div>
+                                    }
+                                    
+                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                        <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                        <p className="font-medium">Add Cart Discount</p>
+                                    </div>
+            
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                        <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                        <p className="font-medium">Ship to Customer</p>
+                                    </div>
+            
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                        <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                        <p className="font-medium">Add Note</p>
+                                    </div>
+            
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                        <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                        <p className="font-medium">Pickup from Store</p>
+                                    </div>
+            
+                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                        <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                        <p className="font-medium">Save Cart</p>
+                                    </div>
                                 </div>
-                            }
-                            
-                            <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
-                                <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
-                                <p className="font-medium">Add Cart Discount</p>
-                            </div>
-    
-                            <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
-                                <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                <p className="font-medium">Ship to Customer</p>
-                            </div>
-    
-                            <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
-                                <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                <p className="font-medium">Add Note</p>
-                            </div>
-    
-                            <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
-                                <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                <p className="font-medium">Pickup from Store</p>
-                            </div>
-    
-                            <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
-                                <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
-                                <p className="font-medium">Save Cart</p>
-                            </div>
-                        </div>
                     }
                 </div>
                 

@@ -13,6 +13,10 @@ const ICON_SIZE = 30
 
 export default function App() {
 	const [ page, setPage ] = useState(0);
+	const [ masterState, setMasterState ] = useState({
+		store_id: "001"
+	});
+
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async () => {
@@ -35,7 +39,7 @@ export default function App() {
 	// Handle user authentication and pass it to child elements.
 	useEffect(() => {
 		fetch_cookie().then(() => {
-			setTimeout(fetch_cookie, 9 * 60 * 1000)
+			setInterval(fetch_cookie, 9 * 60 * 1000)
 		})
 	}, []);
 
@@ -104,7 +108,7 @@ export default function App() {
 					(() => {
 						switch(page) {
 							case 0:
-								return <Kiosk />
+								return <Kiosk master_state={masterState} />
 							case 1:
 								return <Inventory />
 							case 2:
@@ -114,9 +118,9 @@ export default function App() {
 							case 4:
 								return <Incomings />
 							case 5:
-								return <Kiosk />
+								return <Kiosk master_state={masterState} />
 							default:
-								return <Kiosk />
+								return <Kiosk master_state={masterState} />
 						}
 					})()
 				}
