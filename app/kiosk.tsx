@@ -51,7 +51,10 @@ type Product = {
     company: string,
     variants: VariantCategory[],
     sku: string,
-    loyalty_discount: string,
+    loyalty_discount: {
+        Absolute?: string,
+        Percentage?: string
+    },
     images: string[],
     tags: string[],
     description: string,
@@ -61,6 +64,11 @@ type Product = {
 type VariantCategory = {
     category: string,
     variants: Variant[]
+}
+
+type StrictVariantCategory = {
+    category: string,
+    variant: Variant
 }
 
 type Variant = {
@@ -110,6 +118,8 @@ export default function Kiosk(state: { master_state: {
     });
 
     async function fetchData(searchTerm: string) {
+        if(searchTerm == "") return;
+
         var myHeaders = new Headers();
         myHeaders.append("Cookie", `${document.cookie}`);
 
@@ -130,7 +140,7 @@ export default function Kiosk(state: { master_state: {
     }
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
-    const [ activeVariants, setActiveVariants ] = useState<Variant[] | null>(null);
+    const [ activeVariants, setActiveVariants ] = useState<StrictVariantCategory[] | null>(null);
     const [ searchTermState, setSearchTermState ] = useState("");
     const [ result, setResult ] = useState([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
@@ -150,7 +160,15 @@ export default function Kiosk(state: { master_state: {
             <div className="flex flex-col justify-between h-screen min-h-screen flex-1">
                 <div className="flex flex-col p-4 gap-4">
                     <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
-                        <Image width="20" height="20" src="/icons/search-sm.svg" alt={''}></Image>
+                        {
+                            activeProduct && !searchFocused ?
+                            <Image onClick={() => {
+                                setActiveProduct(null);
+                            }} width="20" height="20" src="/icons/arrow-narrow-left.svg" alt={''}></Image>
+                            :
+                            <Image width="20" height="20" src="/icons/search-sm.svg" alt={''}></Image>
+                        }
+
                         <input placeholder="Search" className="bg-transparent focus:outline-none text-white flex-1" 
                             onChange={(e) => {
                                 debouncedResults(e.target.value);
@@ -184,22 +202,31 @@ export default function Kiosk(state: { master_state: {
                                                 setActiveProduct(e);
                                                 setSearchFocused(false);
 
-                                                setActiveVariants([e.variants[0].variants[0]]);
+                                                let vlist: StrictVariantCategory[] = [];
+
+                                                e.variants.map(e => {
+                                                    vlist.push({
+                                                        category: e.category,
+                                                        variant: e.variants[0]
+                                                    })
+                                                })
+
+                                                setActiveVariants(vlist);
                                             }}>
-                                                <div className="flex flex-row items-center gap-4">
+                                                <div className="grid items-center gap-4" style={{ gridTemplateColumns: "50px 1fr 1fr 250px 150px" }}>
                                                     <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
                                                     
-                                                    <div className="flex flex-row items-center gap-2 max-w-md w-full flex-1">
+                                                    <div className="flex flex-row items-center gap-2 max-w-[26rem] w-full flex-1">
                                                         <p>{e.company}</p>
                                                         <p>{e.name}</p>
                                                     </div>
 
-                                                    <div className="flex flex-row items-center gap-2 flex-1">
+                                                    <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
                                                         {
                                                             e.variants.map(e => {
                                                                 return (
-                                                                    <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2">
-                                                                        <p>{e.category}(s) </p>
+                                                                    <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2 max-h-fit">
+                                                                        <p>{e.category}s </p>
 
                                                                         <div className="text-gray-300">
                                                                             {
@@ -264,25 +291,27 @@ export default function Kiosk(state: { master_state: {
                                                     <div className="flex flex-row items-center px-2 font-medium">
                                                         {
                                                             (() => {
-                                                                let flat_map = e.variants.map(k => k.variants.flatMap(b => b.marginal_price));
+                                                                let flat_map = e.variants.map(k => 
+                                                                    k.variants.flatMap(b => b.marginal_price)
+                                                                );
+                                                                
+                                                                let min_total = 0;
+                                                                flat_map.map((e) => {
+                                                                    min_total += Math.min(...e)
+                                                                });
 
-                                                                let flat = [];
+                                                                let max_total = 0;
+                                                                flat_map.map((e) => {
+                                                                    max_total += Math.max(...e)
+                                                                })
 
-                                                                for (var i = 0; i < flat_map.length; ++i) {
-                                                                    for (var j = 0; j < flat_map[i].length; ++j)
-                                                                        flat.push(flat_map[i][j]);
-                                                                }
-
-                                                                let min = Math.min.apply(null, flat),
-                                                                    max = Math.max.apply(null, flat);
-
-                                                                if(min == max) {
+                                                                if(max_total == min_total) {
                                                                     return (
-                                                                        <p>${max.toFixed(2)}</p>
+                                                                        <p>${max_total.toFixed(2)}</p>
                                                                     )
                                                                 }else {
                                                                     return (
-                                                                        <p>${min.toFixed(2)}-{max.toFixed(2)}</p>
+                                                                        <p>${min_total.toFixed(2)}-{max_total.toFixed(2)}</p>
                                                                     )
                                                                 }
                                                             })()
@@ -300,55 +329,119 @@ export default function Kiosk(state: { master_state: {
                             </div>
                             :
                             activeProduct ? 
-                                <div className="p-4 text-white flex flex-col gap-8">
-                                    <div className="flex flex-row items-start    gap-4">
+                                <div className="p-4 text-white flex flex-col gap-8  bg-opacity-50 rounded-sm">
+                                    <div className="flex flex-row items-start gap-4">
                                         <Image src={activeProduct.images[0]} height={150} width={150} alt={activeProduct.name}></Image>
-                                        <div className="flex flex-col items-start">
+                                        <div className="flex flex-row items-start h-full justify-between flex-1">
                                             <div className="flex flex-col">
                                                 <h2 className="text-xl font-medium">{activeProduct.name}</h2>
                                                 <p className="text-gray-400">{activeProduct.company}</p>
-
                                                 <br />
 
-                                                <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p>
+                                                <div className="flex flex-row items-center gap-4">
+                                                    <p className="text-gray-400">SKU:</p>
+                                                    <p>{activeProduct.sku}</p>
+                                                </div>
+                                                
+                                                {(() => {
+                                                    if(activeProduct.loyalty_discount.Absolute) {
+                                                        return (
+                                                            <div className="flex flex-row items-center gap-4">
+                                                                <p className="text-gray-400">Loyalty Discount:</p>
+                                                                <p>-${activeProduct.loyalty_discount.Absolute}</p>
+                                                            </div>
+                                                        )
+                                                    }else {
+                                                        return (
+                                                            <div className="flex flex-row items-center gap-4">
+                                                                <p className="text-gray-400">Loyalty Discount:</p>
+                                                                <p>-%{activeProduct.loyalty_discount.Percentage}</p>
+                                                            </div>
+                                                        )
+                                                    }
+                                                })()}
+                                                <br />
+                                                {/* <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p> */}
                                             </div>
 
-                                            <div>
-                                                {/* <p>{activeProduct.}</p> */}
+                                            <div className="self-center flex flex-row items-center gap-4">
+                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                                    <Image width="25" height="25" src="/icons/plus-lge.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                                    <p className="font-medium">Add to cart</p>
+                                                </div>
+
+                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                                    <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                                    <p className="font-medium">Show Related Orders</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        {
-                                            activeProduct.variants.map(e => {
-                                                return (
-                                                    <div className="flex flex-col gap-2" key={e.category}>
-                                                        <p className="text-sm text-gray-400">{e.category.toLocaleUpperCase()}</p>
-                                                        <div className="flex flex-row items-center">
-                                                            {
-                                                                e.variants.map(k => {
-                                                                    return (
-                                                                        <>
-                                                                            {
-                                                                                activeVariants?.includes(k) ? 
-                                                                                <p className="bg-gray-600 text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
-                                                                                :
-                                                                                <p className="bg-gray-700 text-gray-500 py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                    <div className="flex flex-row items-start">
+                                        <div className="flex flex-col gap-8">
+                                            <div className="flex flex-col gap-4">
+                                                {
+                                                    activeProduct.variants.map(e => {
+                                                        return (
+                                                            <div className="flex flex-col gap-2" key={e.category}>
+                                                                <p className="text-sm text-gray-400">{e.category.toLocaleUpperCase()}</p>
+                                                                <div className="flex flex-row items-center gap-2 select-none">
+                                                                    {
+                                                                        e.variants.map(k => {
+                                                                            let match = activeVariants?.find(function(o) {
+                                                                                return o.variant.variant_code == k.variant_code;
+                                                                            });
+
+                                                                            if(match) {
+                                                                                console.log(match);
+
+                                                                                return (
+                                                                                    <p className="bg-gray-600 cursor-pointer text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                                )
                                                                             }
-                                                                        </>
-                                                                    )
-                                                                })
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })
-                                        }
+                                                                            else {
+                                                                                return (
+                                                                                    <p onClick={() => {
+                                                                                            let new_vlist: StrictVariantCategory[] = [];
+
+                                                                                            activeVariants?.map(j => {
+                                                                                                if(j.category == e.category) {
+                                                                                                    new_vlist.push({
+                                                                                                        category: j.category,
+                                                                                                        variant: k
+                                                                                                    })
+                                                                                                }else {
+                                                                                                    new_vlist.push(j)
+                                                                                                }
+                                                                                            })
+                                                                                            
+                                                                                            setActiveVariants(new_vlist)
+                                                                                        }} className="bg-gray-700 hover:bg-gray-600 hover:cursor-pointer text-gray-500 hover:text-gray-400 py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                                )
+                                                                            }
+                                                                        })
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })
+                                                }
+                                            </div>
+                                            
+                                            <div className="flex flex-col items-start gap-2 w-fit">
+                                                <p className="text-sm text-gray-400">Variant Cost</p>
+                                                {/* As the price of a product is generated by the marginal increase from every variant, we must sum each variants prices to obtain the cost of the product with all variant codes applied. */}
+                                                <p className="text-2xl font-semibold">${activeVariants?.reduce((prev, curr) => { return prev += curr.variant.marginal_price }, 0)}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            
+                                        </div>
                                     </div>
+
                                     
-                                    {/* As the price of a product is generated by the marginal increase from every variant, we must sum each variants prices to obtain the cost of the product with all variant codes applied. */}
-                                    <p>${activeVariants?.reduce((prev, curr) => { return prev += curr.marginal_price }, 0)}</p>
                                 </div>
                             :
                                 <div className="flex flex-1 flex-row flex-wrap gap-4 ">
