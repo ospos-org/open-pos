@@ -49,7 +49,8 @@ type OrderStatus = {
 type Product = {
     name: string,
     company: string,
-    variants: VariantCategory[],
+    variant_groups: VariantCategory[],
+    variants: VariantInformation[],
     sku: string,
     loyalty_discount: {
         Absolute?: string,
@@ -59,6 +60,18 @@ type Product = {
     tags: string[],
     description: string,
     specifications: (string[])[]
+}
+
+type VariantInformation = {
+    name: string,
+    stock: StockInfo[],
+    images: string[],
+    marginal_price: number,
+    /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
+    variant_code: string[],
+    order_history: string[],
+    /// impl! Implement this type!
+    stock_information: string
 }
 
 type VariantCategory = {
@@ -118,7 +131,10 @@ export default function Kiosk(state: { master_state: {
     });
 
     async function fetchData(searchTerm: string) {
-        if(searchTerm == "") return;
+        if(searchTerm == "") {
+            setSearchTermState(searchTerm);
+            return;
+        }
 
         var myHeaders = new Headers();
         myHeaders.append("Cookie", `${document.cookie}`);
@@ -196,6 +212,9 @@ export default function Kiosk(state: { master_state: {
                         searchFocused && (searchTermState !== "") ?
                             <div className="flex flex-1 flex-col flex-wrap gap-4 bg-gray-700 p-4 rounded-sm text-white">
                                 {
+                                    result.length == 0 ?
+                                    <p className="self-center text-gray-400 py-6">No products with this name</p>
+                                    :
                                     result.map((e: Product, indx) => {
                                         return (
                                             <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
@@ -204,7 +223,7 @@ export default function Kiosk(state: { master_state: {
 
                                                 let vlist: StrictVariantCategory[] = [];
 
-                                                e.variants.map(e => {
+                                                e.variant_groups.map(e => {
                                                     vlist.push({
                                                         category: e.category,
                                                         variant: e.variants[0]
@@ -223,7 +242,7 @@ export default function Kiosk(state: { master_state: {
 
                                                     <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
                                                         {
-                                                            e.variants.map(e => {
+                                                            e.variant_groups.map(e => {
                                                                 return (
                                                                     <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2 max-h-fit">
                                                                         <p>{e.category}s </p>
@@ -245,37 +264,29 @@ export default function Kiosk(state: { master_state: {
                                                         {
                                                             (() => {
                                                                 let total_stock = e.variants.map(k => {
-                                                                    return k.variants.map(b => {
-                                                                        let total = 0;
-
-                                                                        for(let i = 0; i < b.stock.length; i++) {
-                                                                            total += b.stock[i].quantity.quantity_on_hand;
-                                                                        }
-
-                                                                        return total;
-                                                                    }).reduce(function (accumVariable, curValue) {
-                                                                        return accumVariable + curValue
+                                                                    return k.stock.map(b => {
+                                                                        return b.quantity.quantity_on_hand;
+                                                                    }).reduce(function (prev, curr) {
+                                                                        return prev + curr
                                                                     }, 0);
-                                                                }).reduce(function (accumVariable, curValue) {
-                                                                    return accumVariable + curValue
+                                                                }).reduce(function (prev, curr) {
+                                                                    return prev + curr
                                                                 }, 0);
 
                                                                 let total_stock_in_store = e.variants.map(k => {
-                                                                    return k.variants.map(b => {
+                                                                    return k.stock.map(b => {
                                                                         let total = 0;
 
-                                                                        for(let i = 0; i < b.stock.length; i++) {
-                                                                            if(b.stock[i].store.code == state.master_state.store_id) {
-                                                                                total += b.stock[i].quantity.quantity_on_hand;
-                                                                            }
+                                                                        if(b.store.code == state.master_state.store_id) {
+                                                                            total += b.quantity.quantity_on_hand;
                                                                         }
 
                                                                         return total;
-                                                                    }).reduce(function (accumVariable, curValue) {
-                                                                        return accumVariable + curValue
+                                                                    }).reduce(function (prev, curr) {
+                                                                        return prev + curr
                                                                     }, 0);
-                                                                }).reduce(function (accumVariable, curValue) {
-                                                                    return accumVariable + curValue
+                                                                }).reduce(function (prev, curr) {
+                                                                    return prev + curr
                                                                 }, 0);
 
                                                                 return (
@@ -292,18 +303,11 @@ export default function Kiosk(state: { master_state: {
                                                         {
                                                             (() => {
                                                                 let flat_map = e.variants.map(k => 
-                                                                    k.variants.flatMap(b => b.marginal_price)
+                                                                    k.marginal_price
                                                                 );
                                                                 
-                                                                let min_total = 0;
-                                                                flat_map.map((e) => {
-                                                                    min_total += Math.min(...e)
-                                                                });
-
-                                                                let max_total = 0;
-                                                                flat_map.map((e) => {
-                                                                    max_total += Math.max(...e)
-                                                                })
+                                                                let min_total = Math.min(...flat_map);
+                                                                let max_total = Math.max(...flat_map);
 
                                                                 if(max_total == min_total) {
                                                                     return (
@@ -331,7 +335,7 @@ export default function Kiosk(state: { master_state: {
                             activeProduct ? 
                                 <div className="p-4 text-white flex flex-col gap-8  bg-opacity-50 rounded-sm">
                                     <div className="flex flex-row items-start gap-4">
-                                        <Image src={activeProduct.images[0]} height={150} width={150} alt={activeProduct.name}></Image>
+                                        <Image src={activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
                                         <div className="flex flex-row items-start h-full justify-between flex-1">
                                             <div className="flex flex-col">
                                                 <h2 className="text-xl font-medium">{activeProduct.name}</h2>
@@ -382,7 +386,7 @@ export default function Kiosk(state: { master_state: {
                                         <div className="flex flex-col gap-8">
                                             <div className="flex flex-col gap-4">
                                                 {
-                                                    activeProduct.variants.map(e => {
+                                                    activeProduct.variant_groups.map(e => {
                                                         return (
                                                             <div className="flex flex-col gap-2" key={e.category}>
                                                                 <p className="text-sm text-gray-400">{e.category.toLocaleUpperCase()}</p>
@@ -436,8 +440,26 @@ export default function Kiosk(state: { master_state: {
                                             </div>
                                         </div>
 
-                                        <div>
-                                            
+                                        <div className="p-8 w-full">
+                                            <div className="p-4 w-full bg-gray-700 rounded-md">
+                                                {
+                                                    activeProduct.variants.map(e => {
+                                                        return (
+                                                            <div key={e.variant_code.toString()} className="grid w-full" style={{ gridTemplateColumns: "1fr 100px 150px 50px" }}>
+                                                                <p className="flex-1 w-full">{e.name}</p>
+
+                                                                <p>{e.stock.find(e => e.store.code == state.master_state.store_id)?.quantity.quantity_on_hand ?? 0} Here</p>
+                                                                <p>
+                                                                    {
+                                                                        e.stock.map(e => (e.store.code == state.master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                    } In other stores
+                                                                </p>
+                                                                <p>{e.marginal_price}</p>
+                                                            </div>
+                                                        )
+                                                    })
+                                                }
+                                            </div>
                                         </div>
                                     </div>
 
@@ -538,6 +560,11 @@ export default function Kiosk(state: { master_state: {
                                 <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src="https://www.torpedo7.co.nz/images/products/F1S8DN512XX_zoom---2017-surfboard-6ft-6in-fish---white.jpg?v=81b1f5068df74b648797"></Image>
 
                                 <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">2</div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 items-center justify-center">
+                                <Image width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }} ></Image>
+                                <Image width="15" height="15" src="/icons/arrow-block-down.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }}></Image>
                             </div>
                             
                             <div className="flex-1">
