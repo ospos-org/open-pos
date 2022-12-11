@@ -379,7 +379,8 @@ export default function Kiosk(state: { master_state: {
                             activeProduct ? 
                                 <div className="p-4 text-white flex flex-col gap-8  bg-opacity-50 rounded-sm">
                                     <div className="flex flex-row items-start gap-4">
-                                        <Image src={activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
+                                        <Image src={activeProductVariant?.images?.[0] ?? activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
+
                                         <div className="flex flex-row items-start h-full justify-between flex-1">
                                             <div className="flex flex-col">
                                                 <h2 className="text-xl font-medium">{activeProduct.name}</h2>
@@ -736,8 +737,13 @@ export default function Kiosk(state: { master_state: {
                             <p className="text-sm text-gray-400">{orderState.products.length} items</p>
                         </div>
 
-                        <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md">
-                            <p className="text-white">Clear Cart</p>
+                        <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md cursor-pointer">
+                            <p className="text-white" onClick={() => {
+                                setOrderState({
+                                    ...orderState,
+                                    products: []
+                                })
+                            }}>Clear Cart</p>
                             {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
                         </div>
                     </div>
@@ -861,98 +867,6 @@ export default function Kiosk(state: { master_state: {
                             )
                         })
                     }
-
-                    
-
-                    <div className="text-white">
-                        <div className="flex flex-row items-center gap-4">
-                            <div className="relative">
-                                <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src="https://www.torpedo7.co.nz/images/products/3YBMHN2ABEL_zoom---2022-marlin-5-mtb-lithium-grey.jpg?v=845eb9a5288642009c05"></Image>
-
-                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">1</div>
-                            </div>
-                            
-                            <div className="flex-1">
-                                <p className="font-semibold">Trek 2023 Marlin 5 Gen 2 MTB</p>
-                                <p className="text-sm text-gray-400">Lithium Grey, Small</p>
-                            </div>
-
-                            <div>
-                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                    }}
-                                ></Image>
-                            </div>
-
-                            <div className="min-w-[75px]">
-                                <p className="">$999.00</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="text-white">
-                        <div className="flex flex-row items-center gap-4">
-                            <div className="relative">
-                                <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src="https://www.torpedo7.co.nz/images/products/T7RTF20E2C4_zoom---discovery-12-person-tent-ink-grey.jpg?v=845eb9a5288642009c05"></Image>
-
-                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">1</div>
-                            </div>
-                            
-                            <div className="flex-1">
-                                <p className="font-semibold">Torpedo7 Discovery</p>
-                                <p className="text-sm text-gray-400">Ink/Grey, 12 Person</p>
-                            </div>
-
-                            <div>
-                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                    }}
-                                ></Image>
-                            </div>
-
-                            <div className="min-w-[75px]">
-                                <p className="">$1,119.99</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="text-white">
-                        <div className="flex flex-row items-center gap-4">
-                            <div className="relative">
-                                <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src="https://www.torpedo7.co.nz/images/products/T7TEO23YDHS_zoom---men-s-ecopulse-short-sleeve-explore-graphic-t-shirts-hot-sauce.jpg?v=845eb9a5288642009c05"></Image>
-
-                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">1</div>
-                            </div>
-                            
-                            <div className="flex-1">
-                                <p className="font-semibold">Torpedo7 Men{'\''}s Ecopulse</p>
-                                <p className="text-sm text-gray-400">Short Sleeve, Explore Graphic, Small, Hot Sauce</p>
-                            </div>
-
-                            <div>
-                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                    }}
-                                ></Image>
-                            </div>
-
-                            <div className="min-w-[75px]">
-                                <p className="">$1,119.99</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </>
