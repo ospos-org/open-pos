@@ -406,6 +406,62 @@ export default function Kiosk(state: { master_state: {
                                                                                 return o.variant.variant_code == k.variant_code;
                                                                             });
 
+                                                                            let new_vlist: StrictVariantCategory[] = [];
+
+                                                                            activeVariant?.map(j => {
+                                                                                if(j.category == e.category) {
+                                                                                    new_vlist.push({
+                                                                                        category: j.category,
+                                                                                        variant: k
+                                                                                    })
+                                                                                }else {
+                                                                                    new_vlist.push(j)
+                                                                                }
+                                                                            })
+
+                                                                            let variant = activeProduct.variants?.find(b => {
+                                                                                let flat = b.variant_code;
+                                                                                let f2 = new_vlist?.map(e => e.variant.variant_code);
+                        
+                                                                                return isEqual(flat, f2)
+                                                                            });
+
+                                                                            if(!variant) {
+                                                                                return (
+                                                                                    <p 
+                                                                                        className="bg-gray-700 cursor-pointer text-gray-600 py-1 px-4 w-fit rounded-md" 
+                                                                                        key={k.variant_code}
+                                                                                        onClick={() => {
+                                                                                            let valid_variant: null | StrictVariantCategory[] = null;
+
+                                                                                            for(let i = 0; i < (activeVariantPossibilities?.length ?? 0); i++) {
+                                                                                                let new_vlist: StrictVariantCategory[] = [];
+
+                                                                                                activeVariantPossibilities?.[i]?.map(j => {
+                                                                                                    if(j.category == e.category) {
+                                                                                                        new_vlist.push({
+                                                                                                            category: j.category,
+                                                                                                            variant: k
+                                                                                                        })
+                                                                                                    }else {
+                                                                                                        // If valid pair, choose. 
+                                                                                                        new_vlist.push(j)
+                                                                                                    }
+                                                                                                })
+                                                                                                
+                                                                                                if(isValidVariant(activeProduct, new_vlist)) {
+                                                                                                    valid_variant = new_vlist;
+                                                                                                    break;
+                                                                                                }
+                                                                                            }
+
+                                                                                            setActiveVariant(valid_variant);
+                                                                                        }}>
+                                                                                            {k.name}
+                                                                                    </p>
+                                                                                )
+                                                                            }
+
                                                                             if(match) {
                                                                                 return (
                                                                                     <p className="bg-gray-600 cursor-pointer text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
@@ -728,4 +784,17 @@ export default function Kiosk(state: { master_state: {
             </div>
         </>
     )
+}
+
+function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
+    return activeProduct.variants.find(e => {
+        let comparative_map = e.variant_code.map(b => {
+            return activeVariant?.find(c => c.variant.variant_code == b)
+        });
+    
+        let filtered = comparative_map.filter(s => !s);
+        let active = filtered.length <= 0;
+
+        return active;
+    })
 }
