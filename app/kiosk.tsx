@@ -34,11 +34,15 @@ type Order = {
 
 type ProductPurchase = {
     product_code: string,
-    variant: string,
+    variant: string[],
     discount: string,
 
     product_cost: number,
     quantity: number,
+
+    /// Extra information that should be removed before sending to server
+    product: Product,
+    variant_information: VariantInformation
 }
 
 type OrderStatus = {
@@ -130,6 +134,20 @@ export default function Kiosk(state: { master_state: {
         till: null
     });
 
+    const [ orderState, setOrderState ] = useState<Order>({
+        id: "",
+        destination: "",
+        origin: "",
+        products: [],
+        status: [],
+        status_history: [],
+        order_history: [],
+        order_notes: [],
+        reference: "",
+        creation_date: Date.now().toString(),
+        discount: "a|0"
+    })
+
     async function fetchData(searchTerm: string) {
         if(searchTerm == "") {
             setSearchTermState(searchTerm);
@@ -155,6 +173,7 @@ export default function Kiosk(state: { master_state: {
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
+    const [ activeProductVariant, setActiveProductVariant ] = useState<VariantInformation | null>(null);
     const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
 
     const [ searchTermState, setSearchTermState ] = useState("");
@@ -210,7 +229,7 @@ export default function Kiosk(state: { master_state: {
                     
                     {
                         searchFocused && (searchTermState !== "") ?
-                            <div className="flex flex-1 flex-col flex-wrap gap-4 bg-gray-700 p-4 rounded-sm text-white">
+                            <div className="flex flex-1 flex-col flex-wrap gap-2 bg-gray-700 rounded-sm text-white overflow-hidden">
                                 {
                                     result.length == 0 ?
                                     <p className="self-center text-gray-400 py-6">No products with this name</p>
@@ -240,13 +259,14 @@ export default function Kiosk(state: { master_state: {
 
                                                 setActiveVariantPossibilities(vmap_list);
                                                 setActiveVariant(vmap_list[0]);
+                                                setActiveProductVariant(e.variants[0]);
                                             }}>
-                                                <div className="grid items-center gap-4" style={{ gridTemplateColumns: "50px 1fr 1fr 250px 150px" }}>
+                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "50px minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
                                                     <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
                                                     
-                                                    <div className="flex flex-row items-center gap-2 max-w-[26rem] w-full flex-1">
-                                                        <p>{e.company}</p>
+                                                    <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                         <p>{e.name}</p>
+                                                        <p className="text-sm text-gray-400">{e.company}</p>
                                                     </div>
 
                                                     <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
@@ -333,7 +353,7 @@ export default function Kiosk(state: { master_state: {
                                                 </div>
 
                                                 {
-                                                    (indx == result.length-1) ? <></> : <hr className="mt-4 border-gray-500" />
+                                                    (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
                                                 }
                                             </div>
                                         )
@@ -378,7 +398,30 @@ export default function Kiosk(state: { master_state: {
                                             </div>
 
                                             <div className="self-center flex flex-row items-center gap-4">
-                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                                <div 
+                                                    className="cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
+                                                    onClick={() => {
+                                                        // impl! how would this happen if we were to instead increment the quantity?
+                                                        let po: ProductPurchase = {
+                                                            product_code: activeProduct.sku,
+                                                            variant: activeProductVariant?.variant_code ?? [],
+                                                            discount: "a|0",
+
+                                                            product_cost: activeProductVariant?.marginal_price ?? 0,
+                                                            quantity: 1,
+
+                                                            product: activeProduct,
+                                                            variant_information: activeProductVariant ?? activeProduct.variants[0]
+                                                        };
+
+                                                        console.log(po);
+
+                                                        setOrderState({
+                                                            ...orderState,
+                                                            products: [...orderState.products, po ]
+                                                        })
+                                                    }}
+                                                    >
                                                     <Image width="25" height="25" src="/icons/plus-lge.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                                     <p className="font-medium">Add to cart</p>
                                                 </div>
@@ -429,7 +472,7 @@ export default function Kiosk(state: { master_state: {
                                                                             if(!variant) {
                                                                                 return (
                                                                                     <p 
-                                                                                        className="bg-gray-700 cursor-pointer text-gray-600 py-1 px-4 w-fit rounded-md" 
+                                                                                        className="bg-gray-700 whitespace-nowrap cursor-pointer text-gray-600 py-1 px-4 w-fit rounded-md" 
                                                                                         key={k.variant_code}
                                                                                         onClick={() => {
                                                                                             let valid_variant: null | StrictVariantCategory[] = null;
@@ -464,7 +507,7 @@ export default function Kiosk(state: { master_state: {
 
                                                                             if(match) {
                                                                                 return (
-                                                                                    <p className="bg-gray-600 cursor-pointer text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                                    <p className="bg-gray-600 whitespace-nowrap cursor-pointer text-white py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
                                                                                 )
                                                                             }
                                                                             else {
@@ -484,7 +527,7 @@ export default function Kiosk(state: { master_state: {
                                                                                             })
                                                                                             
                                                                                             setActiveVariant(new_vlist)
-                                                                                        }} className="bg-gray-600 hover:cursor-pointer text-gray-500 hover:text-gray-400 py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
+                                                                                        }} className="bg-gray-600 whitespace-nowrap hover:cursor-pointer text-gray-500 hover:text-gray-400 py-1 px-4 w-fit rounded-md" key={k.variant_code}>{k.name}</p>
                                                                                 )
                                                                             }
                                                                         })
@@ -511,12 +554,28 @@ export default function Kiosk(state: { master_state: {
                                                 })()
                                                 }</p>
                                             </div>
+
+                                            <div className="flex flex-col gap-2 w-full bg-gray-700 p-[0.7rem] px-4 rounded-md">
+                                                {
+                                                    activeProductVariant?.stock.map(e => {
+                                                        return (
+                                                            <div key={`STOCK-FOR-${e.store.code}`} className="flex flex-row items-center justify-between gap-2">
+                                                                <p>{e.store.code}</p>
+                                                                <div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full"></div>
+                                                                <p>{e.quantity.quantity_on_hand}</p>
+                                                                <p>(+{e.quantity.quantity_on_order} on order)</p>
+                                                                {/* <p>{e.quantity.quantity_on_floor}</p> */}
+                                                            </div>
+                                                        )
+                                                    })
+                                                }
+                                            </div>
                                         </div>
 
                                         <div className="w-full flex flex-col gap-2">
                                             <p className="text-sm text-gray-400">ALL VARIANTS</p>
 
-                                            <div className="p-4 w-full bg-gray-700 rounded-md gap-2 flex flex-col">
+                                            <div className="p-[0.7rem] w-full bg-gray-700 rounded-md gap-2 flex flex-col">
                                                 {
                                                     activeProduct.variants.map((e, indx) => {
                                                         let comparative_map = e.variant_code.map(b => {
@@ -541,6 +600,7 @@ export default function Kiosk(state: { master_state: {
                                                                         // console.log(variant);
 
                                                                         setActiveVariant(variant);
+                                                                        setActiveProductVariant(e);
                                                                     }}
                                                                     className={`grid w-full px-[0.7rem] py-2 rounded-sm ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 50px" }}>
                                                                     <p className="flex-1 w-full">{e.name}</p>
@@ -628,7 +688,7 @@ export default function Kiosk(state: { master_state: {
                         <div className="flex flex-col">
                             <h3>Leslie K.</h3>
                             <div className="flex flex-row items-center gap-[0.2rem]">
-                                <p className="text-sm">6 items</p>
+                                <p className="text-sm">5 items</p>
                                 <p className="text-gray-400 text-sm">&#8226; Kiosk 5</p>
                             </div>
                         </div>
@@ -644,7 +704,7 @@ export default function Kiosk(state: { master_state: {
                     <div className="flex flex-row items-center justify-between">
                         <div className="text-white">
                             <h2 className="font-semibold text-lg">Carl Sagan</h2>
-                            <p className="text-sm text-gray-400">3 items</p>
+                            <p className="text-sm text-gray-400">{orderState.products.length} items</p>
                         </div>
 
                         <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md">
@@ -656,40 +716,49 @@ export default function Kiosk(state: { master_state: {
 
                     <hr className="border-gray-400 opacity-25"/>
 
-                    <div className="text-white">
-                        <div className="flex flex-row items-center gap-4">
-                            <div className="relative">
-                                <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src="https://www.torpedo7.co.nz/images/products/F1S8DN512XX_zoom---2017-surfboard-6ft-6in-fish---white.jpg?v=81b1f5068df74b648797"></Image>
+                    {
+                        orderState.products.map(e => {
+                            // Find the variant of the product for name and other information...
+                            return (
+                                <div key={`${e.product_code}-${e.variant.toString()}`} className="text-white">
+                                    <div className="flex flex-row items-center gap-4">
+                                        <div className="relative">
+                                            <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src={e.variant_information.images[0]}></Image>
 
-                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">2</div>
-                            </div>
+                                            <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                        </div>
 
-                            <div className="flex flex-col gap-2 items-center justify-center">
-                                <Image width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }} ></Image>
-                                <Image width="15" height="15" src="/icons/arrow-block-down.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }}></Image>
-                            </div>
-                            
-                            <div className="flex-1">
-                                <p className="font-semibold">Torq Surfboard</p>
-                                <p className="text-sm text-gray-400">White, 6{'\"'}6{'\''}</p>
-                            </div>
+                                        <div className="flex flex-col gap-2 items-center justify-center">
+                                            <Image width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }} ></Image>
+                                            <Image width="15" height="15" src="/icons/arrow-block-down.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }}></Image>
+                                        </div>
+                                        
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{e.product.company} {e.product.name}</p>
+                                            <p className="text-sm text-gray-400">{e.variant_information.name}</p>
+                                        </div>
 
-                            <div>
-                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                    }}
-                                ></Image>
-                            </div>
+                                        <div>
+                                            <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                }}
+                                            ></Image>
+                                        </div>
 
-                            <div className="min-w-[75px]">
-                                <p className="">$1539.98</p>
-                            </div>
-                        </div>
-                    </div>
+                                        <div className="min-w-[75px]">
+                                            <p className="">${e.variant_information.marginal_price}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })
+                    }
+
+                    
 
                     <div className="text-white">
                         <div className="flex flex-row items-center gap-4">
