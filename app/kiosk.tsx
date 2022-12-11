@@ -75,7 +75,7 @@ type VariantInformation = {
     variant_code: string[],
     order_history: string[],
     /// impl! Implement this type!
-    stock_information: string
+    stock_information: StockInformation
 }
 
 type VariantCategory = {
@@ -97,6 +97,21 @@ type Variant = {
     order_history: string[],
     // impl! Flesh this type out correctly.
     stock_information: string
+}
+
+type StockInformation = {
+    stock_group: string,
+    sales_group: string,
+    value_stream: string,
+    brand: string,
+    unit: string,
+    tax_code: string,
+    weight: string,
+    volume: string,
+    max_volume: string,
+    back_order: boolean,
+    discontinued: boolean,
+    non_diminishing: boolean
 }
 
 type StockInfo = {
@@ -401,25 +416,39 @@ export default function Kiosk(state: { master_state: {
                                                 <div 
                                                     className="cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
                                                     onClick={() => {
-                                                        // impl! how would this happen if we were to instead increment the quantity?
-                                                        let po: ProductPurchase = {
-                                                            product_code: activeProduct.sku,
-                                                            variant: activeProductVariant?.variant_code ?? [],
-                                                            discount: "a|0",
+                                                        let existing_product = orderState.products.find(k => k.product_code == activeProduct.sku && isEqual(k.variant, activeProductVariant?.variant_code));
 
-                                                            product_cost: activeProductVariant?.marginal_price ?? 0,
-                                                            quantity: 1,
+                                                        if(existing_product) {
+                                                            // Editing the quantity of an existing product in the order.
+                                                            let new_order_products_state = orderState.products.map(e => {
+                                                                return e.product_code == activeProduct.sku && isEqual(e.variant, activeProductVariant?.variant_code) ? { ...e, quantity: e.quantity+1 } : e
+                                                            });
 
-                                                            product: activeProduct,
-                                                            variant_information: activeProductVariant ?? activeProduct.variants[0]
-                                                        };
-
-                                                        console.log(po);
-
-                                                        setOrderState({
-                                                            ...orderState,
-                                                            products: [...orderState.products, po ]
-                                                        })
+                                                            setOrderState({
+                                                                ...orderState,
+                                                                products: [...new_order_products_state]
+                                                            })
+                                                        }else {
+                                                            // Creating a new product in the order.
+                                                            let po: ProductPurchase = {
+                                                                product_code: activeProduct.sku,
+                                                                variant: activeProductVariant?.variant_code ?? [],
+                                                                discount: "a|0",
+    
+                                                                product_cost: activeProductVariant?.marginal_price ?? 0,
+                                                                quantity: 1,
+    
+                                                                product: activeProduct,
+                                                                variant_information: activeProductVariant ?? activeProduct.variants[0]
+                                                            };
+    
+                                                            console.log(po);
+    
+                                                            setOrderState({
+                                                                ...orderState,
+                                                                products: [...orderState.products, po ]
+                                                            })
+                                                        }
                                                     }}
                                                     >
                                                     <Image width="25" height="25" src="/icons/plus-lge.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
@@ -725,12 +754,84 @@ export default function Kiosk(state: { master_state: {
                                         <div className="relative">
                                             <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src={e.variant_information.images[0]}></Image>
 
-                                            <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[30px] min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                            {
+                                                // Determine the accurate representation of a non-diminishing item.
+                                                e.variant_information.stock_information.non_diminishing ?
+                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                :
+                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                            }
                                         </div>
 
                                         <div className="flex flex-col gap-2 items-center justify-center">
-                                            <Image width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }} ></Image>
-                                            <Image width="15" height="15" src="/icons/arrow-block-down.svg" alt={''} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%)" }}></Image>
+                                            <Image
+                                                onClick={() => {
+                                                    let product_list_clone = orderState.products.map(k => {
+                                                        console.log(k, e.product_code);
+                                                        if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                            return {
+                                                                ...k,
+                                                                quantity: k.quantity+1
+                                                            }
+                                                        }else {
+                                                            return k
+                                                        }
+                                                    })
+
+                                                    setOrderState({
+                                                        ...orderState,
+                                                        products: product_list_clone
+                                                    })
+                                                }} 
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                }}
+                                                draggable="false"
+                                                className="select-none"
+                                                width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} ></Image>
+                                            <Image
+                                                onClick={() => {
+                                                    let product_list_clone = orderState.products.map(k => {
+                                                        console.log(k, e.product_code);
+                                                        if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                            if(k.quantity <= 1) {
+                                                                return null;
+                                                            }else {
+                                                                return {
+                                                                    ...k,
+                                                                    quantity: k.quantity-1
+                                                                }
+                                                            }
+                                                        }else {
+                                                            return k
+                                                        }
+                                                    })
+
+                                                    setOrderState({
+                                                        ...orderState,
+                                                        products: product_list_clone.filter(k => k) as ProductPurchase[]
+                                                    })
+                                                }} 
+                                                draggable="false"
+                                                className="select-none"
+                                                onMouseOver={(b) => {
+                                                    b.currentTarget.style.filter = (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                    "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)"
+                                                    : 
+                                                    "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                }}
+                                                width="15" height="15" src={
+                                                    (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                    "/icons/x-close.svg" 
+                                                    : 
+                                                    "/icons/arrow-block-down.svg"
+                                                } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
                                         </div>
                                         
                                         <div className="flex-1">
@@ -738,7 +839,9 @@ export default function Kiosk(state: { master_state: {
                                             <p className="text-sm text-gray-400">{e.variant_information.name}</p>
                                         </div>
 
-                                        <div>
+                                        <div className="flex flex-row items-center gap-2">
+                                            
+
                                             <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
                                                 onMouseOver={(e) => {
                                                     e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
@@ -749,8 +852,9 @@ export default function Kiosk(state: { master_state: {
                                             ></Image>
                                         </div>
 
-                                        <div className="min-w-[75px]">
+                                        <div className="min-w-[75px] flex flex-row items-center gap-2">
                                             <p className="">${e.variant_information.marginal_price}</p>
+
                                         </div>
                                     </div>
                                 </div>
