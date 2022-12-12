@@ -1,6 +1,6 @@
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { debounce, isEqual } from "lodash";
+import { createRef, useEffect, useMemo, useRef, useState } from "react";
+import { debounce, divide, isEqual } from "lodash";
 
 type KioskState = {
     customer: string | null,
@@ -130,6 +130,39 @@ type Store = {
     contact: string
 }
 
+type Customer = {
+    id: string,
+    name: string,
+    contact: ContactInformation,
+    order_history: Order[],
+    customer_notes: Note[],
+    balance: number,
+}
+
+type ContactInformation = {
+    name: string,
+    mobile: Mobile,
+    email: Email,
+    landline: string,
+    address: string
+}
+
+type Email = {
+    root: string,
+    domain: string,
+    full: string
+}
+
+type Mobile = {
+    region_code: string,
+    root: string
+}
+
+type Note = {
+    message: string,
+    timestamp: string
+}
+
 export default function Kiosk(state: { master_state: {
     store_id: string
 } }) {
@@ -163,28 +196,9 @@ export default function Kiosk(state: { master_state: {
         discount: "a|0"
     })
 
-    async function fetchData(searchTerm: string) {
-        if(searchTerm == "") {
-            setSearchTermState(searchTerm);
-            return;
-        }
+    const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
-        var myHeaders = new Headers();
-        myHeaders.append("Cookie", `${document.cookie}`);
-
-        setSearchTermState(searchTerm);
-
-        const fetchResult = await fetch(`http://127.0.0.1:8000/product/name/${searchTerm}`, {
-            method: "GET",
-            headers: myHeaders,
-            redirect: "follow",
-            credentials: "include"
-        });
-
-        const data = await fetchResult.json();
-
-        setResult(data);
-    }
+    const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -196,9 +210,34 @@ export default function Kiosk(state: { master_state: {
     const [ searchFocused, setSearchFocused ] = useState(false); 
 
     const debouncedResults = useMemo(() => {
-        return debounce(fetchData, 50);
-    }, []);
+        return debounce(async (searchTerm: string, searchType: string) => {
+            console.log("Called fetch data! ", searchTerm, searchType);
     
+            if(searchTerm == "") {
+                setSearchTermState(searchTerm);
+                return;
+            }
+    
+            var myHeaders = new Headers();
+            myHeaders.append("Cookie", `${document.cookie}`);
+    
+            setSearchTermState(searchTerm);
+    
+            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : "search"}/${searchTerm}`, {
+                method: "GET",
+                headers: myHeaders,
+                redirect: "follow",
+                credentials: "include"
+            });
+    
+            const data = await fetchResult.json();
+    
+            setResult(data);
+        }, 50);
+    }, []);
+
+    const input_ref = createRef<HTMLInputElement>();
+
     useEffect(() => {
         return () => {
             debouncedResults.cancel();
@@ -214,16 +253,21 @@ export default function Kiosk(state: { master_state: {
                             activeProduct && !searchFocused ?
                             <Image onClick={() => {
                                 setActiveProduct(null);
-                            }} width="20" height="20" src="/icons/arrow-narrow-left.svg" alt={''}></Image>
+                            }} width="20" height="20" src="/icons/arrow-narrow-left.svg" className="select-none" alt={''} draggable={false} ></Image>
                             :
-                            <Image width="20" height="20" src="/icons/search-sm.svg" alt={''}></Image>
+                            <Image width="20" height="20" src="/icons/search-sm.svg" className="select-none" alt={''} draggable={false}></Image>
                         }
 
-                        <input placeholder="Search" className="bg-transparent focus:outline-none text-white flex-1" 
+                        <input 
+                            ref={input_ref}
+                            placeholder={`Search for ${searchType}`} className="bg-transparent focus:outline-none text-white flex-1" 
                             onChange={(e) => {
-                                debouncedResults(e.target.value);
+                                debouncedResults(e.target.value, searchType);
                             }}
-                            onFocus={() => setSearchFocused(true)}
+                            onFocus={(e) => {
+                                setSearchFocused(true)
+                                debouncedResults(e.target.value, searchType);
+                            }}
                             tabIndex={0}
                             // onBlur={() => setSearchFocused(false)}
                             onKeyDown={(e) => {
@@ -234,11 +278,35 @@ export default function Kiosk(state: { master_state: {
                             }}
                             />
 
+                        <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md">
+                            <Image draggable={false} onClick={() => { 
+                                setResult([]); 
+                                setSearchType("product");  
+
+                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                input_ref.current?.focus()
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "product" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>   
+                            <Image draggable={false} onClick={() => { 
+                                setResult([]); 
+                                setSearchType("customer");    
+
+                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                input_ref.current?.focus()
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customer" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>    
+                            <Image draggable={false} onClick={() => { 
+                                setResult([]); 
+                                setSearchType("transaction"); 
+                                
+                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                input_ref.current?.focus()
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transaction" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>    
+                        </div>
+                        
                         {
                             searchFocused ? 
-                            <Image width="20" height="20" src="/icons/x.svg" alt={''} onClick={() => setSearchFocused(false)}></Image>
+                            <Image width="20" height="20" src="/icons/x.svg" alt={''} draggable={false} onClick={() => setSearchFocused(false)}></Image>
                             :
-                            <Image width="20" height="20" src="/icons/scan.svg" alt={''}></Image>
+                            <Image width="20" height="20" src="/icons/scan.svg" draggable={false} alt={''}></Image>
                         }
                     </div>
                     
@@ -246,133 +314,216 @@ export default function Kiosk(state: { master_state: {
                         searchFocused && (searchTermState !== "") ?
                             <div className="flex flex-1 flex-col flex-wrap gap-2 bg-gray-700 rounded-sm text-white overflow-hidden">
                                 {
-                                    result.length == 0 ?
-                                    <p className="self-center text-gray-400 py-6">No products with this name</p>
-                                    :
-                                    result.map((e: Product, indx) => {
-                                        return (
-                                            <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
-                                                setActiveProduct(e);
-                                                setSearchFocused(false);
+                                    (() => {
+                                        switch(searchType) {
+                                            case "product":
+                                                return (
+                                                    result.length == 0 ?
+                                                        <p className="self-center text-gray-400 py-6">No products with this name</p>
+                                                        :
+                                                        result.map((e: Product, indx) => {
+                                                            return (
+                                                                <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
+                                                                    setActiveProduct(e);
+                                                                    setSearchFocused(false);
 
-                                                let vmap_list = [];
+                                                                    let vmap_list = [];
 
-                                                for(let i = 0; i < e.variants.length; i++) {
-                                                    let var_map = e.variants[i].variant_code.map(k => {
-                                                        // Replace the variant code with the variant itself.
-                                                        return e.variant_groups.map(c => {
-                                                            let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
-    
-                                                            return nc.filter(l => l)
-                                                        });
-                                                    }).flat();
-    
-                                                    // Flat map of the first variant pair. 
-                                                    let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
-                                                    vmap_list.push(vlist);
-                                                }
+                                                                    for(let i = 0; i < e.variants.length; i++) {
+                                                                        let var_map = e.variants[i].variant_code.map(k => {
+                                                                            // Replace the variant code with the variant itself.
+                                                                            return e.variant_groups.map(c => {
+                                                                                let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
+                        
+                                                                                return nc.filter(l => l)
+                                                                            });
+                                                                        }).flat();
+                        
+                                                                        // Flat map of the first variant pair. 
+                                                                        let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
+                                                                        vmap_list.push(vlist);
+                                                                    }
 
-                                                setActiveVariantPossibilities(vmap_list);
-                                                setActiveVariant(vmap_list[0]);
-                                                setActiveProductVariant(e.variants[0]);
-                                            }}>
-                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "50px minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
-                                                    <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
-                                                    
-                                                    <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
-                                                        <p>{e.name}</p>
-                                                        <p className="text-sm text-gray-400">{e.company}</p>
-                                                    </div>
+                                                                    setActiveVariantPossibilities(vmap_list);
+                                                                    setActiveVariant(vmap_list[0]);
+                                                                    setActiveProductVariant(e.variants[0]);
+                                                                }}>
+                                                                    <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "50px minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
+                                                                        <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
+                                                                        
+                                                                        <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
+                                                                            <p>{e.name}</p>
+                                                                            <p className="text-sm text-gray-400">{e.company}</p>
+                                                                        </div>
 
-                                                    <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
-                                                        {
-                                                            e.variant_groups.map(e => {
-                                                                return (
-                                                                    <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2 max-h-fit">
-                                                                        <p>{e.category}s </p>
-
-                                                                        <div className="text-gray-300">
+                                                                        <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
                                                                             {
-                                                                                e.variants.map((k, i) => {
-                                                                                    return (i == e.variants.length-1) ? k.name : (k.name+", ")
+                                                                                e.variant_groups.map(e => {
+                                                                                    return (
+                                                                                        <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2 max-h-fit">
+                                                                                            <p>{e.category}s </p>
+
+                                                                                            <div className="text-gray-300">
+                                                                                                {
+                                                                                                    e.variants.map((k, i) => {
+                                                                                                        return (i == e.variants.length-1) ? k.name : (k.name+", ")
+                                                                                                    })
+                                                                                                }
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
                                                                                 })
                                                                             }
                                                                         </div>
-                                                                    </div>
-                                                                )
-                                                            })
-                                                        }
-                                                    </div>
 
+                                                                        <div>
+                                                                            {
+                                                                                (() => {
+                                                                                    let total_stock = e.variants.map(k => {
+                                                                                        return k.stock.map(b => {
+                                                                                            return b.quantity.quantity_on_hand;
+                                                                                        }).reduce(function (prev, curr) {
+                                                                                            return prev + curr
+                                                                                        }, 0);
+                                                                                    }).reduce(function (prev, curr) {
+                                                                                        return prev + curr
+                                                                                    }, 0);
+
+                                                                                    let total_stock_in_store = e.variants.map(k => {
+                                                                                        return k.stock.map(b => {
+                                                                                            let total = 0;
+
+                                                                                            if(b.store.code == state.master_state.store_id) {
+                                                                                                total += b.quantity.quantity_on_hand;
+                                                                                            }
+
+                                                                                            return total;
+                                                                                        }).reduce(function (prev, curr) {
+                                                                                            return prev + curr
+                                                                                        }, 0);
+                                                                                    }).reduce(function (prev, curr) {
+                                                                                        return prev + curr
+                                                                                    }, 0);
+
+                                                                                    return (
+                                                                                        <div className="flex flex-row items-center gap-1">
+                                                                                            <p>{total_stock_in_store} instore,</p>
+                                                                                            <p className="text-gray-400">{total_stock - total_stock_in_store} in other stores</p>
+                                                                                        </div>
+                                                                                    )
+                                                                                })()
+                                                                            }
+                                                                        </div>
+
+                                                                        <div className="flex flex-row items-center px-2 font-medium">
+                                                                            {
+                                                                                (() => {
+                                                                                    let flat_map = e.variants.map(k => 
+                                                                                        k.marginal_price
+                                                                                    );
+                                                                                    
+                                                                                    let min_total = Math.min(...flat_map);
+                                                                                    let max_total = Math.max(...flat_map);
+
+                                                                                    if(max_total == min_total) {
+                                                                                        return (
+                                                                                            <p>${max_total.toFixed(2)}</p>
+                                                                                        )
+                                                                                    }else {
+                                                                                        return (
+                                                                                            <p>${min_total.toFixed(2)}-{max_total.toFixed(2)}</p>
+                                                                                        )
+                                                                                    }
+                                                                                })()
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {
+                                                                        (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
+                                                                    }
+                                                                </div>
+                                                            )
+                                                        })
+                                                )
+                                            case "customer":
+                                                return (
+                                                    result.length == 0 ?
+                                                        <p className="self-center text-gray-400 py-6">No customers with this name</p>
+                                                        :
+                                                        result.map((e: Customer, indx) => {
+                                                            return (
+                                                                <div 
+                                                                    key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
+                                                                    onClick={() => {
+                                                                        setCustomerState(e);
+                                                                        setSearchFocused(false);
+                                                                        setSearchType("product");
+                                                                        setResult([]);
+                                                                        input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                                    }}
+                                                                    >
+                                                                    <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
+                                                                        <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
+                                                                            <p>{e.name}</p>
+                                                                            <p className="text-sm text-gray-400">{e.order_history.length} Past Orders</p>
+                                                                        </div>
+
+                                                                        <div className="flex flex-row items-center gap-4">
+                                                                            <p>({e.contact.mobile.region_code}) {
+                                                                                (() => {
+                                                                                    let k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                                                    console.log(k, e.contact.mobile.root);
+
+                                                                                    if(!k) return ""
+                                                                                    return `${k[1]} ${k[2]} ${k[3]}`
+                                                                                })()
+                                                                            }</p>
+                                                                            <p>{e.contact.email.full}</p>
+                                                                        </div>
+
+                                                                        <p className="text-gray-400">${e.balance} Credit</p>
+
+                                                                        <p className="whitespace-nowrap justify-self-end pr-4">Add to cart</p>
+                                                                    </div>
+
+                                                                    {
+                                                                        (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
+                                                                    }
+                                                                </div>
+                                                            )
+                                                        })
+                                                )
+                                            case "transaction":
+                                                return (
+                                                    result.length == 0 ?
+                                                        <p className="self-center text-gray-400 py-6">No transactions with this reference</p>
+                                                        :
+                                                        result.map((e: Order, indx) => {
+                                                            return (
+                                                                <div key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit">
+                                                                    <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
+                                                                        <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
+                                                                            <p>{e.reference} {e.creation_date}</p>
+                                                                            {/* <p className="text-sm text-gray-400">{e.order_history.length} Past Orders</p> */}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {
+                                                                        (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
+                                                                    }
+                                                                </div>
+                                                            )
+                                                        })
+                                                )
+                                            default:
+                                                return (
                                                     <div>
-                                                        {
-                                                            (() => {
-                                                                let total_stock = e.variants.map(k => {
-                                                                    return k.stock.map(b => {
-                                                                        return b.quantity.quantity_on_hand;
-                                                                    }).reduce(function (prev, curr) {
-                                                                        return prev + curr
-                                                                    }, 0);
-                                                                }).reduce(function (prev, curr) {
-                                                                    return prev + curr
-                                                                }, 0);
-
-                                                                let total_stock_in_store = e.variants.map(k => {
-                                                                    return k.stock.map(b => {
-                                                                        let total = 0;
-
-                                                                        if(b.store.code == state.master_state.store_id) {
-                                                                            total += b.quantity.quantity_on_hand;
-                                                                        }
-
-                                                                        return total;
-                                                                    }).reduce(function (prev, curr) {
-                                                                        return prev + curr
-                                                                    }, 0);
-                                                                }).reduce(function (prev, curr) {
-                                                                    return prev + curr
-                                                                }, 0);
-
-                                                                return (
-                                                                    <div className="flex flex-row items-center gap-1">
-                                                                        <p>{total_stock_in_store} instore,</p>
-                                                                        <p className="text-gray-400">{total_stock - total_stock_in_store} in other stores</p>
-                                                                    </div>
-                                                                )
-                                                            })()
-                                                        }
+                                                        A problem has occurred.
                                                     </div>
-
-                                                    <div className="flex flex-row items-center px-2 font-medium">
-                                                        {
-                                                            (() => {
-                                                                let flat_map = e.variants.map(k => 
-                                                                    k.marginal_price
-                                                                );
-                                                                
-                                                                let min_total = Math.min(...flat_map);
-                                                                let max_total = Math.max(...flat_map);
-
-                                                                if(max_total == min_total) {
-                                                                    return (
-                                                                        <p>${max_total.toFixed(2)}</p>
-                                                                    )
-                                                                }else {
-                                                                    return (
-                                                                        <p>${min_total.toFixed(2)}-{max_total.toFixed(2)}</p>
-                                                                    )
-                                                                }
-                                                            })()
-                                                        }
-                                                    </div>
-                                                </div>
-
-                                                {
-                                                    (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
-                                                }
-                                            </div>
-                                        )
-                                    })
+                                                )
+                                        }
+                                    })()
                                 }
                             </div>
                             :
@@ -661,49 +812,49 @@ export default function Kiosk(state: { master_state: {
                                 <div className="flex flex-1 flex-row flex-wrap gap-4 ">
                                     {/* Tiles */}
                                     {
-                                        kioskState.customer ? 
-                                        <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
-                                            onClick={() => setKioskState({
-                                                ...kioskState,
-                                                customer: null
-                                            })}
+                                        customerState ? 
+                                        <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer"
+                                            onClick={() => setCustomerState(null)}
                                         >
                                             <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
                                             <p className="font-medium select-none">Remove Customer</p>
                                         </div>
                                         :
-                                        <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit" 
-                                            onClick={() => setKioskState({
-                                                ...kioskState,
-                                                customer: "a"
-                                            })}
+                                        <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                            onClick={() => { 
+                                                setResult([]); 
+                                                setSearchType("customer");    
+
+                                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                input_ref.current?.focus()
+                                            }}
                                         >
                                             <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                             <p className="font-medium select-none">Select Customer</p>
                                         </div>
                                     }
                                     
-                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                         <p className="font-medium">Add Cart Discount</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Ship to Customer</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Add Note</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Pickup from Store</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                         <p className="font-medium">Save Cart</p>
                                     </div>
@@ -733,7 +884,25 @@ export default function Kiosk(state: { master_state: {
                     {/* Order Information */}
                     <div className="flex flex-row items-center justify-between">
                         <div className="text-white">
-                            <h2 className="font-semibold text-lg">Carl Sagan</h2>
+                            {
+                                customerState ?
+                                <h2 className="font-semibold text-lg">{customerState.name}</h2>
+                                :
+                                <div 
+                                    onClick={() => {
+                                        setResult([]); 
+                                        setSearchType("customer");    
+
+                                        input_ref.current?.value ? input_ref.current.value = "" : {};
+                                        input_ref.current?.focus()
+                                    }}
+                                    className="bg-gray-800 rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                    <p>Select Customer</p>
+                                    <Image 
+                                        className=""
+                                        height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
+                                </div>
+                            }
                             <p className="text-sm text-gray-400">{orderState.products.length} items</p>
                         </div>
 
@@ -752,6 +921,11 @@ export default function Kiosk(state: { master_state: {
                     <hr className="border-gray-400 opacity-25"/>
 
                     {
+                        orderState.products.length <= 0 ?
+                        <div className="flex flex-col items-center w-full">
+                            <p className="text-sm text-gray-400 py-4">No products in cart</p>
+                        </div>
+                        :
                         orderState.products.map(e => {
                             // Find the variant of the product for name and other information...
                             return (
