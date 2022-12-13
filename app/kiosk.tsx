@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { debounce, divide, isEqual } from "lodash";
+import { ReactBarcodeReader } from "./scanner";
+import BarcodeReader from 'react-barcode-reader'
 
 type KioskState = {
     customer: string | null,
@@ -70,12 +72,13 @@ type VariantInformation = {
     name: string,
     stock: StockInfo[],
     images: string[],
-    marginal_price: number,
+    retail_price: number,
     /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
     variant_code: string[],
     order_history: string[],
     /// impl! Implement this type!
-    stock_information: StockInformation
+    stock_information: StockInformation,
+    barcode: string
 }
 
 type VariantCategory = {
@@ -93,10 +96,11 @@ type Variant = {
     stock: StockInfo[],
     images: string[],
     marginal_price: number,
+    retail_price: number,
     variant_code: string,
     order_history: string[],
     // impl! Flesh this type out correctly.
-    stock_information: string
+    stock_information: StockInformation
 }
 
 type StockInformation = {
@@ -206,8 +210,50 @@ export default function Kiosk(state: { master_state: {
     const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
 
     const [ searchTermState, setSearchTermState ] = useState("");
-    const [ result, setResult ] = useState([]);
+    const [ result, setResult ] = useState<Product[] | Customer[] | Order[]>([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
+
+    const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
+        let existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
+
+        console.log("Trying to add ", product, "of variant", variant, "to", orderProducts);
+
+        if(existing_product) {
+            // Editing the quantity of an existing product in the order.
+            let new_order_products_state = orderProducts.map(e => {
+                return e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) ? { ...e, quantity: e.quantity+1 } : e
+            });
+
+            return new_order_products_state
+
+            // setOrderState({
+            //     ...orderState,
+            //     products: [...new_order_products_state]
+            // })
+        }else {
+            // Creating a new product in the order.
+            let po: ProductPurchase = {
+                product_code: product.sku,
+                variant: variant?.variant_code ?? [],
+                discount: "a|0",
+
+                product_cost: variant?.retail_price ?? 0,
+                quantity: 1,
+
+                product: product,
+                variant_information: variant ?? product.variants[0]
+            };
+
+            console.log(po);
+
+            return [ ...orderProducts, po ]
+
+            // setOrderState({
+            //     ...orderState,
+            //     products: [...orderState.products, po ]
+            // })
+        }
+    }
 
     const debouncedResults = useMemo(() => {
         return debounce(async (searchTerm: string, searchType: string) => {
@@ -230,11 +276,60 @@ export default function Kiosk(state: { master_state: {
                 credentials: "include"
             });
     
-            const data = await fetchResult.json();
+            const data: any[] = await fetchResult.json();
+
+            console.log(data, searchType);
+
+            if(data.length == 1 && searchType == "product") {
+                let e: Product = data[0];
+
+                let vmap_list = [];
+                let active_variant = null;
+                let active_product_variant = null;
+
+                for(let i = 0; i < e.variants.length; i++) {
+                    let var_map = e.variants[i].variant_code.map(k => {
+                        // Replace the variant code with the variant itself.
+                        return e.variant_groups.map(c => {
+                            let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
+
+                            return nc.filter(l => l)
+                        });
+                    }).flat();
+
+                    // Flat map of the first variant pair. 
+                    let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
+
+                    if(e.variants[i].barcode == searchTerm) {
+                        active_variant = vlist;
+                        active_product_variant = e.variants[i];
+                    }
+                    
+                    vmap_list.push(vlist);
+                }
+
+                console.log(active_variant);
+
+                if(active_product_variant) {
+                    console.log("Active Product Variant:", active_product_variant);
+
+                    let new_pdt_list = addToCart(e, active_product_variant, orderState.products);
+
+                    setOrderState({
+                        ...orderState,
+                        products: new_pdt_list
+                    })
+                }else {
+                    setActiveProduct(e);
+                    setActiveVariantPossibilities(vmap_list);
+                    setActiveVariant(active_variant ?? vmap_list[0]);
+                    setActiveProductVariant(active_product_variant ?? e.variants[0]);
+                }
+            }
     
             setResult(data);
         }, 50);
-    }, []);
+    }, [orderState]);
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -246,6 +341,20 @@ export default function Kiosk(state: { master_state: {
 
     return (
         <>
+            <BarcodeReader
+                onScan={(e: any) => {
+                    setSearchFocused(false);
+                    input_ref.current?.value ? input_ref.current.value = e : {};
+
+                    setSearchType("product");
+                    debouncedResults(e, "product");
+                }}
+                minLength={0}
+                preventDefault
+                stopPropagation
+                timeBeforeScanTest={50}
+            />
+
             <div className="flex flex-col justify-between h-screen min-h-screen flex-1">
                 <div className="flex flex-col p-4 gap-4">
                     <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
@@ -321,7 +430,7 @@ export default function Kiosk(state: { master_state: {
                                                     result.length == 0 ?
                                                         <p className="self-center text-gray-400 py-6">No products with this name</p>
                                                         :
-                                                        result.map((e: Product, indx) => {
+                                                        (result as Product[]).map((e: Product, indx) => {
                                                             return (
                                                                 <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
                                                                     setActiveProduct(e);
@@ -419,7 +528,7 @@ export default function Kiosk(state: { master_state: {
                                                                             {
                                                                                 (() => {
                                                                                     let flat_map = e.variants.map(k => 
-                                                                                        k.marginal_price
+                                                                                        k.retail_price
                                                                                     );
                                                                                     
                                                                                     let min_total = Math.min(...flat_map);
@@ -427,11 +536,11 @@ export default function Kiosk(state: { master_state: {
 
                                                                                     if(max_total == min_total) {
                                                                                         return (
-                                                                                            <p>${max_total.toFixed(2)}</p>
+                                                                                            <p>${(max_total * 1.15).toFixed(2)}</p>
                                                                                         )
                                                                                     }else {
                                                                                         return (
-                                                                                            <p>${min_total.toFixed(2)}-{max_total.toFixed(2)}</p>
+                                                                                            <p>${(min_total * 1.15).toFixed(2)}-{(max_total * 1.15).toFixed(2)}</p>
                                                                                         )
                                                                                     }
                                                                                 })()
@@ -451,7 +560,7 @@ export default function Kiosk(state: { master_state: {
                                                     result.length == 0 ?
                                                         <p className="self-center text-gray-400 py-6">No customers with this name</p>
                                                         :
-                                                        result.map((e: Customer, indx) => {
+                                                        (result as Customer[]).map((e: Customer, indx) => {
                                                             return (
                                                                 <div 
                                                                     key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
@@ -499,7 +608,7 @@ export default function Kiosk(state: { master_state: {
                                                     result.length == 0 ?
                                                         <p className="self-center text-gray-400 py-6">No transactions with this reference</p>
                                                         :
-                                                        result.map((e: Order, indx) => {
+                                                        (result as Order[]).map((e: Order, indx) => {
                                                             return (
                                                                 <div key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit">
                                                                     <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
@@ -568,37 +677,12 @@ export default function Kiosk(state: { master_state: {
                                                 <div 
                                                     className="cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
                                                     onClick={() => {
-                                                        let existing_product = orderState.products.find(k => k.product_code == activeProduct.sku && isEqual(k.variant, activeProductVariant?.variant_code));
-
-                                                        if(existing_product) {
-                                                            // Editing the quantity of an existing product in the order.
-                                                            let new_order_products_state = orderState.products.map(e => {
-                                                                return e.product_code == activeProduct.sku && isEqual(e.variant, activeProductVariant?.variant_code) ? { ...e, quantity: e.quantity+1 } : e
-                                                            });
+                                                        if(activeProductVariant) {
+                                                            let new_pdt_list = addToCart(activeProduct, activeProductVariant, orderState.products)
 
                                                             setOrderState({
                                                                 ...orderState,
-                                                                products: [...new_order_products_state]
-                                                            })
-                                                        }else {
-                                                            // Creating a new product in the order.
-                                                            let po: ProductPurchase = {
-                                                                product_code: activeProduct.sku,
-                                                                variant: activeProductVariant?.variant_code ?? [],
-                                                                discount: "a|0",
-    
-                                                                product_cost: activeProductVariant?.marginal_price ?? 0,
-                                                                quantity: 1,
-    
-                                                                product: activeProduct,
-                                                                variant_information: activeProductVariant ?? activeProduct.variants[0]
-                                                            };
-    
-                                                            console.log(po);
-    
-                                                            setOrderState({
-                                                                ...orderState,
-                                                                products: [...orderState.products, po ]
+                                                                products: new_pdt_list
                                                             })
                                                         }
                                                     }}
@@ -723,7 +807,7 @@ export default function Kiosk(state: { master_state: {
                                             <div className="flex flex-col items-start gap-2 w-fit">
                                                 <p className="text-sm text-gray-400">Variant Cost</p>
                                                 {/* As the price of a product is generated by the marginal increase from every variant, we must sum each variants prices to obtain the cost of the product with all variant codes applied. */}
-                                                <p className="text-2xl font-semibold">${(() => {
+                                                {(() => {
                                                     let variant = activeProduct.variants?.find(b => {
                                                         let flat = b.variant_code;
                                                         let f2 = activeVariant?.map(e => e.variant.variant_code);
@@ -731,9 +815,14 @@ export default function Kiosk(state: { master_state: {
                                                         return isEqual(flat, f2)
                                                     });
 
-                                                    return variant?.marginal_price
-                                                })()
-                                                }</p>
+                                                    return (
+                                                        <div>
+                                                            <p className="text-2xl font-semibold">${((variant?.retail_price ?? 1) * 1.15).toFixed(2)}</p>
+                                                            <p className="text-gray-400">pre-tax: ${((variant?.retail_price ?? 1) * 1).toFixed(2)}</p>
+                                                        </div>
+                                                    )
+                                                    })()
+                                                }
                                             </div>
 
                                             <div className="flex flex-col gap-2 w-full bg-gray-700 p-[0.7rem] px-4 rounded-md">
@@ -792,7 +881,7 @@ export default function Kiosk(state: { master_state: {
                                                                             e.stock.map(e => (e.store.code == state.master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
                                                                         } In other stores
                                                                     </p>
-                                                                    <p >{e.marginal_price}</p>
+                                                                    <p >${(e.retail_price * 1.15).toFixed(2)}</p>
                                                                 </div>
 
                                                                 {
@@ -879,8 +968,8 @@ export default function Kiosk(state: { master_state: {
                 </div>
             </div>
 
-            <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6">
-                <div className="flex flex-col gap-4">
+            <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
+                <div className="flex flex-col gap-4 flex-1">
                     {/* Order Information */}
                     <div className="flex flex-row items-center justify-between">
                         <div className="text-white">
@@ -903,7 +992,7 @@ export default function Kiosk(state: { master_state: {
                                         height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                 </div>
                             }
-                            <p className="text-sm text-gray-400">{orderState.products.length} items</p>
+                            <p className="text-sm text-gray-400">{orderState.products.length} item{orderState.products.length > 1 ? "s" : ""}</p>
                         </div>
 
                         <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md cursor-pointer">
@@ -919,7 +1008,8 @@ export default function Kiosk(state: { master_state: {
                     
 
                     <hr className="border-gray-400 opacity-25"/>
-
+                    
+                    <div className="flex flex-col flex-1 h-full gap-4">
                     {
                         orderState.products.length <= 0 ?
                         <div className="flex flex-col items-center w-full">
@@ -1033,14 +1123,58 @@ export default function Kiosk(state: { master_state: {
                                         </div>
 
                                         <div className="min-w-[75px] flex flex-row items-center gap-2">
-                                            <p className="">${e.variant_information.marginal_price}</p>
-
+                                            <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
                                         </div>
                                     </div>
                                 </div>
                             )
                         })
                     }
+                    </div>
+                    
+
+                    <hr className="border-gray-400 opacity-25"/>
+                    
+                    <div className="flex flex-row items-center text-white justify-between px-2">
+                        <div>
+                            <p className="text-gray-400 font-bold">Sub Total</p>
+                            <p className="text-gray-600 font-bold">Tax</p>
+                            <p className="font-bold text-lg">Total</p>
+                        </div>
+                        
+                        <div className="flex flex-col gap-0">
+                            <p className="text-gray-400 font-bold items-end self-end">
+                                ${
+                                    orderState.products.reduce(function (prev, curr) {
+                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                    }, 0).toFixed(2)
+                                }
+                            </p>
+                            <p className="text-gray-600 font-bold items-end self-end">+15% (${
+                                (orderState.products.reduce(function (prev, curr) {
+                                    return prev + (curr.variant_information.retail_price * curr.quantity)
+                                }, 0) * 0.15).toFixed(2)
+                            })</p>
+                            <p className="font-bold text-lg items-end self-end">
+                            ${
+                                (orderState.products.reduce(function (prev, curr) {
+                                    return prev + (curr.variant_information.retail_price * curr.quantity)
+                                }, 0) * 1.15).toFixed(2)
+                            }
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-row items-center gap-4">
+                        <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${orderState.products.length > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                            <p className="text-blue-500 font-semibold">Park Sale</p>
+                        </div>
+
+                        <div className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                            <p className={`text-white font-semibold ${""}`}>Checkout</p>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </>
