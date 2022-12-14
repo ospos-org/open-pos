@@ -11,8 +11,9 @@ type KioskState = {
     order_total: number | null,
     payment: {
         payment_method: "cash" | "card" | string | null,
-        fulfillment_date: string | null
-    },
+        fulfillment_date: string | null,
+        amount: number | null
+    }[],
     order_date: string | null,
     order_notes: string[] | null,
     order_history: string[] | null,
@@ -175,10 +176,7 @@ export default function Kiosk(state: { master_state: {
         transaction_type: "OUT",
         products: [],
         order_total: null,
-        payment: {
-            payment_method: null,
-            fulfillment_date: null
-        },
+        payment: [],
         order_date: null,
         order_notes: null,
         order_history: null,
@@ -203,6 +201,7 @@ export default function Kiosk(state: { master_state: {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
+    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "completed">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -212,6 +211,9 @@ export default function Kiosk(state: { master_state: {
     const [ searchTermState, setSearchTermState ] = useState("");
     const [ result, setResult ] = useState<Product[] | Customer[] | Order[]>([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
+
+    const [ editPrice, setEditPrice ] = useState(false);
+    const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
 
     const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         let existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
@@ -355,7 +357,9 @@ export default function Kiosk(state: { master_state: {
                 timeBeforeScanTest={50}
             />
 
-            <div className="flex flex-col justify-between h-screen min-h-screen flex-1">
+            <div className="flex flex-col justify-between h-screen min-h-screen flex-1" onKeyDownCapture={(e) => {
+                if(e.key == "Escape") setSearchFocused(false)
+            }}>
                 <div className="flex flex-col p-4 gap-4">
                     <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
                         {
@@ -381,6 +385,7 @@ export default function Kiosk(state: { master_state: {
                             // onBlur={() => setSearchFocused(false)}
                             onKeyDown={(e) => {
                                 if(e.key == "Escape") {
+                                    e.preventDefault();
                                     setSearchFocused(false)
                                     e.currentTarget.blur()
                                 }
@@ -969,213 +974,352 @@ export default function Kiosk(state: { master_state: {
             </div>
 
             <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
-                <div className="flex flex-col gap-4 flex-1">
-                    {/* Order Information */}
-                    <div className="flex flex-row items-center justify-between">
-                        <div className="text-white">
-                            {
-                                customerState ?
-                                <h2 className="font-semibold text-lg">{customerState.name}</h2>
-                                :
-                                <div 
-                                    onClick={() => {
-                                        setResult([]); 
-                                        setSearchType("customer");    
+                {
+                    (() => {
+                        switch(padState) {
+                            case "cart":
+                                return (
+                                    <div className="flex flex-col gap-4 flex-1">
+                                        {/* Order Information */}
+                                        <div className="flex flex-row items-center justify-between">
+                                            <div className="text-white">
+                                                {
+                                                    customerState ?
+                                                    <h2 className="font-semibold text-lg">{customerState.name}</h2>
+                                                    :
+                                                    <div 
+                                                        onClick={() => {
+                                                            setResult([]); 
+                                                            setSearchType("customer");    
 
-                                        input_ref.current?.value ? input_ref.current.value = "" : {};
-                                        input_ref.current?.focus()
-                                    }}
-                                    className="bg-gray-800 rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
-                                    <p>Select Customer</p>
-                                    <Image 
-                                        className=""
-                                        height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                                </div>
-                            }
-                            <p className="text-sm text-gray-400">{orderState.products.length} item{orderState.products.length > 1 ? "s" : ""}</p>
-                        </div>
+                                                            input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                            input_ref.current?.focus()
+                                                        }}
+                                                        className="bg-gray-800 rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                                        <p>Select Customer</p>
+                                                        <Image 
+                                                            className=""
+                                                            height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
+                                                    </div>
+                                                }
+                                                <p className="text-sm text-gray-400">{orderState.products.length} item{orderState.products.length > 1 ? "s" : ""}</p>
+                                            </div>
 
-                        <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md cursor-pointer">
-                            <p className="text-white" onClick={() => {
-                                setOrderState({
-                                    ...orderState,
-                                    products: []
-                                })
-                            }}>Clear Cart</p>
-                            {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
-                        </div>
-                    </div>
-                    
-
-                    <hr className="border-gray-400 opacity-25"/>
-                    
-                    <div className="flex flex-col flex-1 h-full gap-4">
-                    {
-                        orderState.products.length <= 0 ?
-                        <div className="flex flex-col items-center w-full">
-                            <p className="text-sm text-gray-400 py-4">No products in cart</p>
-                        </div>
-                        :
-                        orderState.products.map(e => {
-                            // Find the variant of the product for name and other information...
-                            return (
-                                <div key={`${e.product_code}-${e.variant.toString()}`} className="text-white">
-                                    <div className="flex flex-row items-center gap-4">
-                                        <div className="relative">
-                                            <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src={e.variant_information.images[0]}></Image>
-
-                                            {
-                                                // Determine the accurate representation of a non-diminishing item.
-                                                e.variant_information.stock_information.non_diminishing ?
-                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                                :
-                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                            }
-                                        </div>
-
-                                        <div className="flex flex-col gap-2 items-center justify-center">
-                                            <Image
-                                                onClick={() => {
-                                                    let product_list_clone = orderState.products.map(k => {
-                                                        console.log(k, e.product_code);
-                                                        if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
-                                                            return {
-                                                                ...k,
-                                                                quantity: k.quantity+1
-                                                            }
-                                                        }else {
-                                                            return k
-                                                        }
-                                                    })
-
+                                            <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md cursor-pointer">
+                                                <p className="text-white" onClick={() => {
                                                     setOrderState({
                                                         ...orderState,
-                                                        products: product_list_clone
+                                                        products: []
                                                     })
-                                                }} 
-                                                onMouseOver={(e) => {
-                                                    e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                }}
-                                                draggable="false"
-                                                className="select-none"
-                                                width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} ></Image>
-                                            <Image
-                                                onClick={() => {
-                                                    let product_list_clone = orderState.products.map(k => {
-                                                        console.log(k, e.product_code);
-                                                        if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
-                                                            if(k.quantity <= 1) {
-                                                                return null;
-                                                            }else {
-                                                                return {
-                                                                    ...k,
-                                                                    quantity: k.quantity-1
-                                                                }
-                                                            }
-                                                        }else {
-                                                            return k
-                                                        }
-                                                    })
-
-                                                    setOrderState({
-                                                        ...orderState,
-                                                        products: product_list_clone.filter(k => k) as ProductPurchase[]
-                                                    })
-                                                }} 
-                                                draggable="false"
-                                                className="select-none"
-                                                onMouseOver={(b) => {
-                                                    b.currentTarget.style.filter = (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
-                                                    "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)"
-                                                    : 
-                                                    "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                }}
-                                                width="15" height="15" src={
-                                                    (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
-                                                    "/icons/x-close.svg" 
-                                                    : 
-                                                    "/icons/arrow-block-down.svg"
-                                                } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                                                }}>Clear Cart</p>
+                                                {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
+                                            </div>
                                         </div>
                                         
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{e.product.company} {e.product.name}</p>
-                                            <p className="text-sm text-gray-400">{e.variant_information.name}</p>
-                                        </div>
 
-                                        <div className="flex flex-row items-center gap-2">
+                                        <hr className="border-gray-400 opacity-25"/>
+                                        
+                                        <div className="flex flex-col flex-1 h-full gap-4">
+                                        {
+                                            orderState.products.length <= 0 ?
+                                            <div className="flex flex-col items-center w-full">
+                                                <p className="text-sm text-gray-400 py-4">No products in cart</p>
+                                            </div>
+                                            :
+                                            orderState.products.map(e => {
+                                                // Find the variant of the product for name and other information...
+                                                return (
+                                                    <div key={`${e.product_code}-${e.variant.toString()}`} className="text-white">
+                                                        <div className="flex flex-row items-center gap-4">
+                                                            <div className="relative">
+                                                                <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src={e.variant_information.images[0]}></Image>
+
+                                                                {
+                                                                    // Determine the accurate representation of a non-diminishing item.
+                                                                    e.variant_information.stock_information.non_diminishing ?
+                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                    :
+                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                }
+                                                            </div>
+
+                                                            <div className="flex flex-col gap-2 items-center justify-center">
+                                                                <Image
+                                                                    onClick={() => {
+                                                                        let product_list_clone = orderState.products.map(k => {
+                                                                            console.log(k, e.product_code);
+                                                                            if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                                                return {
+                                                                                    ...k,
+                                                                                    quantity: k.quantity+1
+                                                                                }
+                                                                            }else {
+                                                                                return k
+                                                                            }
+                                                                        })
+
+                                                                        setOrderState({
+                                                                            ...orderState,
+                                                                            products: product_list_clone
+                                                                        })
+                                                                    }} 
+                                                                    onMouseOver={(e) => {
+                                                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                    }}
+                                                                    draggable="false"
+                                                                    className="select-none"
+                                                                    width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} ></Image>
+                                                                <Image
+                                                                    onClick={() => {
+                                                                        let product_list_clone = orderState.products.map(k => {
+                                                                            console.log(k, e.product_code);
+                                                                            if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                                                if(k.quantity <= 1) {
+                                                                                    return null;
+                                                                                }else {
+                                                                                    return {
+                                                                                        ...k,
+                                                                                        quantity: k.quantity-1
+                                                                                    }
+                                                                                }
+                                                                            }else {
+                                                                                return k
+                                                                            }
+                                                                        })
+
+                                                                        setOrderState({
+                                                                            ...orderState,
+                                                                            products: product_list_clone.filter(k => k) as ProductPurchase[]
+                                                                        })
+                                                                    }} 
+                                                                    draggable="false"
+                                                                    className="select-none"
+                                                                    onMouseOver={(b) => {
+                                                                        b.currentTarget.style.filter = (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                                        "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)"
+                                                                        : 
+                                                                        "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                    }}
+                                                                    width="15" height="15" src={
+                                                                        (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                                        "/icons/x-close.svg" 
+                                                                        : 
+                                                                        "/icons/arrow-block-down.svg"
+                                                                    } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                                                            </div>
+                                                            
+                                                            <div className="flex-1">
+                                                                <p className="font-semibold">{e.product.company} {e.product.name}</p>
+                                                                <p className="text-sm text-gray-400">{e.variant_information.name}</p>
+                                                            </div>
+
+                                                            <div className="flex flex-row items-center gap-2">
+                                                                
+
+                                                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
+                                                                    onMouseOver={(e) => {
+                                                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                    }}
+                                                                ></Image>
+                                                            </div>
+
+                                                            <div className="min-w-[75px] flex flex-row items-center gap-2">
+                                                                <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })
+                                        }
+                                        </div>
+                                        
+
+                                        <hr className="border-gray-400 opacity-25"/>
+                                        
+                                        <div className="flex flex-row items-center text-white justify-between px-2">
+                                            <div>
+                                                <p className="text-gray-400 font-bold">Sub Total</p>
+                                                <p className="text-gray-600 font-bold">Tax</p>
+                                                <p className="font-bold text-lg">Total</p>
+                                            </div>
                                             
+                                            <div className="flex flex-col gap-0">
+                                                <p className="text-gray-400 font-bold items-end self-end">
+                                                    ${
+                                                        orderState.products.reduce(function (prev, curr) {
+                                                            return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                        }, 0).toFixed(2)
+                                                    }
+                                                </p>
+                                                <p className="text-gray-600 font-bold items-end self-end">+15% (${
+                                                    (orderState.products.reduce(function (prev, curr) {
+                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                    }, 0) * 0.15).toFixed(2)
+                                                })</p>
+                                                <p className="font-bold text-lg items-end self-end">
+                                                ${
+                                                    (orderState.products.reduce(function (prev, curr) {
+                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                    }, 0) * 1.15).toFixed(2)
+                                                }
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-row items-center gap-4">
+                                            <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${orderState.products.length > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                                                <p className="text-blue-500 font-semibold">Park Sale</p>
+                                            </div>
 
-                                            <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                                onMouseOver={(e) => {
-                                                    e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                            <div
+                                                onClick={() => {
+                                                    setPadState("select-payment-method");
+
+                                                    let price = (orderState.products.reduce(function (prev, curr) {
+                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                    }, 0) * 1.15).toFixed(2);
+
+                                                    setKioskState({
+                                                        ...kioskState,
+                                                        order_total: parseFloat(price)
+                                                    })
+
+                                                    setCurrentTransactionPrice(parseFloat(price));
+                                                }} 
+                                                className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                                <p className={`text-white font-semibold ${""}`}>Checkout</p>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                )
+                            case "select-payment-method":
+                                return (
+                                    <div className="flex flex-col h-full gap-24">
+                                        <div className="flex flex-row justify-between cursor-pointer">
+                                            <div 
+                                                onClick={() => {
+                                                    setPadState("cart")
                                                 }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                }}
-                                            ></Image>
+                                                className="flex flex-row items-center gap-2"
+                                            >
+                                                <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                                <p className="text-gray-400">Back</p>
+                                            </div>
+                                            <p className="text-gray-400">Select Preferred Payment Method</p>
+                                        </div>
+                                    
+                                        <div className="self-center flex flex-col items-center">
+                                            <p className="text-gray-400 text-sm">TO PAY</p>
+
+                                            {
+                                                editPrice ? 
+                                                    <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
+                                                        (orderState.products.reduce(function (prev, curr) {
+                                                            return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                        }, 0) * 1.15).toFixed(2)
+                                                    } onBlur={(e) => {
+                                                        if(e.currentTarget.value == "") {
+                                                            setEditPrice(false)
+                                                            setCurrentTransactionPrice(kioskState.order_total)
+                                                        }else {
+                                                            let p = parseFloat(e.currentTarget.value);
+
+                                                            if(p < (kioskState.order_total ?? 0)) {
+                                                                setCurrentTransactionPrice(p)
+                                                                setEditPrice(false)
+                                                            } else if (p == kioskState.order_total) {
+                                                                setEditPrice(false)
+                                                                setCurrentTransactionPrice(kioskState.order_total)
+                                                            }
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if(e.key == "Enter") {
+                                                            if(e.currentTarget.value == "") {
+                                                                setEditPrice(false)
+                                                                setCurrentTransactionPrice(kioskState.order_total)
+                                                            } else { 
+                                                                let p = parseFloat(e.currentTarget.value);
+    
+                                                                if(p < (kioskState.order_total ?? 0)) {
+                                                                    setCurrentTransactionPrice(p)
+                                                                    setEditPrice(false)
+                                                                } else if (p == kioskState.order_total) {
+                                                                    setEditPrice(false)
+                                                                    setCurrentTransactionPrice(kioskState.order_total)
+                                                                }
+                                                            }
+                                                        }
+                                                    }}
+                                                    ></input>
+                                                :
+                                                    <p className="font-semibold text-3xl text-white">${currentTransactionPrice?.toFixed(2)}</p>
+                                            }
+
+                                            {
+                                                (currentTransactionPrice ?? kioskState?.order_total ?? 0) < (kioskState?.order_total ?? 0) ?
+                                                <p className="text-gray-500">${(kioskState.order_total! - currentTransactionPrice!).toFixed(2)} remains</p>
+                                                :
+                                                <></>
+                                            }
+
+                                            <br />
+
+                                            <div
+                                                onClick={() => {
+                                                    setEditPrice(true)
+                                                }} 
+                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
+                                            >
+                                                <Image src="/icons/coins-stacked-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
+                                                <p className="text-gray-400">Split Payment</p>
+                                            </div>
                                         </div>
 
-                                        <div className="min-w-[75px] flex flex-row items-center gap-2">
-                                            <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
+                                        <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center">
+                                            <div className="flex flex-row items-end gap-2">
+                                                <p className="text-white font-semibold text-2xl">Eftpos</p>
+                                                <p className="text-sm text-gray-400">F1</p>
+                                            </div>
+                                            <div className="flex flex-row items-end gap-2">
+                                                <p className="text-white font-semibold text-2xl">Cash</p>
+                                                <p className="text-sm text-gray-400">F2</p>
+                                            </div>
+                                            <div className="flex flex-row items-end gap-2">
+                                                <p className="text-white font-semibold text-2xl">Bank Transfer</p>
+                                                <p className="text-sm text-gray-400">F3</p>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="flex flex-row items-end gap-2">
+                                                    <p className="text-white font-semibold text-2xl">Gift Card</p>
+                                                    <p className="text-sm text-gray-400">F4</p>
+                                                </div>
+                                                <div className="flex flex-row items-end gap-1">
+                                                    <p className="text-sm text-gray-400">Check Ballance</p>
+                                                    <p className="text-xs text-gray-400">F5</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="self-center flex flex-col items-center">
+                                            
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        })
-                    }
-                    </div>
-                    
-
-                    <hr className="border-gray-400 opacity-25"/>
-                    
-                    <div className="flex flex-row items-center text-white justify-between px-2">
-                        <div>
-                            <p className="text-gray-400 font-bold">Sub Total</p>
-                            <p className="text-gray-600 font-bold">Tax</p>
-                            <p className="font-bold text-lg">Total</p>
-                        </div>
-                        
-                        <div className="flex flex-col gap-0">
-                            <p className="text-gray-400 font-bold items-end self-end">
-                                ${
-                                    orderState.products.reduce(function (prev, curr) {
-                                        return prev + (curr.variant_information.retail_price * curr.quantity)
-                                    }, 0).toFixed(2)
-                                }
-                            </p>
-                            <p className="text-gray-600 font-bold items-end self-end">+15% (${
-                                (orderState.products.reduce(function (prev, curr) {
-                                    return prev + (curr.variant_information.retail_price * curr.quantity)
-                                }, 0) * 0.15).toFixed(2)
-                            })</p>
-                            <p className="font-bold text-lg items-end self-end">
-                            ${
-                                (orderState.products.reduce(function (prev, curr) {
-                                    return prev + (curr.variant_information.retail_price * curr.quantity)
-                                }, 0) * 1.15).toFixed(2)
-                            }
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-row items-center gap-4">
-                        <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${orderState.products.length > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
-                            <p className="text-blue-500 font-semibold">Park Sale</p>
-                        </div>
-
-                        <div className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                            <p className={`text-white font-semibold ${""}`}>Checkout</p>
-                        </div>
-                    </div>
-                    
-                </div>
+                                )
+                        }
+                    })()
+                }
+                
             </div>
         </>
     )
