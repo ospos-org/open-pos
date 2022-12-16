@@ -74,6 +74,7 @@ type VariantInformation = {
     stock: StockInfo[],
     images: string[],
     retail_price: number,
+    marginal_price: number,
     /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
     variant_code: string[],
     order_history: string[],
@@ -201,7 +202,7 @@ export default function Kiosk(state: { master_state: {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "completed">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "completed" | "discount">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -211,6 +212,16 @@ export default function Kiosk(state: { master_state: {
     const [ searchTermState, setSearchTermState ] = useState("");
     const [ result, setResult ] = useState<Product[] | Customer[] | Order[]>([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
+
+    const [ discount, setDiscount ] = useState<{
+        type: "absolute" | "percentage",
+        product: VariantInformation | null,
+        value: number
+    }>({
+        type: "absolute",
+        product: null,
+        value: 0.00
+    })
 
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
@@ -343,18 +354,17 @@ export default function Kiosk(state: { master_state: {
 
     return (
         <>
-            <BarcodeReader
+            <ReactBarcodeReader
                 onScan={(e: any) => {
+                    console.log("Scanned", e);
+
                     setSearchFocused(false);
                     input_ref.current?.value ? input_ref.current.value = e : {};
 
                     setSearchType("product");
                     debouncedResults(e, "product");
                 }}
-                minLength={0}
-                preventDefault
-                stopPropagation
-                timeBeforeScanTest={50}
+                onError={() => {}}
             />
 
             <div className="flex flex-col justify-between h-screen min-h-screen flex-1" onKeyDownCapture={(e) => {
@@ -1005,7 +1015,7 @@ export default function Kiosk(state: { master_state: {
                                                             height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                                     </div>
                                                 }
-                                                <p className="text-sm text-gray-400">{orderState.products.length} item{orderState.products.length > 1 ? "s" : ""}</p>
+                                                <p className="text-sm text-gray-400">{orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0)} item{orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0) > 1 ? "s" : ""}</p>
                                             </div>
 
                                             <div className="flex flex-row items-center gap-[0.75rem] bg-gray-700 p-2 px-4 rounded-md cursor-pointer">
@@ -1125,7 +1135,16 @@ export default function Kiosk(state: { master_state: {
                                                             <div className="flex flex-row items-center gap-2">
                                                                 
 
-                                                                <Image style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
+                                                                <Image 
+                                                                    onClick={() => {
+                                                                        setPadState("discount");
+                                                                        setDiscount({
+                                                                            type: "absolute",
+                                                                            product: e.variant_information,
+                                                                            value: 0
+                                                                        })
+                                                                    }}
+                                                                    style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
                                                                     onMouseOver={(e) => {
                                                                         e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
                                                                     }}
@@ -1136,7 +1155,7 @@ export default function Kiosk(state: { master_state: {
                                                             </div>
 
                                                             <div className="min-w-[75px] flex flex-row items-center gap-2">
-                                                                <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
+                                                                <p>${((applyDiscount(e.variant_information.retail_price, e.discount) ?? 1) * 1.15).toFixed(2)}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1159,19 +1178,19 @@ export default function Kiosk(state: { master_state: {
                                                 <p className="text-gray-400 font-bold items-end self-end">
                                                     ${
                                                         orderState.products.reduce(function (prev, curr) {
-                                                            return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                            return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
                                                         }, 0).toFixed(2)
                                                     }
                                                 </p>
                                                 <p className="text-gray-600 font-bold items-end self-end">+15% (${
                                                     (orderState.products.reduce(function (prev, curr) {
-                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
                                                     }, 0) * 0.15).toFixed(2)
                                                 })</p>
                                                 <p className="font-bold text-lg items-end self-end">
                                                 ${
                                                     (orderState.products.reduce(function (prev, curr) {
-                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
                                                     }, 0) * 1.15).toFixed(2)
                                                 }
                                                 </p>
@@ -1188,7 +1207,7 @@ export default function Kiosk(state: { master_state: {
                                                     setPadState("select-payment-method");
 
                                                     let price = (orderState.products.reduce(function (prev, curr) {
-                                                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
                                                     }, 0) * 1.15).toFixed(2);
 
                                                     setKioskState({
@@ -1440,6 +1459,137 @@ export default function Kiosk(state: { master_state: {
                                     </div>
                                 </div>
                             )
+                            case "discount":
+                                return (
+                                    <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
+                                        <div className="flex flex-col h-full gap-24">
+                                            <div className="flex flex-row justify-between cursor-pointer">
+                                                <div 
+                                                    onClick={() => {
+                                                        setPadState("cart")
+                                                    }}
+                                                    className="flex flex-row items-center gap-2"
+                                                >
+                                                    <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                                    <p className="text-gray-400">Back</p>
+                                                </div>
+                                                <p className="text-gray-400">Select Discount</p>
+                                            </div>
+                                            
+                                            <div className="flex flex-row items-center gap-4 self-center">
+                                                <div
+                                                    onClick={() => {
+                                                        setDiscount({
+                                                            ...discount,
+                                                            type: "absolute"
+                                                        })
+                                                    }} 
+                                                    className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
+                                                >
+                                                    <Image src="/icons/minus-circle.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "absolute" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
+                                                    <p className={`${discount.type == "absolute" ? "text-white" : "text-gray-400"}`}>Absolute</p>
+                                                </div>
+
+                                                <div
+                                                    onClick={() => {
+                                                        setDiscount({
+                                                            ...discount,
+                                                            type: "percentage"
+                                                        })
+                                                    }} 
+                                                    className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
+                                                >
+                                                    <Image src="/icons/percent-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "percentage" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
+                                                    <p className={`${discount.type == "percentage" ? "text-white" : "text-gray-400"}`}>Percentage</p>
+                                                </div>
+                                            </div>
+                                        
+                                            <div className="self-center flex flex-col items-center">
+                                                <p className="text-gray-400 text-sm">VALUE</p>
+    
+                                                <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={"0.00"}
+                                                onChange={(e) => {
+                                                    setDiscount({
+                                                        ...discount,
+                                                        value: parseFloat(e.currentTarget.value)
+                                                    })
+                                                }}
+                                                onBlur={(e) => {
+                                                    e.currentTarget.value = parseFloat(e.currentTarget.value).toFixed(2)
+                                                }}
+                                                ></input>
+                                            </div>
+
+                                            <div className="self-center flex-1 flex-col items-center justify-center">
+                                                <div className="flex flex-row items-center gap-4">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">Original Price</p>
+                                                        <p className="text-white">${((discount.product?.retail_price ?? 1)).toFixed(2)}</p>
+                                                    </div>
+
+                                                    <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+                                                    
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">New Price</p>
+                                                        <p className="text-white">${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`)?.toFixed(2)}</p>
+                                                    </div>
+
+                                                    <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">+GST</p>
+                                                        <p className="text-white">${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15)?.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <br />
+                                                <hr className="bg-gray-600 border-gray-600" />
+                                                <br />
+
+                                                <div className="flex flex-row items-center gap-4">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">GP</p>
+                                                        <p className="text-white">${((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15)?.toFixed(2)}</p>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">GP%</p>
+                                                        <p className="text-white">{((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <p className="text-gray-400 text-sm">MP</p>
+                                                        <p className="text-white">${((discount.product?.marginal_price ?? 1) * 1.15).toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-row items-center gap-4">
+                                                <div
+                                                    onClick={() => {
+                                                        setPadState("cart")
+
+                                                        let new_products = orderState.products.map(e => {
+                                                            if(e.variant_information.barcode == discount.product?.barcode) {
+                                                                return {
+                                                                    ...e,
+                                                                    discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
+                                                                };
+                                                            }else return e;
+                                                        })
+
+                                                        setOrderState({
+                                                            ...orderState,
+                                                            products: new_products
+                                                        })
+                                                    }} 
+                                                    className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                                    <p className={`text-white font-semibold ${""}`}>Apply Discount</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
                     }
                 })()
             }
@@ -1472,4 +1622,6 @@ function applyDiscount(price: number, discount: string) {
         let discount_percentage = parseInt(d[1]);
         return (price) - (price * (discount_percentage / 100))
     }
+
+    return 1
 }
