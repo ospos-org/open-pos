@@ -202,7 +202,7 @@ export default function Kiosk(state: { master_state: {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "completed" | "discount">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -367,7 +367,7 @@ export default function Kiosk(state: { master_state: {
                 onError={() => {}}
             />
 
-            <div className="flex flex-col justify-between h-screen min-h-screen flex-1" onKeyDownCapture={(e) => {
+            <div className="flex flex-col justify-between h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] flex-1" onKeyDownCapture={(e) => {
                 if(e.key == "Escape") setSearchFocused(false)
             }}>
                 <div className="flex flex-col p-4 gap-4">
@@ -1311,27 +1311,31 @@ export default function Kiosk(state: { master_state: {
 
                                         <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center">
                                             <div 
-                                                className="flex flex-row items-end gap-2"
+                                                className="flex flex-row items-end gap-2 cursor-pointer"
                                                 onClick={() => {
                                                     setPadState("await-debit");
                                                 }}>
                                                 <p className="text-white font-semibold text-2xl">Eftpos</p>
                                                 <p className="text-sm text-gray-400">F1</p>
                                             </div>
-                                            <div className="flex flex-row items-end gap-2">
+                                            <div 
+                                                className="flex flex-row items-end gap-2 cursor-pointer"
+                                                onClick={() => {
+                                                    setPadState("await-cash");
+                                                }}>
                                                 <p className="text-white font-semibold text-2xl">Cash</p>
                                                 <p className="text-sm text-gray-400">F2</p>
                                             </div>
-                                            <div className="flex flex-row items-end gap-2">
-                                                <p className="text-white font-semibold text-2xl">Bank Transfer</p>
+                                            <div className="flex flex-row items-end gap-2 cursor-pointer">
+                                                <p className="text-gray-400 font-semibold text-2xl">Bank Transfer</p>
                                                 <p className="text-sm text-gray-400">F3</p>
                                             </div>
                                             <div className="flex flex-col items-center gap-1">
-                                                <div className="flex flex-row items-end gap-2">
+                                                <div className="flex flex-row items-end gap-2 cursor-pointer">
                                                     <p className="text-white font-semibold text-2xl">Gift Card</p>
                                                     <p className="text-sm text-gray-400">F4</p>
                                                 </div>
-                                                <div className="flex flex-row items-end gap-1">
+                                                <div className="flex flex-row items-end gap-1 cursor-pointer">
                                                     <p className="text-sm text-gray-400">Check Ballance</p>
                                                     <p className="text-xs text-gray-400">F5</p>
                                                 </div>
@@ -1606,6 +1610,43 @@ export default function Kiosk(state: { master_state: {
                                         </div>
                                     </div>
                                 )
+                        case "await-cash":
+                            // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
+                            return (
+                                <div className="bg-blue-500 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full items-center">
+                                    <div className="flex flex-row justify-between cursor-pointer w-full">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("select-payment-method")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left (1).svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
+                                            <p className="text-white">Back</p>
+                                        </div>
+                                        <p className="text-white">Awaiting Customer Payment</p>
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-12 items-center justify-center flex-1">
+                                        <div className="flex-1 flex flex-col items-center justify-center">
+                                            <p className="text-gray-200">Dollar Amount</p>
+                                            <p className="text-white text-3xl font-bold">${currentTransactionPrice?.toFixed(2)}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-gray-200">Suggested Options</p>
+                                            <p className="text-white text-3xl font-bold">${currentTransactionPrice?.toFixed(2)}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex w-full flex-1 flex-row items-center gap-4 cursor-pointer">
+                                        <div
+                                            className={`bg-white w-full rounded-md p-4 flex items-center justify-center`}>
+                                            <p className={`text-blue-700 font-semibold ${""}`}>Complete</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
                     }
                 })()
             }
