@@ -1247,9 +1247,11 @@ export default function Kiosk(state: { master_state: {
                                             {
                                                 editPrice ? 
                                                     <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                                        (orderState.products.reduce(function (prev, curr) {
+                                                        ((orderState.products.reduce(function (prev, curr) {
                                                             return prev + (curr.variant_information.retail_price * curr.quantity)
-                                                        }, 0) * 1.15).toFixed(2)
+                                                        }, 0) * 1.15) - (kioskState.payment.reduce(function (prev, curr) {
+                                                            return prev + (curr.amount ?? 0)
+                                                        }, 0))).toFixed(2)
                                                     } onBlur={(e) => {
                                                         if(e.currentTarget.value == "") {
                                                             setEditPrice(false)
@@ -1291,7 +1293,9 @@ export default function Kiosk(state: { master_state: {
 
                                             {
                                                 (currentTransactionPrice ?? kioskState?.order_total ?? 0) < (kioskState?.order_total ?? 0) ?
-                                                <p className="text-gray-500">${(kioskState.order_total! - currentTransactionPrice!).toFixed(2)} remains</p>
+                                                <p className="text-gray-500">${(kioskState.order_total! - (currentTransactionPrice! + kioskState.payment.reduce(function (prev, curr) {
+                                                    return prev + (curr.amount ?? 0)
+                                                }, 0))).toFixed(2)} remains</p>
                                                 :
                                                 <></>
                                             }
@@ -1371,7 +1375,29 @@ export default function Kiosk(state: { master_state: {
                                     </div>
 
                                     <p onClick={() => {
-                                        setPadState("completed")
+                                        let new_payment = [ ...kioskState.payment, {
+                                            payment_method: "card",
+                                            fulfillment_date: new Date().toString(),
+                                            amount: currentTransactionPrice
+                                        }];
+
+                                        setKioskState({
+                                            ...kioskState,
+                                            payment: new_payment
+                                        });
+
+                                        let qua = new_payment.reduce(function (prev, curr) {
+                                            return prev + (curr.amount ?? 0)
+                                        }, 0);
+
+                                        console.log("Total Paid:", qua);
+
+                                        if(qua < (kioskState.order_total ?? 0)) {
+                                            setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
+                                            setPadState("select-payment-method")
+                                        }else {
+                                            setPadState("completed")
+                                        }
                                     }}>skip to completion</p>
                                 </div>
                             )
@@ -1567,17 +1593,17 @@ export default function Kiosk(state: { master_state: {
                                                 <div className="flex flex-row items-center gap-6 justify-center">
                                                     <div className="flex flex-col items-center justify-center">
                                                         <p className="text-gray-400 text-sm">GP</p>
-                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15)?.toFixed(2)}</p>
+                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
                                                     </div>
 
                                                     <div className="flex flex-col items-center justify-center">
                                                         <p className="text-gray-400 text-sm">GP%</p>
-                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1) * 1.15) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
+                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
                                                     </div>
 
                                                     <div className="flex flex-col items-center justify-center">
                                                         <p className="text-gray-400 text-sm">MP</p>
-                                                        <p className="text-white">${((discount.product?.marginal_price ?? 1) * 1.15).toFixed(2)}</p>
+                                                        <p className="text-white">${((discount.product?.marginal_price ?? 1)).toFixed(2)}</p>
                                                     </div>
                                                 </div>
                                             </div>

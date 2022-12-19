@@ -62,8 +62,18 @@ export default function App() {
 					</div>
 
 					<div className="flex w-fit flex-row gap-2 items-center"> 
+						<p className="text-xs text-white font-bold">TERMINAL</p>
+						<div className="h-2 w-2 bg-green-500 rounded-full"></div>
+					</div>
+
+					<div className="flex w-fit flex-row gap-2 items-center"> 
 						<p className="text-xs text-white font-bold">KIOSK</p>
 						<div className="text-xs text-green-500 font-bold">A</div>
+					</div>
+
+					<div className="flex w-fit flex-row gap-2 items-center"> 
+						<p className="text-xs text-white font-bold">STORE</p>
+						<div className="text-xs text-green-500 font-bold">001</div>
 					</div>
 				</div>				
 			</div>
@@ -84,17 +94,17 @@ export default function App() {
 							{/* Inventory / Order Search */}
 							{
 								page == 1 ?
-								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" alt={''} onClick={() => setPage(1)}></Image>
+								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}  alt={''} onClick={() => setPage(1)}></Image>
 								:	
-								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" alt={''} onClick={() => setPage(1)}></Image>
+								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(1)}></Image>
 							}
 							
 							{/* Job Calender - Place to-do-jobs */}
 							{
 								page == 2 ?
-								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" alt={''} onClick={() => setPage(2)}></Image>
+								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''} onClick={() => setPage(2)}></Image>
 								:	
-								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" alt={''} onClick={() => setPage(2)}></Image>
+								<Image width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(2)}></Image>
 							}
 						</div>
 
