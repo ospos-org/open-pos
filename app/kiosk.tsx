@@ -3,6 +3,7 @@ import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { debounce, divide, isEqual } from "lodash";
 import { ReactBarcodeReader } from "./scanner";
 import BarcodeReader from 'react-barcode-reader'
+import CashSelect from "./cashSelect";
 
 type KioskState = {
     customer: string | null,
@@ -225,6 +226,8 @@ export default function Kiosk(state: { master_state: {
 
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
+
+    const [ cashContinuable, setCashContinuable ] = useState(false);
 
     const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         let existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
@@ -1359,7 +1362,7 @@ export default function Kiosk(state: { master_state: {
                                     <div className="flex flex-row justify-between cursor-pointer w-full">
                                         <div 
                                             onClick={() => {
-                                                setPadState("cart")
+                                                setPadState("select-payment-method")
                                             }}
                                             className="flex flex-row items-center gap-2"
                                         >
@@ -1653,22 +1656,40 @@ export default function Kiosk(state: { master_state: {
                                         <p className="text-white">Awaiting Customer Payment</p>
                                     </div>
                                     
-                                    <div className="flex flex-col gap-12 items-center justify-center flex-1">
-                                        <div className="flex-1 flex flex-col items-center justify-center">
-                                            <p className="text-gray-200">Dollar Amount</p>
-                                            <p className="text-white text-3xl font-bold">${currentTransactionPrice?.toFixed(2)}</p>
-                                        </div>
+                                    <CashSelect totalCost={currentTransactionPrice ?? 0} changeCallback={(_val: number, deg: number) => {
+                                        setCashContinuable(deg >= 0)
+                                    }} />
 
-                                        <div>
-                                            <p className="text-gray-200">Suggested Options</p>
-                                            <p className="text-white text-3xl font-bold">${currentTransactionPrice?.toFixed(2)}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex w-full flex-1 flex-row items-center gap-4 cursor-pointer">
+                                    <div className="flex w-full flex-row items-center gap-4 cursor-pointer">
                                         <div
-                                            className={`bg-white w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-blue-700 font-semibold ${""}`}>Complete</p>
+                                            className={`${cashContinuable ? "bg-white" : "bg-blue-400"} w-full rounded-md p-4 flex items-center justify-center`}
+                                            onClick={() => {
+                                                let new_payment = [ ...kioskState.payment, {
+                                                    payment_method: "cash",
+                                                    fulfillment_date: new Date().toString(),
+                                                    amount: currentTransactionPrice
+                                                }];
+        
+                                                setKioskState({
+                                                    ...kioskState,
+                                                    payment: new_payment
+                                                });
+        
+                                                let qua = new_payment.reduce(function (prev, curr) {
+                                                    return prev + (curr.amount ?? 0)
+                                                }, 0);
+        
+                                                console.log("Total Paid:", qua);
+        
+                                                if(qua < (kioskState.order_total ?? 0)) {
+                                                    setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
+                                                    setPadState("select-payment-method")
+                                                }else {
+                                                    setPadState("completed")
+                                                }
+                                            }}
+                                            >
+                                            <p className={`${cashContinuable ? "text-blue-600" : "text-blue-500"} font-semibold ${""}`}>Complete</p>
                                         </div>
                                     </div>
                                 </div>
