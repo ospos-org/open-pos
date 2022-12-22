@@ -1,9 +1,10 @@
 import Image from "next/image";
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
-import { debounce, divide, isEqual } from "lodash";
+import { debounce, divide, isEqual, uniqueId } from "lodash";
 import { ReactBarcodeReader } from "./scanner";
 import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
+import { v4 } from "uuid"
 
 type KioskState = {
     customer: string | null,
@@ -24,8 +25,8 @@ type KioskState = {
 
 type Order = {
     id: string,
-    destination: string,
-    origin: string,
+    destination: Move | null,
+    origin: Move,
     products: ProductPurchase[],
     status: OrderStatus[],
     status_history: (OrderStatus[])[],
@@ -34,6 +35,11 @@ type Order = {
     reference: string,
     creation_date: string,
     discount: string
+}
+
+type Move = {
+    code: string,
+    contact: ContactInformation
 }
 
 type ProductPurchase = {
@@ -51,7 +57,8 @@ type ProductPurchase = {
 
 type OrderStatus = {
     status: "queued" | "transit" | "processing" | "in-store" | "fulfilled" | "failed" | string,
-    assigned_products: string[]
+    assigned_products: string[],
+    timestamp: string
 }
 
 type Product = {
@@ -151,7 +158,15 @@ type ContactInformation = {
     mobile: Mobile,
     email: Email,
     landline: string,
-    address: string
+    address: Address
+}
+
+type Address = {
+    street: string,
+    street2: string,
+    city: string,
+    country: string,
+    po_code: string
 }
 
 type Email = {
@@ -171,7 +186,8 @@ type Note = {
 }
 
 export default function Kiosk(state: { master_state: {
-    store_id: string
+    store_id: string,
+    store_contact: ContactInformation
 } }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
@@ -187,9 +203,12 @@ export default function Kiosk(state: { master_state: {
     });
 
     const [ orderState, setOrderState ] = useState<Order>({
-        id: "",
-        destination: "",
-        origin: "",
+        id: v4(),
+        destination: null,
+        origin: {
+            code: state.master_state.store_id,
+            contact: state.master_state.store_contact
+        },
         products: [],
         status: [],
         status_history: [],
@@ -231,21 +250,13 @@ export default function Kiosk(state: { master_state: {
 
     const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         let existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
-
-        console.log("Trying to add ", product, "of variant", variant, "to", orderProducts);
+        let new_order_products_state = [];
 
         if(existing_product) {
             // Editing the quantity of an existing product in the order.
-            let new_order_products_state = orderProducts.map(e => {
+            new_order_products_state = orderProducts.map(e => {
                 return e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) ? { ...e, quantity: e.quantity+1 } : e
             });
-
-            return new_order_products_state
-
-            // setOrderState({
-            //     ...orderState,
-            //     products: [...new_order_products_state]
-            // })
         }else {
             // Creating a new product in the order.
             let po: ProductPurchase = {
@@ -260,15 +271,44 @@ export default function Kiosk(state: { master_state: {
                 variant_information: variant ?? product.variants[0]
             };
 
-            console.log(po);
-
-            return [ ...orderProducts, po ]
-
-            // setOrderState({
-            //     ...orderState,
-            //     products: [...orderState.products, po ]
-            // })
+            new_order_products_state = [ ...orderProducts, po ]
         }
+
+        if(padState == "cart" && discount.product?.barcode == "CART") {
+            setPadState("discount")
+            setDiscount({
+                type: "absolute",
+                product: {
+                    name: "",
+                    stock: [],
+                    images: [],
+                    /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
+                    variant_code: [],
+                    order_history: [],
+                    /// impl! Implement this type!
+                    stock_information: {
+                        stock_group: "string",
+                        sales_group: 'string',
+                        value_stream: 'string',
+                        brand: 'string',
+                        unit: 'string',
+                        tax_code: 'string',
+                        weight: 'string',
+                        volume: 'string',
+                        max_volume: 'string',
+                        back_order: false,
+                        discontinued: false,
+                        non_diminishing: false
+                    },
+                    barcode: "CART",
+                    marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
+                    retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
+                },
+                value: 0
+            })
+        }
+
+        return new_order_products_state;
     }
 
     const debouncedResults = useMemo(() => {
@@ -345,7 +385,7 @@ export default function Kiosk(state: { master_state: {
     
             setResult(data);
         }, 50);
-    }, [orderState]);
+    }, [orderState, discount]);
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -944,7 +984,41 @@ export default function Kiosk(state: { master_state: {
                                         </div>
                                     }
                                     
-                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    <div
+                                        onClick={() => {
+                                            setPadState("discount")
+                                            setDiscount({
+                                                type: "absolute",
+                                                product: {
+                                                    name: "",
+                                                    stock: [],
+                                                    images: [],
+                                                    /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
+                                                    variant_code: [],
+                                                    order_history: [],
+                                                    /// impl! Implement this type!
+                                                    stock_information: {
+                                                        stock_group: "string",
+                                                        sales_group: 'string',
+                                                        value_stream: 'string',
+                                                        brand: 'string',
+                                                        unit: 'string',
+                                                        tax_code: 'string',
+                                                        weight: 'string',
+                                                        volume: 'string',
+                                                        max_volume: 'string',
+                                                        back_order: false,
+                                                        discontinued: false,
+                                                        non_diminishing: false
+                                                    },
+                                                    barcode: "CART",
+                                                    marginal_price: orderState.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
+                                                    retail_price: orderState.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
+                                                },
+                                                value: 0
+                                            })
+                                        }} 
+                                        className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                         <p className="font-medium">Add Cart Discount</p>
                                     </div>
@@ -954,7 +1028,11 @@ export default function Kiosk(state: { master_state: {
                                         <p className="font-medium">Ship to Customer</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    <div 
+                                        onClick={() => {
+                                            
+                                        }}
+                                        className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Add Note</p>
                                     </div>
@@ -1399,7 +1477,42 @@ export default function Kiosk(state: { master_state: {
                                             setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
                                             setPadState("select-payment-method")
                                         }else {
-                                            setPadState("completed")
+                                            setPadState("completed");
+
+                                            let date = new Date().toString();
+
+                                            // Following state change is for an in-store purchase, modifications to status and destination are required for shipments
+                                            setOrderState({
+                                                ...orderState,
+                                                origin: {
+                                                    code: state.master_state.store_id,
+                                                    contact: state.master_state.store_contact
+                                                },
+                                                destination: {
+                                                    code: "cust",
+                                                    contact: customerState?.contact ?? state.master_state.store_contact
+                                                },
+                                                status: [
+                                                    ...orderState.status,
+                                                    {   
+                                                        status: "fulfilled",
+                                                        assigned_products: orderState.products.map<string>(e => { return e.product_code + "-" + e.variant.join("-") }) as string[],
+                                                        timestamp: date
+                                                    }
+                                                ],
+                                                status_history: [
+                                                    ...orderState.status_history,
+                                                    [
+                                                        ...orderState.status,
+                                                        {   
+                                                            status: "fulfilled",
+                                                            assigned_products: orderState.products.map<string>(e => { return e.product_code + "-" + e.variant.join("-") }) as string[],
+                                                            timestamp: date
+                                                        }
+                                                    ]
+                                                ]
+                                                
+                                            })
                                         }
                                     }}>skip to completion</p>
                                 </div>
@@ -1469,9 +1582,12 @@ export default function Kiosk(state: { master_state: {
                                                 })
                                                 
                                                 setOrderState({
-                                                    id: "",
-                                                    destination: "",
-                                                    origin: "",
+                                                    id: v4(),
+                                                    destination: null,
+                                                    origin: {
+                                                        contact: state.master_state.store_contact,
+                                                        code: state.master_state.store_id
+                                                    },
                                                     products: [],
                                                     status: [],
                                                     status_history: [],
@@ -1492,153 +1608,153 @@ export default function Kiosk(state: { master_state: {
                                     </div>
                                 </div>
                             )
-                            case "discount":
-                                return (
-                                    <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1">
-                                        <div className="flex flex-row justify-between cursor-pointer">
-                                            <div 
-                                                onClick={() => {
-                                                    setPadState("cart")
+                        case "discount":
+                            return (
+                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
+                                        </div>
+                                        <p className="text-gray-400">Select Discount</p>
+                                    </div>
+
+                                    <div className="flex flex-col h-full gap-12 justify-center">
+                                        <div className="self-center flex flex-col items-center justify-center">
+                                            <p className="text-gray-400 text-sm">DISCOUNT VALUE</p>
+
+                                            <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
+                                                <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
+                                                <input autoFocus className="bg-transparent text-center w-[4ch] outline-none font-semibold text-3xl " placeholder={"0.00"}
+                                                onChange={(e) => {
+                                                    e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
+
+                                                    setDiscount({
+                                                        ...discount,
+                                                        value: parseFloat(e.currentTarget.value) ?? 0
+                                                    })
                                                 }}
-                                                className="flex flex-row items-center gap-2"
-                                            >
-                                                <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                                <p className="text-gray-400">Back</p>
-                                            </div>
-                                            <p className="text-gray-400">Select Discount</p>
+                                                onBlur={(e) => {
+                                                    let possible = parseFloat(e.currentTarget.value);
+
+                                                    if(isNaN(possible)) {
+                                                        e.currentTarget.value = (0).toFixed(2)
+                                                        e.target.style.width = ((4 - 0.5 ?? 1) + 'ch');
+                                                    }else {
+                                                        e.currentTarget.value = possible.toFixed(2)
+                                                        e.target.style.width = (((possible.toFixed(2).length) - 0.5 ?? 1) + 'ch');
+                                                    }
+                                                }}
+                                                ></input>
+                                                <p className="text-2xl font-semibold">{discount.type == "percentage" ? "%" : ""}</p>
+                                            </div> 
                                         </div>
-
-                                        <div className="flex flex-col h-full gap-12 justify-center">
-                                            <div className="self-center flex flex-col items-center justify-center">
-                                                <p className="text-gray-400 text-sm">DISCOUNT VALUE</p>
-
-                                                <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
-                                                    <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
-                                                    <input autoFocus className="bg-transparent text-center w-[4ch] outline-none font-semibold text-3xl " placeholder={"0.00"}
-                                                    onChange={(e) => {
-                                                        e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
-
-                                                        setDiscount({
-                                                            ...discount,
-                                                            value: parseFloat(e.currentTarget.value) ?? 0
-                                                        })
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        let possible = parseFloat(e.currentTarget.value);
-
-                                                        if(isNaN(possible)) {
-                                                            e.currentTarget.value = (0).toFixed(2)
-                                                            e.target.style.width = ((4 - 0.5 ?? 1) + 'ch');
-                                                        }else {
-                                                            e.currentTarget.value = possible.toFixed(2)
-                                                            e.target.style.width = (((possible.toFixed(2).length) - 0.5 ?? 1) + 'ch');
-                                                        }
-                                                    }}
-                                                    ></input>
-                                                    <p className="text-2xl font-semibold">{discount.type == "percentage" ? "%" : ""}</p>
-                                                </div> 
-                                            </div>
-                                            
-                                            <div className="flex flex-row items-center gap-4 self-center">
-                                                <div
-                                                    onClick={() => {
-                                                        setDiscount({
-                                                            ...discount,
-                                                            type: "absolute"
-                                                        })
-                                                    }} 
-                                                    className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                                                >
-                                                    <Image src="/icons/minus-circle.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "absolute" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                                                    <p className={`${discount.type == "absolute" ? "text-white" : "text-gray-400"}`}>Absolute</p>
-                                                </div>
-
-                                                <div
-                                                    onClick={() => {
-                                                        setDiscount({
-                                                            ...discount,
-                                                            type: "percentage"
-                                                        })
-                                                    }} 
-                                                    className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                                                >
-                                                    <Image src="/icons/percent-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "percentage" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                                                    <p className={`${discount.type == "percentage" ? "text-white" : "text-gray-400"}`}>Percentage</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="self-center flex-col items-center justify-center">
-                                                <div className="flex flex-row items-center gap-4">
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">Original Price</p>
-                                                        <p className="text-white">${((discount.product?.retail_price ?? 1)).toFixed(2)}</p>
-                                                    </div>
-
-                                                    <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-                                                    
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">New Price</p>
-                                                        <p className={`${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) < 0 ? "text-red-400" : "text-white"}`}>${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`)?.toFixed(2)}</p>
-                                                    </div>
-
-                                                    <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">+GST</p>
-                                                        <p className={`${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"} font-bold`}>${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15)?.toFixed(2)}</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <br />
-                                                <hr className="bg-gray-600 border-gray-600" />
-                                                <br />
-
-                                                <div className="flex flex-row items-center gap-6 justify-center">
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">GP</p>
-                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
-                                                    </div>
-
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">GP%</p>
-                                                        <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
-                                                    </div>
-
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <p className="text-gray-400 text-sm">MP</p>
-                                                        <p className="text-white">${((discount.product?.marginal_price ?? 1)).toFixed(2)}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div></div>
-                                        </div>
-
-                                        <div className="flex flex-row items-center gap-4">
+                                        
+                                        <div className="flex flex-row items-center gap-4 self-center">
                                             <div
                                                 onClick={() => {
-                                                    setPadState("cart")
-
-                                                    let new_products = orderState.products.map(e => {
-                                                        if(e.variant_information.barcode == discount.product?.barcode) {
-                                                            return {
-                                                                ...e,
-                                                                discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
-                                                            };
-                                                        }else return e;
-                                                    })
-
-                                                    setOrderState({
-                                                        ...orderState,
-                                                        products: new_products
+                                                    setDiscount({
+                                                        ...discount,
+                                                        type: "absolute"
                                                     })
                                                 }} 
-                                                className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                                <p className={`text-white font-semibold ${""}`}>Apply Discount</p>
+                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
+                                            >
+                                                <Image src="/icons/minus-circle.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "absolute" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
+                                                <p className={`${discount.type == "absolute" ? "text-white" : "text-gray-400"}`}>Absolute</p>
+                                            </div>
+
+                                            <div
+                                                onClick={() => {
+                                                    setDiscount({
+                                                        ...discount,
+                                                        type: "percentage"
+                                                    })
+                                                }} 
+                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
+                                            >
+                                                <Image src="/icons/percent-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "percentage" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
+                                                <p className={`${discount.type == "percentage" ? "text-white" : "text-gray-400"}`}>Percentage</p>
                                             </div>
                                         </div>
+
+                                        <div className="self-center flex-col items-center justify-center">
+                                            <div className="flex flex-row items-center gap-4">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">Original Price</p>
+                                                    <p className="text-white">${((discount.product?.retail_price ?? 1)).toFixed(2)}</p>
+                                                </div>
+
+                                                <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+                                                
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">New Price</p>
+                                                    <p className={`${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) < 0 ? "text-red-400" : "text-white"}`}>${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`)?.toFixed(2)}</p>
+                                                </div>
+
+                                                <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">+GST</p>
+                                                    <p className={`${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"} font-bold`}>${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15)?.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <br />
+                                            <hr className="bg-gray-600 border-gray-600" />
+                                            <br />
+
+                                            <div className="flex flex-row items-center gap-6 justify-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">GP</p>
+                                                    <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
+                                                </div>
+
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">GP%</p>
+                                                    <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
+                                                </div>
+
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <p className="text-gray-400 text-sm">MP</p>
+                                                    <p className="text-white">${((discount.product?.marginal_price ?? 1)).toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div></div>
                                     </div>
-                                )
+
+                                    <div className="flex flex-row items-center gap-4">
+                                        <div
+                                            onClick={() => {
+                                                setPadState("cart")
+
+                                                let new_products = orderState.products.map(e => {
+                                                    if(e.variant_information.barcode == discount.product?.barcode) {
+                                                        return {
+                                                            ...e,
+                                                            discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
+                                                        };
+                                                    }else return e;
+                                                })
+
+                                                setOrderState({
+                                                    ...orderState,
+                                                    products: new_products
+                                                })
+                                            }} 
+                                            className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                            <p className={`text-white font-semibold ${""}`}>Apply Discount</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
                         case "await-cash":
                             // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
                             return (
@@ -1728,4 +1844,11 @@ function applyDiscount(price: number, discount: string) {
     }
 
     return 1
+}
+
+function isGreaterDiscount(predicate: string, discount: string, price: number) {
+    let predicatedDiscount = applyDiscount(price, predicate);
+    let discountedDiscount = applyDiscount(price, discount);
+
+    return discountedDiscount < predicatedDiscount 
 }

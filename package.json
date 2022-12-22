@@ -20,10 +20,12 @@
     "react-barcode-reader": "^0.0.2",
     "react-dom": "18.2.0",
     "react-feather": "^2.0.10",
-    "typescript": "4.9.3"
+    "typescript": "4.9.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.191",
+    "@types/uuid": "^9.0.0",
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.19",
     "tailwindcss": "^3.2.4"

@@ -14,7 +14,27 @@ const ICON_SIZE = 30
 export default function App() {
 	const [ page, setPage ] = useState(0);
 	const [ masterState, setMasterState ] = useState({
-		store_id: "001"
+		store_id: "001",
+		store_contact: {
+			name: "Torpedo7",
+			mobile: {
+				region_code: "21212120",
+				root: "+64"
+			},
+			email: {
+				root: "order",
+				domain: "torpedo7.com",
+				full: "order@torpedo7.com"
+			},
+			landline: "",
+			address: {
+				street: "9 Carbine Road",
+				street2: "",
+				city: "Auckland",
+				country: "New Zealand",
+				po_code: "100",
+			},
+		}
 	});
 
 	const [ authCookie, setAuthCookie ] = useState("");
