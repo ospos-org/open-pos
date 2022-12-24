@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
-import { debounce, divide, isEqual, uniqueId } from "lodash";
+import { debounce, divide, isEqual, uniqueId, values } from "lodash";
 import { ReactBarcodeReader } from "./scanner";
 import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
+import DiscountMenu from "./discountMenu";
 
 type KioskState = {
     customer: string | null,
@@ -45,7 +46,7 @@ type Move = {
 type ProductPurchase = {
     product_code: string,
     variant: string[],
-    discount: string,
+    discount: DiscountValue[],
 
     product_cost: number,
     quantity: number,
@@ -53,6 +54,11 @@ type ProductPurchase = {
     /// Extra information that should be removed before sending to server
     product: Product,
     variant_information: VariantInformation
+}
+
+type DiscountValue = {
+    source: "user" | "promotion" | "loyalty",
+    value: string
 }
 
 type OrderStatus = {
@@ -77,7 +83,7 @@ type Product = {
     specifications: (string[])[]
 }
 
-type VariantInformation = {
+export type VariantInformation = {
     name: string,
     stock: StockInfo[],
     images: string[],
@@ -264,7 +270,7 @@ export default function Kiosk(state: { master_state: {
             let po: ProductPurchase = {
                 product_code: product.sku,
                 variant: variant?.variant_code ?? [],
-                discount: "a|0",
+                discount: [],
 
                 product_cost: variant?.retail_price ?? 0,
                 quantity: 1,
@@ -277,7 +283,7 @@ export default function Kiosk(state: { master_state: {
         }
 
         if(padState == "cart" && discount.product?.barcode == "CART") {
-            setPadState("discount")
+            setPadState("cart")
             setDiscount({
                 type: "absolute",
                 for: "cart",
@@ -633,13 +639,27 @@ export default function Kiosk(state: { master_state: {
 
                                                                         let new_pdts = orderState.products.map(e => {
                                                                             // If current discount is GREATER than loyalty, keep - otherwise override with loyalty
-                                                                            if(isGreaterDiscount(fromDbDiscount(e.product.loyalty_discount), e.discount, e.variant_information.retail_price)) {
-                                                                                return e
-                                                                            }else {
-                                                                                return {
-                                                                                    ...e,
-                                                                                    discount: fromDbDiscount(e.product.loyalty_discount)
-                                                                                }
+                                                                            // if(isGreaterDiscount(fromDbDiscount(e.product.loyalty_discount), findMaxDiscount(e.discount, e.variant_information.retail_price), e.variant_information.retail_price)) {
+                                                                            //     return e
+                                                                            // }else {
+                                                                            //     return {
+                                                                            //         ...e,
+                                                                            //         discount: [{
+                                                                            //             source: "",
+                                                                            //             value: fromDbDiscount(e.product.loyalty_discount)
+                                                                            //         }]
+                                                                            //     }
+                                                                            // }
+
+                                                                            return {
+                                                                                ...e,
+                                                                                discount: [
+                                                                                    ...e.discount as DiscountValue[],
+                                                                                    {
+                                                                                        source: "loyalty",
+                                                                                        value: fromDbDiscount(e.product.loyalty_discount)
+                                                                                    } as DiscountValue
+                                                                                ]
                                                                             }
                                                                         });
 
@@ -985,7 +1005,19 @@ export default function Kiosk(state: { master_state: {
                                     {
                                         customerState ? 
                                         <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer"
-                                            onClick={() => setCustomerState(null)}
+                                            onClick={() => { 
+                                                setCustomerState(null)
+
+                                                setOrderState({
+                                                    ...orderState,
+                                                    products: orderState.products.map(e => {
+                                                        return {
+                                                            ...e,
+                                                            discount: e.discount.filter(e => e.source !== "loyalty")
+                                                        }
+                                                    })
+                                                })
+                                            }}
                                         >
                                             <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
                                             <p className="font-medium select-none">Remove Customer</p>
@@ -1258,12 +1290,12 @@ export default function Kiosk(state: { master_state: {
 
                                                             <div className="min-w-[75px] flex flex-col items-center">
                                                                 {
-                                                                    applyDiscount(e.variant_information.retail_price, e.discount) == e.variant_information.retail_price ?
+                                                                    applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price)) == e.variant_information.retail_price ?
                                                                     <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
                                                                     :
                                                                     <>
                                                                         <p className="text-gray-500 line-through text-sm">${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                                        <p>${((applyDiscount(e.variant_information.retail_price, e.discount) ?? 1) * 1.15).toFixed(2)}</p>
+                                                                        <p>${((applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price)) ?? 1) * 1.15).toFixed(2)}</p>
                                                                     </>
                                                                 }
                                                             </div>
@@ -1300,12 +1332,12 @@ export default function Kiosk(state: { master_state: {
                                                 <p className="text-gray-400 font-bold items-end self-end">
                                                     ${
                                                         applyDiscount(orderState.products.reduce(function (prev, curr) {
-                                                            return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
+                                                            return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
                                                         }, 0), orderState.discount).toFixed(2)
                                                     } {applyDiscount(orderState.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
                                                     }, 0), orderState.discount) == orderState.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
                                                     }, 0) ?
                                                         <></>
                                                         :
@@ -1314,7 +1346,7 @@ export default function Kiosk(state: { master_state: {
                                                 </p>
                                                 <p className="text-gray-600 font-bold items-end self-end">+15% (${
                                                     (applyDiscount(orderState.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
                                                     }, 0), orderState.discount) * 0.15).toFixed(2)
                                                 })</p>
                                                 <p className="font-bold text-lg items-end self-end">
@@ -1323,7 +1355,7 @@ export default function Kiosk(state: { master_state: {
                                                     //     return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
                                                     // }, 0) * 1.15).toFixed(2)
                                                     (applyDiscount(orderState.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
                                                     }, 0), orderState.discount) * 1.15).toFixed(2)
                                                 }
                                                 </p>
@@ -1339,9 +1371,9 @@ export default function Kiosk(state: { master_state: {
                                                 onClick={() => {
                                                     setPadState("select-payment-method");
 
-                                                    let price = (orderState.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
-                                                    }, 0) * 1.15).toFixed(2);
+                                                    let price = (applyDiscount(orderState.products.reduce(function (prev, curr) {
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price))
+                                                    }, 0), orderState.discount) * 1.15).toFixed(2);
 
                                                     setKioskState({
                                                         ...kioskState,
@@ -1380,11 +1412,13 @@ export default function Kiosk(state: { master_state: {
                                             {
                                                 editPrice ? 
                                                     <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                                        ((orderState.products.reduce(function (prev, curr) {
-                                                            return prev + (curr.variant_information.retail_price * curr.quantity)
-                                                        }, 0) * 1.15) - (kioskState.payment.reduce(function (prev, curr) {
-                                                            return prev + (curr.amount ?? 0)
-                                                        }, 0))).toFixed(2)
+                                                        (
+                                                            applyDiscount((orderState.products.reduce(function (prev, curr) {
+                                                                return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                            }, 0)) - (kioskState.payment.reduce(function (prev, curr) {
+                                                                return prev + (curr.amount ?? 0)
+                                                            }, 0)), orderState.discount) * 1.15
+                                                        ).toFixed(2)
                                                     } onBlur={(e) => {
                                                         if(e.currentTarget.value == "") {
                                                             setEditPrice(false)
@@ -1589,7 +1623,7 @@ export default function Kiosk(state: { master_state: {
                                                             <p className="text-gray-600">{e.variant_information.name}</p>
                                                         </div>
 
-                                                        <p className="text-white">${applyDiscount(e.variant_information.retail_price * 1.15, e.discount)?.toFixed(2)}</p>
+                                                        <p className="text-white">${applyDiscount(e.variant_information.retail_price * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price))?.toFixed(2)}</p>
                                                     </div>
                                                 )
                                             })
@@ -1676,142 +1710,36 @@ export default function Kiosk(state: { master_state: {
                                         <p className="text-gray-400">Select Discount</p>
                                     </div>
 
-                                    <div className="flex flex-col h-full gap-12 justify-center">
-                                        <div className="self-center flex flex-col items-center justify-center">
-                                            <p className="text-gray-400 text-sm">DISCOUNT VALUE</p>
+                                    <DiscountMenu discountGroup={[ discount, setDiscount ]} callback={() => {
+                                        setPadState("cart")
 
-                                            <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
-                                                <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
-                                                <input autoFocus className="bg-transparent text-center w-[4ch] outline-none font-semibold text-3xl " placeholder={"0.00"}
-                                                onChange={(e) => {
-                                                    e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
+                                        if(discount.for == "product") {
+                                            let new_products = orderState.products.map(e => {
+                                                if(e.variant_information.barcode == discount.product?.barcode) {
+                                                    return {
+                                                        ...e,
+                                                        discount: [
+                                                            ...e.discount,
+                                                            {
+                                                                source: "user",
+                                                                value: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}` 
+                                                            } as DiscountValue
+                                                        ]
+                                                    };
+                                                }else return e;
+                                            })
 
-                                                    setDiscount({
-                                                        ...discount,
-                                                        value: parseFloat(e.currentTarget.value) ?? 0
-                                                    })
-                                                }}
-                                                onBlur={(e) => {
-                                                    let possible = parseFloat(e.currentTarget.value);
-
-                                                    if(isNaN(possible)) {
-                                                        e.currentTarget.value = (0).toFixed(2)
-                                                        e.target.style.width = ((4 - 0.5 ?? 1) + 'ch');
-                                                    }else {
-                                                        e.currentTarget.value = possible.toFixed(2)
-                                                        e.target.style.width = (((possible.toFixed(2).length) - 0.5 ?? 1) + 'ch');
-                                                    }
-                                                }}
-                                                ></input>
-                                                <p className="text-2xl font-semibold">{discount.type == "percentage" ? "%" : ""}</p>
-                                            </div> 
-                                        </div>
-                                        
-                                        <div className="flex flex-row items-center gap-4 self-center">
-                                            <div
-                                                onClick={() => {
-                                                    setDiscount({
-                                                        ...discount,
-                                                        type: "absolute"
-                                                    })
-                                                }} 
-                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                                            >
-                                                <Image src="/icons/minus-circle.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "absolute" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                                                <p className={`${discount.type == "absolute" ? "text-white" : "text-gray-400"}`}>Absolute</p>
-                                            </div>
-
-                                            <div
-                                                onClick={() => {
-                                                    setDiscount({
-                                                        ...discount,
-                                                        type: "percentage"
-                                                    })
-                                                }} 
-                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                                            >
-                                                <Image src="/icons/percent-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: discount.type == "percentage" ? "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)" : "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                                                <p className={`${discount.type == "percentage" ? "text-white" : "text-gray-400"}`}>Percentage</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="self-center flex-col items-center justify-center">
-                                            <div className="flex flex-row items-center gap-4">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">Original Price</p>
-                                                    <p className="text-white">${((discount.product?.retail_price ?? 1)).toFixed(2)}</p>
-                                                </div>
-
-                                                <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-                                                
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">New Price</p>
-                                                    <p className={`${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) < 0 ? "text-red-400" : "text-white"}`}>${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`)?.toFixed(2)}</p>
-                                                </div>
-
-                                                <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">+GST</p>
-                                                    <p className={`${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"} font-bold`}>${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15)?.toFixed(2)}</p>
-                                                </div>
-                                            </div>
-                                            
-                                            <br />
-                                            <hr className="bg-gray-600 border-gray-600" />
-                                            <br />
-
-                                            <div className="flex flex-row items-center gap-6 justify-center">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">GP</p>
-                                                    <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
-                                                </div>
-
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">GP%</p>
-                                                    <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
-                                                </div>
-
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <p className="text-gray-400 text-sm">MP</p>
-                                                    <p className="text-white">${((discount.product?.marginal_price ?? 1)).toFixed(2)}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div></div>
-                                    </div>
-
-                                    <div className="flex flex-row items-center gap-4">
-                                        <div
-                                            onClick={() => {
-                                                setPadState("cart")
-
-                                                if(discount.for == "product") {
-                                                    let new_products = orderState.products.map(e => {
-                                                        if(e.variant_information.barcode == discount.product?.barcode) {
-                                                            return {
-                                                                ...e,
-                                                                discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
-                                                            };
-                                                        }else return e;
-                                                    })
-    
-                                                    setOrderState({
-                                                        ...orderState,
-                                                        products: new_products
-                                                    })
-                                                }else {
-                                                    setOrderState({
-                                                        ...orderState,
-                                                        discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
-                                                    })
-                                                }
-                                            }} 
-                                            className={`${orderState.products.length > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-white font-semibold ${""}`}>Apply Discount</p>
-                                        </div>
-                                    </div>
+                                            setOrderState({
+                                                ...orderState,
+                                                products: new_products
+                                            })
+                                        }else {
+                                            setOrderState({
+                                                ...orderState,
+                                                discount: `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`
+                                            })
+                                        }
+                                    }} multiple={orderState.products.length > 0} />
                                 </div>
                             )
                         case "await-cash":
@@ -1876,7 +1804,7 @@ export default function Kiosk(state: { master_state: {
     )
 }
 
-function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
+export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {
         let comparative_map = e.variant_code.map(b => {
             return activeVariant?.find(c => c.variant.variant_code == b)
@@ -1889,7 +1817,7 @@ function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCate
     })
 }
 
-function applyDiscount(price: number, discount: string) {
+export function applyDiscount(price: number, discount: string) {
     let d = discount.split("|");
 
     if(d[0] == "a" || d[0] == "A") {
@@ -1905,14 +1833,14 @@ function applyDiscount(price: number, discount: string) {
     return 1
 }
 
-function isGreaterDiscount(predicate: string, discount: string, price: number) {
+export function isGreaterDiscount(predicate: string, discount: string, price: number) {
     let predicatedDiscount = applyDiscount(price, predicate);
     let discountedDiscount = applyDiscount(price, discount);
 
     return discountedDiscount < predicatedDiscount 
 }
 
-function parseDiscount(discount: string) {
+export function parseDiscount(discount: string) {
     let d = discount.split("|");
 
     if(d[0] == "a" || d[0] == "A") {
@@ -1926,10 +1854,22 @@ function parseDiscount(discount: string) {
     }
 }
 
-function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: string }) {
+export function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: string }) {
     if(dbDiscount.Absolute) {
         return `a|${dbDiscount.Absolute}`
     }else {
         return `p|${dbDiscount.Percentage}`
     }
+}
+
+export function findMaxDiscount(discountValues: DiscountValue[], productValue: number) {
+    let max_discount = "a|0";
+
+    for(let i = 0; i < discountValues.length; i++) {
+        if(isGreaterDiscount(max_discount, discountValues[i].value, productValue)) {
+            max_discount = discountValues[i].value
+        }
+    }
+
+    return max_discount
 }
