@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { useState, FC } from "react";
-import { applyDiscount, VariantInformation } from "./kiosk";
+import { applyDiscount, findMaxDiscount, VariantInformation } from "./kiosk";
 
 const DiscountMenu: FC<{ discountGroup: [{
         type: "absolute" | "percentage";
@@ -19,7 +19,7 @@ const DiscountMenu: FC<{ discountGroup: [{
 
                     <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
                         <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
-                        <input autoFocus className="bg-transparent text-center w-[4ch] outline-none font-semibold text-3xl " placeholder={"0.00"}
+                        <input style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={discountGroup[0].value.toFixed(2)} placeholder={discountGroup[0].value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
 
@@ -122,9 +122,27 @@ const DiscountMenu: FC<{ discountGroup: [{
             </div>
 
             <div className="flex flex-row items-center gap-4">
+                <div 
+                    onClick={() => {
+                        setDiscount({
+                            ...discount,
+                            source: "user",
+                            value: 0.00
+                        })
+
+                        callback({
+                            ...discount,
+                            source: "user",
+                            value: 0.00
+                        })
+                    }}
+                    className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${discount.value > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                    <p className="text-blue-500 font-semibold">Remove Discount</p>
+                </div>
+
                 <div
                     onClick={() => {
-                        callback()
+                        callback(discount)
                     }} 
                     className={`${multiple ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                     <p className={`text-white font-semibold ${""}`}>Apply Discount</p>
