@@ -32,7 +32,7 @@ type Order = {
     status: OrderStatus[],
     status_history: (OrderStatus[])[],
     order_history: string[],
-    order_notes: string[],
+    order_notes: Note[],
     reference: string,
     creation_date: string,
     discount: string
@@ -759,7 +759,7 @@ export default function Kiosk(state: { master_state: {
                                                     <p>{activeProduct.sku}</p>
                                                 </div>
                                                 
-                                                {(() => {
+                                                {/* {(() => {
                                                     if(activeProductVariant?.loyalty_discount.Absolute) {
                                                         return (
                                                             <div className="flex flex-row items-center gap-4">
@@ -775,7 +775,7 @@ export default function Kiosk(state: { master_state: {
                                                             </div>
                                                         )
                                                     }
-                                                })()}
+                                                })()} */}
                                                 <br />
                                                 {/* <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p> */}
                                             </div>
@@ -1144,7 +1144,25 @@ export default function Kiosk(state: { master_state: {
                                             <div className="text-white">
                                                 {
                                                     customerState ?
-                                                    <h2 className="font-semibold text-lg">{customerState.name}</h2>
+                                                    <div className="flex flex-row items-center gap-2">
+                                                        <h2 className="font-semibold text-lg">{customerState.name}</h2>
+
+                                                        <Image
+                                                            onClick={() => {
+                                                                setCustomerState(null)
+
+                                                                setOrderState({
+                                                                    ...orderState,
+                                                                    products: orderState.products.map(e => {
+                                                                        return {
+                                                                            ...e,
+                                                                            discount: e.discount.filter(e => e.source !== "loyalty")
+                                                                        }
+                                                                    })
+                                                                })
+                                                            }} 
+                                                            className="cursor-pointer" height={15} width={15} src="/icons/x-2.svg" alt="" style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                                                    </div>
                                                     :
                                                     <div 
                                                         onClick={() => {
@@ -1315,7 +1333,6 @@ export default function Kiosk(state: { master_state: {
                                             })
                                         }
                                         </div>
-                                        
 
                                         <hr className="border-gray-400 opacity-25"/>
                                         
@@ -1817,8 +1834,47 @@ export default function Kiosk(state: { master_state: {
                             )
                         case "note":
                             return (
-                                <div>
+                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
+                                        </div>
+                                        <p className="text-gray-400">Change Note</p>
+                                    </div>
 
+                                    <div className="flex flex-1 flex-col">
+                                        <div className="flex flex-col flex-1 items-center justify-between">
+                                            {
+                                                orderState.order_notes.length == 0 ? 
+                                                <p className="text-gray-600">No notes yet</p>
+                                                :
+                                                orderState.order_notes.map(e => {
+                                                    return (
+                                                        <div className="flex flex-row items-center justify-between" key={e.timestamp}>
+                                                            {e.message}
+                                                        </div>
+                                                    )
+                                                })
+                                            }
+                                        </div>
+
+                                        <div className="flex flex-col justify-center gap-4">
+                                           <hr className="border-gray-400 opacity-25"/>
+
+                                            <div className="flex flex-1 flex-row items-center justify-between gap-4">
+                                                <input autoFocus className="flex-1 text-white px-4 py-2 rounded-md border-gray-500 border-[1px] bg-gray-800 outline-none" type="text" />
+                                                <div className="bg-blue-600 text-white">
+                                                    <p>Add Note</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )
                     }

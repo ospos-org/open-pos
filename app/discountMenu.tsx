@@ -19,7 +19,7 @@ const DiscountMenu: FC<{ discountGroup: [{
 
                     <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
                         <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
-                        <input style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={discountGroup[0].value.toFixed(2)} placeholder={discountGroup[0].value.toFixed(2)}
+                        <input style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discountGroup[0].value !== 0) ? (discountGroup[0].value).toFixed(2) : ""} placeholder={discountGroup[0].value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
 
