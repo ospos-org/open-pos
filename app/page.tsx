@@ -8,11 +8,14 @@ import Inventory from './inventory';
 import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
+import { Employee } from './stock-types';
 
 const ICON_SIZE = 30
 
 export default function App() {
 	const [ page, setPage ] = useState(0);
+	const [ user, setUser ] = useState<Employee | null>();
+
 	const [ masterState, setMasterState ] = useState({
 		store_id: "001",
 		store_contact: {
@@ -34,13 +37,21 @@ export default function App() {
 				country: "New Zealand",
 				po_code: "100",
 			},
-		}
+		},
+		employee: user
 	});
+
+	useEffect(() => {
+		setMasterState({
+			...masterState,
+			employee: user
+		})
+	}, [user])
 
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async () => {
-		fetch('http://127.0.0.1:8000/employee/auth/228333fa-29fb-43f4-8322-36ecf6960702', {
+		fetch('http://127.0.0.1:8000/employee/auth/657f4701-9d63-4295-9a24-96e7e5237c7a', {
 			method: "POST",
 			body: JSON.stringify({
 				pass: "1232"
@@ -51,6 +62,17 @@ export default function App() {
 			const cookie = await e.text();
 			console.log(cookie);
 			setAuthCookie(cookie);
+
+			fetch('http://127.0.0.1:8000/employee/657f4701-9d63-4295-9a24-96e7e5237c7a', {
+				method: "GET",
+				credentials: "include",
+				redirect: "follow"
+			}).then(async k => {
+				const employee: Employee = await k.json();
+				console.log(employee);
+
+				setUser(employee);
+			})
 
 			// document.cookie = `key=${cookie.replace("\"", "")};Path=/;SameSite=\"None\";Secure=True`;
 		})

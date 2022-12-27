@@ -6,195 +6,12 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
+import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note, Order, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
+import NotesMenu from "./notesMenu";
 
-type KioskState = {
-    customer: string | null,
-    transaction_type: string | null,
-    products: Order[] | null,
-    order_total: number | null,
-    payment: {
-        payment_method: "cash" | "card" | string | null,
-        fulfillment_date: string | null,
-        amount: number | null
-    }[],
-    order_date: string | null,
-    order_notes: string[] | null,
-    order_history: string[] | null,
-    salesperson: string | null,
-    till: string | null
-};
-
-type Order = {
-    id: string,
-    destination: Move | null,
-    origin: Move,
-    products: ProductPurchase[],
-    status: OrderStatus[],
-    status_history: (OrderStatus[])[],
-    order_history: string[],
-    order_notes: Note[],
-    reference: string,
-    creation_date: string,
-    discount: string
-}
-
-type Move = {
-    code: string,
-    contact: ContactInformation
-}
-
-type ProductPurchase = {
-    id: string,
-
-    product_code: string,
-    variant: string[],
-    discount: DiscountValue[],
-
-    product_cost: number,
-    quantity: number,
-
-    /// Extra information that should be removed before sending to server
-    product: Product,
-    variant_information: VariantInformation
-}
-
-type DiscountValue = {
-    source: "user" | "promotion" | "loyalty",
-    value: string
-}
-
-type OrderStatus = {
-    status: "queued" | "transit" | "processing" | "in-store" | "fulfilled" | "failed" | string,
-    assigned_products: string[],
-    timestamp: string
-}
-
-type Product = {
-    name: string,
-    company: string,
-    variant_groups: VariantCategory[],
-    variants: VariantInformation[],
-    sku: string,
-    images: string[],
-    tags: string[],
-    description: string,
-    specifications: (string[])[]
-}
-
-export type VariantInformation = {
-    name: string,
-    stock: StockInfo[],
-    images: string[],
-    retail_price: number,
-    marginal_price: number,
-    /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
-    variant_code: string[],
-    order_history: string[],
-    /// impl! Implement this type!
-    stock_information: StockInformation,
-    barcode: string,
-    loyalty_discount: {
-        Absolute?: string,
-        Percentage?: string
-    },
-}
-
-type VariantCategory = {
-    category: string,
-    variants: Variant[]
-}
-
-type StrictVariantCategory = {
-    category: string,
-    variant: Variant
-}
-
-type Variant = {
-    name: string,
-    stock: StockInfo[],
-    images: string[],
-    marginal_price: number,
-    retail_price: number,
-    variant_code: string,
-    order_history: string[],
-    // impl! Flesh this type out correctly.
-    stock_information: StockInformation
-}
-
-type StockInformation = {
-    stock_group: string,
-    sales_group: string,
-    value_stream: string,
-    brand: string,
-    unit: string,
-    tax_code: string,
-    weight: string,
-    volume: string,
-    max_volume: string,
-    back_order: boolean,
-    discontinued: boolean,
-    non_diminishing: boolean
-}
-
-type StockInfo = {
-    store: Store,
-    quantity: Quantity
-}
-
-type Quantity = {
-    quantity_on_hand: number,
-    quantity_on_order: number,
-    quantity_on_floor: number
-}
-
-type Store = {
-    code: string,
-    contact: string
-}
-
-type Customer = {
-    id: string,
-    name: string,
-    contact: ContactInformation,
-    order_history: Order[],
-    customer_notes: Note[],
-    balance: number,
-}
-
-type ContactInformation = {
-    name: string,
-    mobile: Mobile,
-    email: Email,
-    landline: string,
-    address: Address
-}
-
-type Address = {
-    street: string,
-    street2: string,
-    city: string,
-    country: string,
-    po_code: string
-}
-
-type Email = {
-    root: string,
-    domain: string,
-    full: string
-}
-
-type Mobile = {
-    region_code: string,
-    root: string
-}
-
-type Note = {
-    message: string,
-    timestamp: string
-}
-
-export default function Kiosk(state: { master_state: {
+export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
+    employee: Employee | null,
     store_contact: ContactInformation
 } }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -214,8 +31,8 @@ export default function Kiosk(state: { master_state: {
         id: v4(),
         destination: null,
         origin: {
-            code: state.master_state.store_id,
-            contact: state.master_state.store_contact
+            code: master_state.store_id,
+            contact: master_state.store_contact
         },
         products: [],
         status: [],
@@ -615,7 +432,7 @@ export default function Kiosk(state: { master_state: {
                                                                                         return k.stock.map(b => {
                                                                                             let total = 0;
 
-                                                                                            if(b.store.code == state.master_state.store_id) {
+                                                                                            if(b.store.code == master_state.store_id) {
                                                                                                 total += b.quantity.quantity_on_hand;
                                                                                             }
 
@@ -1023,10 +840,10 @@ export default function Kiosk(state: { master_state: {
                                                                     className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 50px" }}>
                                                                     <p className="flex-1 w-full">{e.name}</p>
 
-                                                                    <p className="text-gray-300">{e.stock.find(e => e.store.code == state.master_state.store_id)?.quantity.quantity_on_hand ?? 0} Here</p>
+                                                                    <p className="text-gray-300">{e.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 0} Here</p>
                                                                     <p className="text-gray-300">
                                                                         {
-                                                                            e.stock.map(e => (e.store.code == state.master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                            e.stock.map(e => (e.store.code == master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
                                                                         } In other stores
                                                                     </p>
                                                                     <p >${(e.retail_price * 1.15).toFixed(2)}</p>
@@ -1638,12 +1455,12 @@ export default function Kiosk(state: { master_state: {
                                             setOrderState({
                                                 ...orderState,
                                                 origin: {
-                                                    code: state.master_state.store_id,
-                                                    contact: state.master_state.store_contact
+                                                    code: master_state.store_id,
+                                                    contact: master_state.store_contact
                                                 },
                                                 destination: {
                                                     code: "cust",
-                                                    contact: customerState?.contact ?? state.master_state.store_contact
+                                                    contact: customerState?.contact ?? master_state.store_contact
                                                 },
                                                 status: [
                                                     ...orderState.status,
@@ -1738,8 +1555,8 @@ export default function Kiosk(state: { master_state: {
                                                     id: v4(),
                                                     destination: null,
                                                     origin: {
-                                                        contact: state.master_state.store_contact,
-                                                        code: state.master_state.store_id
+                                                        contact: master_state.store_contact,
+                                                        code: master_state.store_id
                                                     },
                                                     products: [],
                                                     status: [],
@@ -1787,45 +1604,70 @@ export default function Kiosk(state: { master_state: {
                                         setPadState("cart")
 
                                         if(dcnt.for == "product") {
-                                            let overflow_quantity = 0;
-                                            let overflow_product: (ProductPurchase | null) = null;
+                                            if(dcnt.exclusive) {
+                                                let overflow_quantity = 0;
+                                                let overflow_product: (ProductPurchase | null) = null;
 
-                                            let new_products = orderState.products.map(e => {
-                                                if(e.variant_information.barcode == dcnt.product?.barcode) {
-                                                    if(e.quantity > 1) {
-                                                        overflow_quantity = e.quantity - 1
-                                                        overflow_product = e
-                                                    }
+                                                let new_products = orderState.products.map(e => {
+                                                    if(e.variant_information.barcode == dcnt.product?.barcode) {
+                                                        if(e.quantity > 1) {
+                                                            overflow_quantity = e.quantity - 1
+                                                            overflow_product = e
+                                                        }
 
-                                                    return {
-                                                        ...e,
-                                                        quantity: 1,
-                                                        discount: [
-                                                            // Will replace any currently imposed discounts
-                                                            ...e.discount.filter(e => {
-                                                                return e.source !== "user"
-                                                            }),
-                                                            {
-                                                                source: "user",
-                                                                value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                            } as DiscountValue
-                                                        ]
-                                                    };
-                                                } else return e;
-                                            });
+                                                        return {
+                                                            ...e,
+                                                            quantity: 1,
+                                                            discount: [
+                                                                // Will replace any currently imposed discounts
+                                                                ...e.discount.filter(e => {
+                                                                    return e.source !== "user"
+                                                                }),
+                                                                {
+                                                                    source: "user",
+                                                                    value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                                } as DiscountValue
+                                                            ]
+                                                        };
+                                                    } else return e;
+                                                });
 
-                                            if(overflow_product !== null) {
-                                                new_products.push({
-                                                    ...overflow_product as ProductPurchase,
-                                                    quantity: overflow_quantity,
-                                                    id: v4()
+                                                if(overflow_product !== null) {
+                                                    new_products.push({
+                                                        ...overflow_product as ProductPurchase,
+                                                        quantity: overflow_quantity,
+                                                        id: v4()
+                                                    })
+                                                }
+
+                                                setOrderState({
+                                                    ...orderState,
+                                                    products: new_products
+                                                })
+                                            }else {
+                                                let new_products = orderState.products.map(e => {
+                                                    if(e.variant_information.barcode == dcnt.product?.barcode) {
+                                                        return {
+                                                            ...e,
+                                                            discount: [
+                                                                // Will replace any currently imposed discounts
+                                                                ...e.discount.filter(e => {
+                                                                    return e.source !== "user"
+                                                                }),
+                                                                {
+                                                                    source: "user",
+                                                                    value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                                } as DiscountValue
+                                                            ]
+                                                        };
+                                                    } else return e;
+                                                });
+
+                                                setOrderState({
+                                                    ...orderState,
+                                                    products: new_products
                                                 })
                                             }
-
-                                            setOrderState({
-                                                ...orderState,
-                                                products: new_products
-                                            })
                                         }else {
                                             setOrderState({
                                                 ...orderState,
@@ -1903,36 +1745,28 @@ export default function Kiosk(state: { master_state: {
                                             <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                                             <p className="text-gray-400">Back</p>
                                         </div>
-                                        <p className="text-gray-400">Change Note</p>
+                                        <p className="text-gray-400">Add Note</p>
                                     </div>
-
-                                    <div className="flex flex-1 flex-col">
-                                        <div className="flex flex-col flex-1 items-center justify-between">
-                                            {
-                                                orderState.order_notes.length == 0 ? 
-                                                <p className="text-gray-600">No notes yet</p>
-                                                :
-                                                orderState.order_notes.map(e => {
-                                                    return (
-                                                        <div className="flex flex-row items-center justify-between" key={e.timestamp}>
-                                                            {e.message}
-                                                        </div>
-                                                    )
-                                                })
+                                    
+                                    <NotesMenu notes={orderState.order_notes} callback={(note: string) => {
+                                        console.log(master_state.employee);
+                                        
+                                        if(master_state?.employee) {
+                                            const note_obj: Note = {
+                                                message: note,
+                                                timestamp: new Date().toString(),
+                                                author: master_state?.employee
                                             }
-                                        </div>
-
-                                        <div className="flex flex-col justify-center gap-4">
-                                           <hr className="border-gray-400 opacity-25"/>
-
-                                            <div className="flex flex-1 flex-row items-center justify-between gap-4">
-                                                <input autoFocus className="flex-1 text-white px-4 py-2 rounded-md border-gray-500 border-[1px] bg-gray-800 outline-none" type="text" />
-                                                <div className="bg-blue-600 px-2 py-1 rounded-md text-white">
-                                                    <p>Add Note</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+    
+                                            setOrderState({
+                                                ...orderState,
+                                                order_notes: [
+                                                    ...orderState.order_notes,
+                                                    note_obj
+                                                ]
+                                            })
+                                        }
+                                    }} />
                                 </div>
                             )
                     }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { useState, FC } from "react";
-import { applyDiscount, findMaxDiscount, VariantInformation } from "./kiosk";
+import { applyDiscount, findMaxDiscount } from "./kiosk";
+import { VariantInformation } from "./stock-types";
 
 const DiscountMenu: FC<{ discountGroup: [{
         type: "absolute" | "percentage";
