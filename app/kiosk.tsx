@@ -266,9 +266,41 @@ export default function Kiosk(state: { master_state: {
 
         if(existing_product) {
             // Editing the quantity of an existing product in the order.
-            new_order_products_state = orderProducts.map(e => {
-                return e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) ? { ...e, quantity: e.quantity+1 } : e
-            });
+            // if(e.product_code == product.sku && isEqual(e.variant, variant?.variant_code)) {
+                    // if(findMaxDiscount(e.discount, e.variant_information.retail_price, true) !== findMaxDiscount([ { source: "loyalty", value: fromDbDiscount(variant.loyalty_discount) } ], e.variant_information.retail_price, true)) {
+                        // return e;
+                    // }else {
+                    // }
+                // }
+
+            let matching_product = orderProducts.find(e => e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1));
+            
+            if(matching_product) {
+                // If a matching product exists; apply emendation
+                new_order_products_state = orderProducts.map(e => {
+                    return e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1) ? { ...e, quantity: e.quantity+1 } : e
+                });
+            }else {
+                let po: ProductPurchase = {
+                    id: v4(),
+                    product_code: product.sku,
+                    variant: variant?.variant_code ?? [],
+                    discount: [
+                        {
+                            source: "loyalty",
+                            value: fromDbDiscount(variant.loyalty_discount)
+                        }
+                    ],
+    
+                    product_cost: variant?.retail_price ?? 0,
+                    quantity: 1,
+    
+                    product: product,
+                    variant_information: variant ?? product.variants[0]
+                };
+    
+                new_order_products_state = [ ...orderProducts, po ]
+            }
         }else {
             // Creating a new product in the order.
             let po: ProductPurchase = {
@@ -1207,13 +1239,13 @@ export default function Kiosk(state: { master_state: {
                                         {
                                             orderState.products.length <= 0 ?
                                             <div className="flex flex-col items-center w-full">
-                                                <p className="text-sm text-gray-400 py-4">No products in cart</p>
+                                                <p className="text-sm text-gray-400 py-4 select-none">No products in cart</p>
                                             </div>
                                             :
                                             orderState.products.map(e => {
                                                 // Find the variant of the product for name and other information...
                                                 return (
-                                                    <div key={`${e.product_code}-${e.variant.toString()}`} className="text-white">
+                                                    <div key={e.id} className="text-white">
                                                         <div className="flex flex-row items-center gap-4">
                                                             <div className="relative">
                                                                 <Image height={60} width={60} quality={100} alt="Torq Surfboard" className="rounded-sm" src={e.variant_information.images[0]}></Image>
@@ -1260,7 +1292,7 @@ export default function Kiosk(state: { master_state: {
                                                                     onClick={() => {
                                                                         let product_list_clone = orderState.products.map(k => {
                                                                             console.log(k, e.product_code);
-                                                                            if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                                            if(k.id == e.id) {
                                                                                 if(k.quantity <= 1) {
                                                                                     return null;
                                                                                 }else {
@@ -1282,7 +1314,7 @@ export default function Kiosk(state: { master_state: {
                                                                     draggable="false"
                                                                     className="select-none"
                                                                     onMouseOver={(b) => {
-                                                                        b.currentTarget.style.filter = (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                                        b.currentTarget.style.filter = (orderState.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
                                                                         "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)"
                                                                         : 
                                                                         "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
@@ -1291,7 +1323,7 @@ export default function Kiosk(state: { master_state: {
                                                                         e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
                                                                     }}
                                                                     width="15" height="15" src={
-                                                                        (orderState.products.find(k => k.product_code == e.product_code && isEqual(k.variant, e.variant))?.quantity ?? 1) <= 1 ? 
+                                                                        (orderState.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
                                                                         "/icons/x-close.svg" 
                                                                         : 
                                                                         "/icons/arrow-block-down.svg"
@@ -1895,7 +1927,7 @@ export default function Kiosk(state: { master_state: {
 
                                             <div className="flex flex-1 flex-row items-center justify-between gap-4">
                                                 <input autoFocus className="flex-1 text-white px-4 py-2 rounded-md border-gray-500 border-[1px] bg-gray-800 outline-none" type="text" />
-                                                <div className="bg-blue-600 text-white">
+                                                <div className="bg-blue-600 px-2 py-1 rounded-md text-white">
                                                     <p>Add Note</p>
                                                 </div>
                                             </div>
