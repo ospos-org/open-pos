@@ -7,6 +7,7 @@ const DiscountMenu: FC<{ discountGroup: [{
         product: VariantInformation | null;
         value: number;
         for: "cart" | "product";
+        exclusive: boolean
     }, Function], callback: Function, multiple: boolean }> = ({ discountGroup, callback, multiple }) => {
     
     const [ discount, setDiscount ] = discountGroup;
@@ -22,6 +23,11 @@ const DiscountMenu: FC<{ discountGroup: [{
                         <input style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discountGroup[0].value !== 0) ? (discountGroup[0].value).toFixed(2) : ""} placeholder={discountGroup[0].value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
+
+                            let new_price = parseFloat(e.currentTarget.value);
+
+                            // (new_price - GST) = new_pricing
+                            // delta<marginal_price, new_pricing> = discount
 
                             setDiscount({
                                 ...discount,
@@ -76,21 +82,21 @@ const DiscountMenu: FC<{ discountGroup: [{
                     <div className="flex flex-row items-center gap-4">
                         <div className="flex flex-col items-center justify-center">
                             <p className="text-gray-400 text-sm">Original Price</p>
-                            <p className="text-white">${((discount.product?.retail_price ?? 1)).toFixed(2)}</p>
+                            <p className="text-white">${((discount.product?.retail_price ?? 1) * 1.15).toFixed(2)}</p>
                         </div>
 
                         <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-                        
+
                         <div className="flex flex-col items-center justify-center">
                             <p className="text-gray-400 text-sm">New Price</p>
-                            <p className={`${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) < 0 ? "text-red-400" : "text-white"}`}>${applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`)?.toFixed(2)}</p>
+                            <p className={`${(applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ) < 0 ? "text-red-400" : "text-white"} font-bold`}>${(applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`))?.toFixed(2)}</p>
                         </div>
 
                         <Image src="/icons/arrow-narrow-right.svg" alt="right arrow" width={20} height={20} style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
 
-                        <div className="flex flex-col items-center justify-center">
-                            <p className="text-gray-400 text-sm">+GST</p>
-                            <p className={`${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"} font-bold`}>${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15)?.toFixed(2)}</p>
+                        <div>
+                            <p className="text-gray-400 text-sm">Discount</p>
+                            <p className={`${(applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ) < 0 ? "text-red-400" : "text-white"}`}>${(applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`))?.toFixed(2)}</p>
                         </div>
                     </div>
                     
@@ -101,12 +107,12 @@ const DiscountMenu: FC<{ discountGroup: [{
                     <div className="flex flex-row items-center gap-6 justify-center">
                         <div className="flex flex-col items-center justify-center">
                             <p className="text-gray-400 text-sm">GP</p>
-                            <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
+                            <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)))) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>${((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1))?.toFixed(2)}</p>
                         </div>
 
                         <div className="flex flex-col items-center justify-center">
                             <p className="text-gray-400 text-sm">GP%</p>
-                            <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / (discount.product?.retail_price ?? 1)) * 100).toFixed(2)}%</p>
+                            <p className={`${((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / ((discount.product?.retail_price ?? 1) * 1.15)) * 100) < 10 ? ((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / ((discount.product?.retail_price ?? 1) * 1.15)) * 100) < 0 ? "text-red-400" : "text-red-200" : "text-white"}`}>{((((applyDiscount((discount.product?.retail_price ?? 1) * 1.15, `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) ?? 1) - (discount.product?.marginal_price ?? 1)) / ((discount.product?.retail_price ?? 1) * 1.15)) * 100).toFixed(2)}%</p>
                         </div>
 
                         <div className="flex flex-col items-center justify-center">
@@ -116,8 +122,22 @@ const DiscountMenu: FC<{ discountGroup: [{
                     </div>
                 </div>
 
-                <div>
-                    
+                <div
+                    onClick={() => {
+                        setDiscount({
+                            ...discount,
+                            exclusive: !discount.exclusive
+                        })
+                    }} 
+                    className="flex cursor-pointer select-none w-full items-center justify-center gap-2">
+                    <p className="text-gray-400">Apply to only one</p>
+
+                    {
+                        !discount.exclusive ?
+                        <Image src="/icons/square.svg" alt="selected" width={20} height={20}  style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+                        :
+                        <Image src="/icons/check-square.svg" alt="selected" width={20} height={20}  style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
+                    }
                 </div>
             </div>
 

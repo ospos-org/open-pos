@@ -44,6 +44,8 @@ type Move = {
 }
 
 type ProductPurchase = {
+    id: string,
+
     product_code: string,
     variant: string[],
     discount: DiscountValue[],
@@ -243,12 +245,14 @@ export default function Kiosk(state: { master_state: {
         type: "absolute" | "percentage",
         product: VariantInformation | null,
         value: number,
-        for: "cart" | "product"
+        for: "cart" | "product",
+        exclusive: boolean
     }>({
         type: "absolute",
         for: "product",
         product: null,
-        value: 0.00
+        value: 0.00,
+        exclusive: false
     })
 
     const [ editPrice, setEditPrice ] = useState(false);
@@ -268,6 +272,7 @@ export default function Kiosk(state: { master_state: {
         }else {
             // Creating a new product in the order.
             let po: ProductPurchase = {
+                id: v4(),
                 product_code: product.sku,
                 variant: variant?.variant_code ?? [],
                 discount: [
@@ -321,7 +326,8 @@ export default function Kiosk(state: { master_state: {
                     marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
                     retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
                 },
-                value: 0
+                value: 0,
+                exclusive: false
             })
         }
 
@@ -1080,7 +1086,8 @@ export default function Kiosk(state: { master_state: {
                                                     marginal_price: orderState.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
                                                     retail_price: orderState.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
                                                 },
-                                                value: 0
+                                                value: 0,
+                                                exclusive: false
                                             })
                                         }} 
                                         className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
@@ -1303,7 +1310,8 @@ export default function Kiosk(state: { master_state: {
                                                                         setDiscount({
                                                                             ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false).value),
                                                                             product: e.variant_information,
-                                                                            for: "product"
+                                                                            for: "product",
+                                                                            exclusive: false
                                                                         })
                                                                     }}
                                                                     style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
@@ -1323,7 +1331,7 @@ export default function Kiosk(state: { master_state: {
                                                                     :
                                                                     <>
                                                                         <p className="text-gray-500 line-through text-sm">${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                                        <p className={`${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-indigo-300" : ""}`}>${((applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1) * 1.15).toFixed(2)}</p>
+                                                                        <p className={`${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-indigo-300" : ""}`}>${((applyDiscount(e.variant_information.retail_price  * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
                                                                     </>
                                                                 }
                                                             </div>
@@ -1741,15 +1749,25 @@ export default function Kiosk(state: { master_state: {
                                         type: "absolute" | "percentage",
                                         product: VariantInformation | null,
                                         value: number,
-                                        for: "cart" | "product"
+                                        for: "cart" | "product",
+                                        exclusive: boolean
                                     }) => {
                                         setPadState("cart")
 
                                         if(dcnt.for == "product") {
+                                            let overflow_quantity = 0;
+                                            let overflow_product: (ProductPurchase | null) = null;
+
                                             let new_products = orderState.products.map(e => {
                                                 if(e.variant_information.barcode == dcnt.product?.barcode) {
+                                                    if(e.quantity > 1) {
+                                                        overflow_quantity = e.quantity - 1
+                                                        overflow_product = e
+                                                    }
+
                                                     return {
                                                         ...e,
+                                                        quantity: 1,
                                                         discount: [
                                                             // Will replace any currently imposed discounts
                                                             ...e.discount.filter(e => {
@@ -1761,8 +1779,16 @@ export default function Kiosk(state: { master_state: {
                                                             } as DiscountValue
                                                         ]
                                                     };
-                                                }else return e;
-                                            })
+                                                } else return e;
+                                            });
+
+                                            if(overflow_product !== null) {
+                                                new_products.push({
+                                                    ...overflow_product as ProductPurchase,
+                                                    quantity: overflow_quantity,
+                                                    id: v4()
+                                                })
+                                            }
 
                                             setOrderState({
                                                 ...orderState,
