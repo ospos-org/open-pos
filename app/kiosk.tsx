@@ -47,7 +47,7 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -944,7 +944,11 @@ export default function Kiosk({ master_state }: { master_state: {
                                         <p className="font-medium">Add Cart Discount</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    <div 
+                                        onClick={() => {
+                                            setPadState("ship-to-customer")
+                                        }}
+                                        className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Ship to Customer</p>
                                     </div>
@@ -958,7 +962,11 @@ export default function Kiosk({ master_state }: { master_state: {
                                         <p className="font-medium">Add Note</p>
                                     </div>
             
-                                    <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    <div 
+                                        onClick={() => {
+                                            setPadState("pickup-from-store")
+                                        }}
+                                        className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
                                         <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                         <p className="font-medium">Pickup from Store</p>
                                     </div>
@@ -1035,7 +1043,15 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                                     </div>
                                                 }
-                                                <p className="text-sm text-gray-400">{orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0)} item{orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0) > 1 ? "s" : ""}</p>
+                                                <p className="text-sm text-gray-400">{
+                                                        orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0) == 0
+                                                        ? 
+                                                        "Cart Empty" 
+                                                        : 
+                                                        <p>
+                                                            {orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0)} item{(orderState.products.reduce((prev, curr) => { return prev + curr.quantity }, 0) > 1 ? "s" : "")}
+                                                        </p>
+                                                }</p>
                                             </div>
 
                                             <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
@@ -1079,32 +1095,41 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             <div className="flex flex-col gap-2 items-center justify-center">
                                                                 <Image
                                                                     onClick={() => {
-                                                                        let product_list_clone = orderState.products.map(k => {
-                                                                            console.log(k, e.product_code);
-                                                                            if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
-                                                                                return {
-                                                                                    ...k,
-                                                                                    quantity: k.quantity+1
+                                                                        if(!((orderState.products.find(k => k.id == e.id)?.quantity ?? 1) >= (orderState.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1))) {
+                                                                            let product_list_clone = orderState.products.map(k => {
+                                                                                console.log(k, e.product_code);
+                                                                                if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                                                    return {
+                                                                                        ...k,
+                                                                                        quantity: k.quantity+1
+                                                                                    }
+                                                                                }else {
+                                                                                    return k
                                                                                 }
-                                                                            }else {
-                                                                                return k
-                                                                            }
-                                                                        })
-
-                                                                        setOrderState({
-                                                                            ...orderState,
-                                                                            products: product_list_clone
-                                                                        })
+                                                                            })
+    
+                                                                            setOrderState({
+                                                                                ...orderState,
+                                                                                products: product_list_clone
+                                                                            })
+                                                                        }
                                                                     }} 
-                                                                    onMouseOver={(e) => {
-                                                                        e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                    onMouseOver={(v) => {
+                                                                        if(!((orderState.products.find(k => k.id == e.id)?.quantity ?? 1) >= (orderState.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1)))
+                                                                            v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
                                                                     }}
-                                                                    onMouseLeave={(e) => {
-                                                                        e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                    onMouseLeave={(v) => {
+                                                                        v.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
                                                                     }}
                                                                     draggable="false"
                                                                     className="select-none"
-                                                                    width="15" height="15" src="/icons/arrow-block-up.svg" alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} ></Image>
+                                                                    src={
+                                                                        (orderState.products.find(k => k.id == e.id)?.quantity ?? 1) >= (orderState.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1) ? 
+                                                                        "/icons/slash-octagon.svg" 
+                                                                        : 
+                                                                        "/icons/arrow-block-up.svg"
+                                                                    } 
+                                                                    width="15" height="15" alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} ></Image>
                                                                 <Image
                                                                     onClick={() => {
                                                                         let product_list_clone = orderState.products.map(k => {
