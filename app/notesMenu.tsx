@@ -7,7 +7,8 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
 
     return (
         <div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
-            <div className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
+            <div 
+                className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
                 {
                     notes.length == 0 ? 
                     <p className="text-gray-600">No notes yet</p>
@@ -15,7 +16,10 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
                     notes.map(e => {
                         return (
                             <div className="flex flex-row items-center w-full justify-between gap-4" key={`${e.timestamp}-${e.message}`}>
-                                <p className="text-gray-400 font-bold">{e.author.name.first} {e.author.name.last}</p>
+                                <div className="flex flex-col">
+                                    <p className="text-gray-400 font-bold">{e.author.name.first} {e.author.name.last}</p>       
+                                    <p className="text-gray-600 text-sm">{new Date(e.timestamp).toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric' }).split(",").join(" ")}</p>                                
+                                </div>
                                 <p className="text-white w-full flex-1">{e.message}</p>
                             </div>
                         )
