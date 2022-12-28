@@ -1734,7 +1734,7 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "note":
                             return (
-                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {

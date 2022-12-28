@@ -154,13 +154,19 @@ export type Customer = {
 
 export type Employee = {
     id: string,
-    name: string,
+    name: Name,
     auth: {
         hash: string
     },
     contact: ContactInformation,
     clock_history: Attendance[],
     level: number
+}
+
+export type Name = {
+    first: string,
+    middle: string,
+    last: string
 }
 
 export type Attendance = {

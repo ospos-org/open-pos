@@ -6,16 +6,17 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
     const input_ref = createRef<HTMLInputElement>();
 
     return (
-        <div className="flex flex-1 flex-col gap-8">
-            <div className="flex flex-col flex-1 items-center justify-between">
+        <div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
+            <div className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
                 {
                     notes.length == 0 ? 
                     <p className="text-gray-600">No notes yet</p>
                     :
                     notes.map(e => {
                         return (
-                            <div className="flex flex-row items-center justify-between" key={`${e.timestamp}-${e.message}`}>
-                                {e.message}
+                            <div className="flex flex-row items-center w-full justify-between gap-4" key={`${e.timestamp}-${e.message}`}>
+                                <p className="text-gray-400 font-bold">{e.author.name.first} {e.author.name.last}</p>
+                                <p className="text-white w-full flex-1">{e.message}</p>
                             </div>
                         )
                     })

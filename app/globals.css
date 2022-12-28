@@ -15,3 +15,23 @@
 .svg svg {
     color: white;
 }
+
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    border-radius: 5px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #c1c1c1; 
+}
