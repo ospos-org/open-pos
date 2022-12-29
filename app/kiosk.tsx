@@ -8,6 +8,8 @@ import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
 import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note, Order, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj } from "./discount_helpers";
+import PaymentMethod from "./paymentMethodMenu";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -72,9 +74,7 @@ export default function Kiosk({ master_state }: { master_state: {
         exclusive: false
     })
 
-    const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
-
     const [ cashContinuable, setCashContinuable ] = useState(false);
 
     const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
@@ -1300,133 +1300,7 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "select-payment-method":
                             return (
-                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
-                                    <div className="flex flex-col h-full gap-24">
-                                        <div className="flex flex-row justify-between cursor-pointer">
-                                            <div 
-                                                onClick={() => {
-                                                    setPadState("cart")
-                                                }}
-                                                className="flex flex-row items-center gap-2"
-                                            >
-                                                <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                                <p className="text-gray-400">Back</p>
-                                            </div>
-                                            <p className="text-gray-400">Select Preferred Payment Method</p>
-                                        </div>
-                                    
-                                        <div className="self-center flex flex-col items-center">
-                                            <p className="text-gray-400 text-sm">TO PAY</p>
-
-                                            {
-                                                editPrice ? 
-                                                    <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                                        (
-                                                            applyDiscount((orderState.products.reduce(function (prev, curr) {
-                                                                return prev + (curr.variant_information.retail_price * curr.quantity)
-                                                            }, 0)) - (kioskState.payment.reduce(function (prev, curr) {
-                                                                return prev + (curr.amount ?? 0)
-                                                            }, 0)), orderState.discount) * 1.15
-                                                        ).toFixed(2)
-                                                    } onBlur={(e) => {
-                                                        if(e.currentTarget.value == "") {
-                                                            setEditPrice(false)
-                                                            setCurrentTransactionPrice(kioskState.order_total)
-                                                        }else {
-                                                            let p = parseFloat(e.currentTarget.value);
-
-                                                            if(p < (kioskState.order_total ?? 0)) {
-                                                                setCurrentTransactionPrice(p)
-                                                                setEditPrice(false)
-                                                            } else if (p == kioskState.order_total) {
-                                                                setEditPrice(false)
-                                                                setCurrentTransactionPrice(kioskState.order_total)
-                                                            }
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if(e.key == "Enter") {
-                                                            if(e.currentTarget.value == "") {
-                                                                setEditPrice(false)
-                                                                setCurrentTransactionPrice(kioskState.order_total)
-                                                            } else { 
-                                                                let p = parseFloat(e.currentTarget.value);
-    
-                                                                if(p < (kioskState.order_total ?? 0)) {
-                                                                    setCurrentTransactionPrice(p)
-                                                                    setEditPrice(false)
-                                                                } else if (p == kioskState.order_total) {
-                                                                    setEditPrice(false)
-                                                                    setCurrentTransactionPrice(kioskState.order_total)
-                                                                }
-                                                            }
-                                                        }
-                                                    }}
-                                                    ></input>
-                                                :
-                                                    <p className="font-semibold text-3xl text-white">${currentTransactionPrice?.toFixed(2)}</p>
-                                            }
-
-                                            {
-                                                (currentTransactionPrice ?? kioskState?.order_total ?? 0) < (kioskState?.order_total ?? 0) ?
-                                                <p className="text-gray-500">${(kioskState.order_total! - (currentTransactionPrice! + kioskState.payment.reduce(function (prev, curr) {
-                                                    return prev + (curr.amount ?? 0)
-                                                }, 0))).toFixed(2)} remains</p>
-                                                :
-                                                <></>
-                                            }
-
-                                            <br />
-
-                                            <div
-                                                onClick={() => {
-                                                    setEditPrice(true)
-                                                }} 
-                                                className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                                            >
-                                                <Image src="/icons/coins-stacked-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                                                <p className="text-gray-400">Split Payment</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center">
-                                            <div 
-                                                className="flex flex-row items-end gap-2 cursor-pointer"
-                                                onClick={() => {
-                                                    setPadState("await-debit");
-                                                }}>
-                                                <p className="text-white font-semibold text-2xl">Eftpos</p>
-                                                <p className="text-sm text-gray-400">F1</p>
-                                            </div>
-                                            <div 
-                                                className="flex flex-row items-end gap-2 cursor-pointer"
-                                                onClick={() => {
-                                                    setPadState("await-cash");
-                                                }}>
-                                                <p className="text-white font-semibold text-2xl">Cash</p>
-                                                <p className="text-sm text-gray-400">F2</p>
-                                            </div>
-                                            <div className="flex flex-row items-end gap-2 cursor-pointer">
-                                                <p className="text-gray-400 font-semibold text-2xl">Bank Transfer</p>
-                                                <p className="text-sm text-gray-400">F3</p>
-                                            </div>
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div className="flex flex-row items-end gap-2 cursor-pointer">
-                                                    <p className="text-white font-semibold text-2xl">Gift Card</p>
-                                                    <p className="text-sm text-gray-400">F4</p>
-                                                </div>
-                                                <div className="flex flex-row items-end gap-1 cursor-pointer">
-                                                    <p className="text-sm text-gray-400">Check Ballance</p>
-                                                    <p className="text-xs text-gray-400">F5</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="self-center flex flex-col items-center">
-                                            
-                                        </div>
-                                    </div>
-                                </div>
+                                <PaymentMethod setPadState={setPadState} orderState={orderState} kioskState={kioskState} ctp={[ currentTransactionPrice, setCurrentTransactionPrice ]} />
                             )
                         case "await-debit":
                             // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
@@ -1794,100 +1668,47 @@ export default function Kiosk({ master_state }: { master_state: {
                                     }} />
                                 </div>
                             )
+                        case "pickup-from-store":
+                            return (
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
+                                        </div>
+                                        <p className="text-gray-400">Pickup from Store</p>
+                                    </div>
+                                    
+                                    
+                                </div>
+                            )
+                        case "ship-to-customer":
+                            return (
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
+                                        </div>
+                                        <p className="text-gray-400">Ship to Customer</p>
+                                    </div>
+                                    
+                                    
+                                </div>
+                            )
                     }
                 })()
             }
         </>
     )
-}
-
-export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
-    return activeProduct.variants.find(e => {
-        let comparative_map = e.variant_code.map(b => {
-            return activeVariant?.find(c => c.variant.variant_code == b)
-        });
-    
-        let filtered = comparative_map.filter(s => !s);
-        let active = filtered.length <= 0;
-
-        return active;
-    })
-}
-
-export function applyDiscount(price: number, discount: string) {
-    let d = discount.split("|");
-
-    if(d[0] == "a" || d[0] == "A") {
-        // Absolute value
-        let discount_absolute = parseInt(d[1]);
-        return price - discount_absolute;
-    }else if (d[0] == "p" || d[0] == "P") {
-        // Percentage value
-        let discount_percentage = parseInt(d[1]);
-        return (price) - (price * (discount_percentage / 100))
-    }
-
-    return 1
-}
-
-export function isGreaterDiscount(predicate: string, discount: string, price: number) {
-    let predicatedDiscount = applyDiscount(price, predicate);
-    let discountedDiscount = applyDiscount(price, discount);
-
-    return discountedDiscount < predicatedDiscount 
-}
-
-export function parseDiscount(discount: string) {
-    let d = discount.split("|");
-
-    if(d[0] == "a" || d[0] == "A") {
-        // Absolute value
-        let discount_absolute = parseInt(d[1]);
-        return `$${discount_absolute}`;
-    }else if (d[0] == "p" || d[0] == "P") {
-        // Percentage value
-        let discount_percentage = parseInt(d[1]);
-        return `${discount_percentage}%`
-    }
-}
-
-export function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: string }) {
-    if(dbDiscount.Absolute) {
-        return `a|${dbDiscount.Absolute}`
-    }else {
-        return `p|${dbDiscount.Percentage}`
-    }
-}
-
-export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean) {
-    let max_discount = {
-        value: "a|0",
-        source: "user"
-    } as DiscountValue;
-
-    for(let i = 0; i < discountValues.length; i++) {
-        if(discountValues[i].source == "loyalty" && !loyalty) { continue; }
-
-        if(isGreaterDiscount(max_discount.value, discountValues[i].value, productValue)) {
-            max_discount = discountValues[i]
-        }
-    }
-
-    return max_discount
-}
-
-export function stringValueToObj(discount: string): { value: number, type: "absolute" | "percentage" } {
-    let d = discount.split("|");
-
-    if(d[0] == "a" || d[0] == "A") {
-        return {
-            value: parseFloat(d[1]),
-            type: "absolute"
-        }
-    }else {
-        return {
-            value: parseFloat(d[1]),
-            type: "percentage"
-        }
-    }
 }

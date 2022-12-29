@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useState, FC, useRef, createRef } from "react";
+import { FC, createRef } from "react";
 import { Note } from "./stock-types";
 
 const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback }) => {
