@@ -10,6 +10,7 @@ import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
+import DispatchMenu from "./dispatchMenu";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -946,11 +947,11 @@ export default function Kiosk({ master_state }: { master_state: {
             
                                     <div 
                                         onClick={() => {
-                                            setPadState("ship-to-customer")
+                                            if(customerState) setPadState("ship-to-customer")
                                         }}
-                                        className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
-                                        <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                        <p className="font-medium">Ship to Customer</p>
+                                        className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
+                                        <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                        <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
                                     </div>
             
                                     <div 
@@ -1703,7 +1704,29 @@ export default function Kiosk({ master_state }: { master_state: {
                                         <p className="text-gray-400">Ship to Customer</p>
                                     </div>
                                     
-                                    
+                                    {
+                                        customerState ? 
+                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} />
+                                        :
+                                        <div className="flex items-center justify-center flex-1 gap-8 flex-col">
+                                            <p className="text-gray-400">Must have an assigned customer to send products.</p>
+
+                                            <div 
+                                                onClick={() => {
+                                                    setResult([]); 
+                                                    setSearchType("customer");    
+
+                                                    input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                    input_ref.current?.focus()
+                                                }}
+                                                className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                                <p>Select Customer</p>
+                                                <Image 
+                                                    className=""
+                                                    height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
                             )
                     }
