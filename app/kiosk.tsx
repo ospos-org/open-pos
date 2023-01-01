@@ -860,8 +860,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                             </div>
                                         </div>
                                     </div>
-
-                                    
                                 </div>
                             :
                                 <div className="flex flex-1 flex-row flex-wrap gap-4 ">
