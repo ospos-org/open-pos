@@ -501,37 +501,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                         setSearchType("product");
                                                                         setResult([]);
 
-                                                                        let new_pdts = orderState.products.map(e => {
-                                                                            // If current discount is GREATER than loyalty, keep - otherwise override with loyalty
-                                                                            // if(isGreaterDiscount(fromDbDiscount(e.product.loyalty_discount), findMaxDiscount(e.discount, e.variant_information.retail_price), e.variant_information.retail_price)) {
-                                                                            //     return e
-                                                                            // }else {
-                                                                            //     return {
-                                                                            //         ...e,
-                                                                            //         discount: [{
-                                                                            //             source: "",
-                                                                            //             value: fromDbDiscount(e.product.loyalty_discount)
-                                                                            //         }]
-                                                                            //     }
-                                                                            // }
-
-                                                                            return {
-                                                                                ...e,
-                                                                                discount: [
-                                                                                    ...e.discount as DiscountValue[],
-                                                                                    {
-                                                                                        source: "loyalty",
-                                                                                        value: fromDbDiscount(e.variant_information.loyalty_discount)
-                                                                                    } as DiscountValue
-                                                                                ]
-                                                                            }
-                                                                        });
-
-                                                                        setOrderState({
-                                                                            ...orderState,
-                                                                            products: new_pdts
-                                                                        })
-
                                                                         input_ref.current?.value ? input_ref.current.value = "" : {};
                                                                     }}
                                                                     >
@@ -615,23 +584,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     <p>{activeProduct.sku}</p>
                                                 </div>
                                                 
-                                                {/* {(() => {
-                                                    if(activeProductVariant?.loyalty_discount.Absolute) {
-                                                        return (
-                                                            <div className="flex flex-row items-center gap-4">
-                                                                <p className="text-gray-400">Loyalty Discount:</p>
-                                                                <p>-${activeProductVariant?.loyalty_discount.Absolute}</p>
-                                                            </div>
-                                                        )
-                                                    }else {
-                                                        return (
-                                                            <div className="flex flex-row items-center gap-4">
-                                                                <p className="text-gray-400">Loyalty Discount:</p>
-                                                                <p>-%{activeProductVariant?.loyalty_discount.Percentage}</p>
-                                                            </div>
-                                                        )
-                                                    }
-                                                })()} */}
                                                 <br />
                                                 {/* <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p> */}
                                             </div>
