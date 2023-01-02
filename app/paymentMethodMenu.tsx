@@ -3,7 +3,7 @@ import { FC, useState } from "react";
 import { applyDiscount } from "./discount_helpers";
 import { KioskState, Order, VariantInformation } from "./stock-types";
 
-const PaymentMethod: FC<{ setPadState: Function, orderState: Order, kioskState: KioskState, ctp: [number | null, Function] }> = ({ setPadState, orderState, kioskState, ctp }) => {
+const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function] }> = ({ setPadState, orderState, kioskState, ctp }) => {
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
 

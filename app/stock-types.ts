@@ -26,7 +26,8 @@ export type Order = {
     order_notes: Note[],
     reference: string,
     creation_date: string,
-    discount: string
+    discount: string,
+    order_type: "shipment" | "collection" | "direct"
 }
 
 export type Move = {

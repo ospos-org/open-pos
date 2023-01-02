@@ -90,3 +90,13 @@ export function stringValueToObj(discount: string): { value: number, type: "abso
         }
     }
 }
+
+export function toAbsoluteDiscount(discount: string, price: number) {
+    let d = discount.split("|");
+
+    if(d[0] == "a" || d[0] == "A") {
+        return `a|${parseFloat(d[1])}`
+    }else {
+        return `a|${(parseFloat(d[1]) / 100) * price}`
+    }
+}

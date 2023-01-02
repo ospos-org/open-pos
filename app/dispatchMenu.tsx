@@ -3,22 +3,25 @@ import { FC, useState } from "react";
 import { applyDiscount } from "./discount_helpers";
 import { Customer, Order, VariantInformation } from "./stock-types";
 
-const DispatchMenu: FC<{ orderJob: [ Order, Function ], customerJob: [ Customer | null, Function ] }> = ({ orderJob, customerJob }) => {
+const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ] }> = ({ orderJob, customerJob }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
     
     const [ selectedItems, setSelectedItems ] = useState<string[]>([]);
 
     const [ pageState, setPageState ] = useState();
-    
+    const [ selectedOrder, setSelectedOrder ] = useState(orderState[0].id);
+
     return (
         <div className="flex flex-col flex-1">
             <div className="flex-col flex gap-4 flex-1">
-                <p className="text-white text-xl">Select Products</p>
+                <div>
+                    <p className="text-white text-lg">Select Products</p>
+                </div>
 
                 <div className="flex-col flex gap-2 flex-1">
                     {
-                        orderState.products.map(e => {
+                        orderState.filter(e => e.order_type == "direct").map(k => k?.products.map(e => {
                             return (
                                 <div key={e.id} onClick={() => {
                                     if(selectedItems?.find(k => k == e.id)) {
@@ -40,7 +43,7 @@ const DispatchMenu: FC<{ orderJob: [ Order, Function ], customerJob: [ Customer 
                                     <p>{e.variant_information.name}</p>
                                 </div>
                             )
-                        })
+                        }))
                     } 
                 </div>
             </div>
