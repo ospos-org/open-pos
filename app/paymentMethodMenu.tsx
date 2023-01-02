@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { FC, useState } from "react";
-import { applyDiscount } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { KioskState, Order, VariantInformation } from "./stock-types";
 
 const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function] }> = ({ setPadState, orderState, kioskState, ctp }) => {
@@ -29,13 +29,21 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     {
                         editPrice ? 
                             <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                (
-                                    applyDiscount((orderState.products.reduce(function (prev, curr) {
-                                        return prev + (curr.variant_information.retail_price * curr.quantity)
-                                    }, 0)) - (kioskState.payment.reduce(function (prev, curr) {
-                                        return prev + (curr.amount ?? 0)
-                                    }, 0)), orderState.discount) * 1.15
-                                ).toFixed(2)
+                                ((
+                                    orderState.reduce(
+                                        (p,c) => 
+                                            p += applyDiscount(
+                                                c.products.reduce(function (prev, curr) {
+                                                    return prev + (curr.variant_information.retail_price * curr.quantity)
+                                                }, 0)
+                                            , c.discount)
+                                        , 0)
+                                     - (
+                                            kioskState.payment.reduce(function (prev, curr) {
+                                                return prev + (curr.amount ?? 0)
+                                            }, 0)
+                                        ) 
+                                ) * 1.15).toFixed(2)
                             } onBlur={(e) => {
                                 if(e.currentTarget.value == "") {
                                     setEditPrice(false)

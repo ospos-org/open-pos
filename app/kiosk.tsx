@@ -1069,8 +1069,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     onClick={() => {
                                                                                         if(!((n.products.find(k => k.id == e.id)?.quantity ?? 1) >= (n.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1))) {
                                                                                             let product_list_clone = n.products.map(k => {
-                                                                                                console.log(k, e.product_code);
-                                                                                                if(k.product_code == e.product_code && isEqual(k.variant, e.variant)) {
+                                                                                                if(k.id == e.id) {
                                                                                                     return {
                                                                                                         ...k,
                                                                                                         quantity: k.quantity+1
@@ -1100,7 +1099,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     draggable="false"
                                                                                     className="select-none"
                                                                                     src={
-                                                                                        (n.products.find(k => k.id == e.id)?.quantity ?? 1) >= (n.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1) ? 
+                                                                                        (n.products.reduce((t, i) => t += (i.variant_information.barcode ? i.quantity : 0), 0) ?? 1) >= (n.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1) ? 
                                                                                         "/icons/slash-octagon.svg" 
                                                                                         : 
                                                                                         "/icons/arrow-block-up.svg"
@@ -1497,6 +1496,19 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 )
                                                             })
                                                         }
+                                                    </div>
+                                                )
+                                            })
+                                        }
+                                    </div>
+
+                                    <div>
+                                        {
+                                            kioskState.payment.map(e => {
+                                                return (
+                                                    <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`}>
+                                                        <p>{e.payment_method}</p>
+                                                        <p>{e.amount}</p>
                                                     </div>
                                                 )
                                             })
