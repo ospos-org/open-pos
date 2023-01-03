@@ -3,9 +3,20 @@ import { FC, useState } from "react";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { KioskState, Order, VariantInformation } from "./stock-types";
 
-const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function] }> = ({ setPadState, orderState, kioskState, ctp }) => {
+const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function], customer: boolean }> = ({ customer, setPadState, orderState, kioskState, ctp }) => {
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
+
+    console.log(
+        orderState.reduce(
+            (p,c) => 
+                p += applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, customer).value)
+                    }, 0)
+                , c.discount)
+            , 0)
+    )
 
     return (
         <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
@@ -29,21 +40,24 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     {
                         editPrice ? 
                             <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                ((
-                                    orderState.reduce(
-                                        (p,c) => 
-                                            p += applyDiscount(
-                                                c.products.reduce(function (prev, curr) {
-                                                    return prev + (curr.variant_information.retail_price * curr.quantity)
-                                                }, 0)
-                                            , c.discount)
-                                        , 0)
-                                     - (
-                                            kioskState.payment.reduce(function (prev, curr) {
-                                                return prev + (curr.amount ?? 0)
-                                            }, 0)
-                                        ) 
-                                ) * 1.15).toFixed(2)
+                                (
+                                    (
+                                        orderState.reduce(
+                                            (p,c) => 
+                                                p += applyDiscount(
+                                                    c.products.reduce(function (prev, curr) {
+                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, customer).value)
+                                                    }, 0)
+                                                , c.discount)
+                                            , 0) * 1.15
+                                    )
+                                - 
+                                    (
+                                        kioskState.payment.reduce(function (prev, curr) {
+                                            return prev + (curr.amount ?? 0)
+                                        }, 0)
+                                    ) 
+                                ).toFixed(2)
                             } onBlur={(e) => {
                                 if(e.currentTarget.value == "") {
                                     setEditPrice(false)

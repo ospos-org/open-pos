@@ -19,7 +19,6 @@ export const ReactBarcodeReader = ({ onScan, onError }: { onScan: Function, onEr
     return (
 		<BarcodeReader
 			onKeyDetect={(e: any) => {
-				console.log(e)
 				e.preventDefault();
 
 				if(e.key == "Enter") {

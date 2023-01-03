@@ -1,9 +1,10 @@
 import Image from "next/image";
-import { FC, createRef } from "react";
-import { Note } from "./stock-types";
+import { FC, createRef, useState } from "react";
+import { Note, Order } from "./stock-types";
 
-const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback }) => {
+const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback }) => {
     const input_ref = createRef<HTMLInputElement>();
+    const [ activeOrder, setActiveOrder ] = useState<Order>(notes[0]);
 
     return (
         <div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
@@ -13,7 +14,7 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
                     notes.length == 0 ? 
                     <p className="text-gray-600">No notes yet</p>
                     :
-                    notes.map(e => {
+                    activeOrder.order_notes.map(e => {
                         return (
                             <div className="flex flex-row items-center w-full justify-between gap-4" key={`${e.timestamp}-${e.message}`}>
                                 <div className="flex flex-col">
@@ -35,7 +36,7 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
                         ref={input_ref}
                         onKeyDown={(e) => {
                             if(e.key == "Enter") {
-                                callback(input_ref.current?.value ?? "")
+                                callback(activeOrder.id, input_ref.current?.value ?? "")
                             }
                         }}
                         placeholder={"Order Note"}
@@ -43,7 +44,7 @@ const NotesMenu: FC<{ notes: Note[], callback: Function }> = ({ notes, callback 
                     
                     <Image
                         onClick={() => {
-                            callback(input_ref.current?.value ?? "")
+                            callback(activeOrder.id, input_ref.current?.value ?? "")
                         }} 
                         width="22" height="22" src="/icons/arrow-square-right.svg" style={{ filter: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }} className="select-none" alt={''} draggable={false}></Image>
                 </div>
