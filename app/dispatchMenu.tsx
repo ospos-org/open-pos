@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { join } from "path";
 import { FC, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
@@ -11,91 +12,25 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ selectedItems, setSelectedItems ] = useState<string[]>([]);
 
     const [ pageState, setPageState ] = useState();
-    const [ selectedOrder, setSelectedOrder ] = useState(orderState[0]);
+    const [ generatedOrder, setGeneratedOrder ] = useState(generateOrders(generateProductMap(orderState)));
 
     return (
         <div className="flex flex-col flex-1 gap-8">
             <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                <p className="bg-gray-800 py-2 px-4 rounded-md ">Select Products</p>
-                <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
-                <p className="text-gray-600">Set Origin</p>
+                <p className="bg-gray-800 py-2 px-4 rounded-md">Set Origin</p>
                 <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
                 <p className="text-gray-600">Set Destination</p>
+                <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
+                <p className="text-gray-600">Set Shipping Rate</p>
             </div>
 
             <div className="flex-col flex gap-4 flex-1">
-                <div>
-                    <p className="text-white">Select Products</p>
-                </div>
-
-                <div className="flex-col flex gap-4 flex-1">
-                    {
-                        orderState
-                            .filter(e => e.order_type == "direct")
-                            .map(k => 
-                                k.products.length == 0 ?
-                                <div key={k.id}>
-                                    <p>No products in cart</p>
-                                </div>
-                                :
-                                k?.products.map(e => {
-                                    const arr = [...Array.from(Array(e.quantity), (_, i) => i + 1)]
-                                    console.log(arr);
-
-                                    return arr.map(k => {
-                                        return (
-                                            <div key={e.id} onClick={() => {
-                                                if(selectedItems?.find(k => k == e.id)) {
-                                                    setSelectedItems([ ...selectedItems.filter(k => k !== e.id) ])
-                                                }else {
-                                                    setSelectedItems([ ...selectedItems, e.id ])
-                                                }
-                                            }} className="flex cursor-pointer select-none flex-col w-full items-center gap-2 text-white">
-                                                <div key={e.id} className="text-white flex flex-row flex-1 w-full">
-                                                    <div className="flex flex-1 w-full flex-row items-center gap-4">
-                                                        <div className="relative">
-                                                            <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
-                                                        </div>
-
-                                                        <br />
-                                                        
-                                                        <div className="flex-1">
-                                                            <p className="font-semibold">{e.product.company} {e.product.name}</p>
-                                                            <p className="text-sm text-gray-400">{e.variant_information.name}</p>
-                                                        </div>
-
-                                                        <div className="flex">
-                                                            {
-                                                                !selectedItems?.find(k => k == e.id) ?
-                                                                <Image src="/icons/square.svg" alt="selected" width={20} height={20}  style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }}></Image>
-                                                                :
-                                                                <Image src="/icons/check-square.svg" alt="selected" width={20} height={20}  style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(168deg) brightness(105%) contrast(107%)" }}></Image>
-                                                            }
-                                                        </div>
-
-                                                        <div className="min-w-[75px] flex flex-col items-center">
-                                                            {
-                                                                applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) == e.variant_information.retail_price ?
-                                                                <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                                :
-                                                                <>
-                                                                    <p className="text-gray-500 line-through text-sm">${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                                    <p className={`${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-indigo-300" : ""}`}>${((applyDiscount(e.variant_information.retail_price  * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
-                                                                </>
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })
-                                })
-                        )
-                    } 
-                </div>
+                {
+                    JSON.stringify(generatedOrder)
+                }
             </div>
             
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
                 <div className="flex flex-row items-center gap-2">
                     <p className="text-gray-400">ADDRESS</p>
                     <Image 
@@ -111,9 +46,105 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                     <p>{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
                     <p>{customerState?.contact.address.country}</p>
                 </div>
-            </div>
+            </div> */}
         </div>
     )
+}
+
+function generateProductMap(orders: Order[]) {
+    let pdt_map: ProductPurchase[] = [];
+
+    for(let i = 0; i < orders.length; i++) {
+        orders[i].products.map(e => {
+            pdt_map.push(e)
+        })
+    }
+
+    return pdt_map;
+}
+
+function generateOrders(product_map: ProductPurchase[]) {
+    /// 1. Determine the best location for each product.
+    /// 2. Ensure as many products are in the same location as possible.
+    /// 3. Ensure it is close to the destination.
+
+    /// Create a reverse map of all products to store relations...
+    /// Generate a valid list of store options
+    /// => Sort by closeness
+    /// => Give to user
+
+    const map = new Map<string, {
+        items: { item_id: string, quantity: number }[],
+        weighting: number
+    }>();
+
+    product_map.map(e => {
+        e.variant_information.stock.map(k => {
+            const has = k.quantity.quantity_sellable;
+            const store = k.store.code;
+            let curr = map.get(store);
+
+            if(curr) {
+                curr.items.push({
+                    item_id: e.id,
+                    quantity: has
+                })
+                
+                map.set(store, curr);
+            }else {
+                map.set(store, {
+                    items: [
+                        {
+                            item_id: e.id,
+                            quantity: has
+                        }
+                    ],
+                    weighting: 0
+                })
+            }
+        })
+    })
+
+    console.log(map);
+
+    // map<map<double (weighting), vector(items)>, string (strore)>
+    // let m: [number, Map<string, ProductPurchase[]>][] = [];
+
+    let kvp: [number, string, { item_id: string, quantity: number }[]][] = [];
+
+    const total_items = product_map.reduce((p, c) => p += c.quantity, 0);
+
+    map.forEach((val, key) => {
+        val.weighting = val.items.reduce((p, e) => {
+            const n = e.quantity - (product_map.find(k => k.id == e.item_id)?.quantity ?? 0);
+            return p += n;
+        }, 0) / total_items;
+
+        kvp.push([val.weighting, key, val.items]);
+    });
+
+    const weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
+
+    console.log(weighted_vector);
+
+    const product_assignment: [string, string][] = [];
+
+    weighted_vector.map(e => {
+        e[2].map(k => {
+            const req = product_map.find(n => n.id == k.item_id)?.quantity ?? 0;
+
+            if(k.quantity >= req && !(product_assignment.find(b => b[0] == k.item_id))) {
+                product_assignment.push([ k.item_id, e[1] ])
+            }
+        })
+    });
+
+    return product_assignment.map(e => {
+        return {
+            item: product_map.find(k => k.id == e[0]),
+            store: e[1]
+        }
+    });
 }
 
 export default DispatchMenu;

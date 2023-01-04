@@ -924,7 +924,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                         }}
                                         className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
                                         <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                        <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
+                                        <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship Order to Customer</p>
                                     </div>
             
                                     <div 
@@ -1839,7 +1839,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                             <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                                             <p className="text-gray-400">Back</p>
                                         </div>
-                                        <p className="text-gray-400">Ship to Customer</p>
+                                        <p className="text-gray-400">Ship Order to Customer</p>
                                     </div>
                                     
                                     {
