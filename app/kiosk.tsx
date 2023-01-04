@@ -95,7 +95,7 @@ export default function Kiosk({ master_state }: { master_state: {
             const matching_product = orderProducts.find(e => e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1));
             
             if(matching_product) {
-                const total_stock = matching_product.variant_information.stock.reduce((p, c) => p += (c.quantity.quantity_on_floor + c.quantity.quantity_on_hand), 0);
+                const total_stock = matching_product.variant_information.stock.reduce((p, c) => p += (c.quantity.quantity_sellable), 0);
                 // If a matching product exists; apply emendation
                 new_order_products_state = orderProducts.map(e => {
                     if(total_stock <= e.quantity) return e;
@@ -424,7 +424,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 (() => {
                                                                                     const total_stock = e.variants.map(k => {
                                                                                         return k.stock.map(b => {
-                                                                                            return (b.quantity.quantity_on_hand + b.quantity.quantity_on_floor);
+                                                                                            return (b.quantity.quantity_sellable);
                                                                                         }).reduce(function (prev, curr) {
                                                                                             return prev + curr
                                                                                         }, 0);
@@ -437,7 +437,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                             let total = 0;
 
                                                                                             if(b.store.code == master_state.store_id) {
-                                                                                                total += (b.quantity.quantity_on_hand + b.quantity.quantity_on_floor);
+                                                                                                total += (b.quantity.quantity_sellable);
                                                                                             }
 
                                                                                             return total;
@@ -504,14 +504,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             return (
                                                                 <div 
                                                                     key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
-                                                                    onClick={() => {
-                                                                        setCustomerState(e);
-                                                                        setSearchFocused(false);
-                                                                        setSearchType("product");
-                                                                        setResult([]);
-
-                                                                        input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                                    }}
+                                                                    
                                                                     >
                                                                     <div className="select-none grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
                                                                         <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
@@ -532,7 +525,16 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                                                         <p className="text-gray-400">${e.balance} Credit</p>
 
-                                                                        <p className="whitespace-nowrap justify-self-end pr-4">Add to cart</p>
+                                                                        <p 
+                                                                            onClick={() => {
+                                                                                setCustomerState(e);
+                                                                                setSearchFocused(false);
+                                                                                setSearchType("product");
+                                                                                setResult([]);
+        
+                                                                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                                            }}
+                                                                            className="whitespace-nowrap justify-self-end pr-4">Assign to cart</p>
                                                                     </div>
 
                                                                     {
@@ -595,14 +597,14 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 <div>
                                                     <div className="flex flex-row items-center gap-2">
                                                         {
-                                                            ((activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_on_hand ?? 0) + (activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_on_floor ?? 0)) <= 0 ? 
+                                                            ((activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">In stock</p>
                                                         } 
 
                                                         {
-                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.code !== master_state.store_id ? c.quantity.quantity_on_hand : 0, 0) ?? 0) <= 0 ? 
+                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.code !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Cannot ship</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Available to ship</p>
@@ -785,8 +787,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 <div key={`STOCK-FOR-${e.store.code}`} className="flex flex-row items-center justify-between gap-2">
                                                                     <p>{e.store.code}</p>
                                                                     <div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full"></div>
-                                                                    <p>{e.quantity.quantity_on_hand}-OH</p>
-                                                                    <p>{e.quantity.quantity_on_floor}-OF</p>
+                                                                    <p>{e.quantity.quantity_sellable}</p>
+                                                                    <p className="text-gray-400">({e.quantity.quantity_unsellable} Unsellable)</p>
                                                                     <p>(+{e.quantity.quantity_on_order} on order)</p>
                                                                     {/* <p>{e.quantity.quantity_on_floor}</p> */}
                                                                 </div>
@@ -824,10 +826,10 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                     className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 50px" }}>
                                                                     <p className="flex-1 w-full">{e.name}</p>
 
-                                                                    <p className="text-gray-300">{((qua?.quantity.quantity_on_hand ?? 0) + (qua?.quantity.quantity_on_floor ?? 0)) ?? 0} Here</p>
+                                                                    <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>
                                                                     <p className="text-gray-300">
                                                                         {
-                                                                            e.stock.map(e => (e.store.code == master_state.store_id) ? 0 : (e.quantity.quantity_on_hand + e.quantity.quantity_on_floor)).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                            e.stock.map(e => (e.store.code == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
                                                                         } In other stores
                                                                     </p>
                                                                     <p >${(e.retail_price * 1.15).toFixed(2)}</p>
@@ -1054,7 +1056,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             n.products.map(e => {
                                                                 // Find the variant of the product for name and other information...
                                                                 const total_stock = e.variant_information.stock.reduce((prev, curr) => {
-                                                                    return prev += (curr.quantity.quantity_on_hand + curr.quantity.quantity_on_floor) 
+                                                                    return prev += (curr.quantity.quantity_sellable) 
                                                                 }, 0)
 
                                                                 const q_here = e.variant_information.stock.find(e => e.store.code == master_state.store_id);
@@ -1070,7 +1072,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 {
                                                                                     (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                                     >
-                                                                                    (q_here?.quantity.quantity_on_floor ?? 0) + (q_here?.quantity.quantity_on_hand ?? 0)
+                                                                                    (q_here?.quantity.quantity_sellable ?? 0)
                                                                                     ?
                                                                                     <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
                                                                                     :
@@ -1086,7 +1088,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                             <div className="flex flex-col gap-2 items-center justify-center">
                                                                                 <Image
                                                                                     onClick={() => {
-                                                                                        if(!((n.products.find(k => k.id == e.id)?.quantity ?? 1) >= total_stock)) {
+                                                                                        console.log((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0)), total_stock);
+
+                                                                                        if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
                                                                                             const product_list_clone = n.products.map(k => {
                                                                                                 if(k.id == e.id) {
                                                                                                     return {
@@ -1109,7 +1113,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                         }
                                                                                     }} 
                                                                                     onMouseOver={(v) => {
-                                                                                        if(!((n.products.find(k => k.id == e.id)?.quantity ?? 1) >= (n.products.find(k => k.id == e.id)?.variant_information.stock.find(e => e.store.code == master_state.store_id)?.quantity.quantity_on_hand ?? 1)))
+                                                                                        if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0) ?? 1) >= total_stock))
                                                                                             v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
                                                                                         else 
                                                                                             v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
@@ -1126,6 +1130,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                         (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                                         <= 
                                                                                         total_stock
+                                                                                        // ((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0)) >= total_stock)
                                                                                         ? 
                                                                                         "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
                                                                                         :
@@ -1187,9 +1192,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 {
                                                                                     (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                                     > 
-                                                                                    (q_here?.quantity.quantity_on_floor ?? 0) + (q_here?.quantity.quantity_on_hand ?? 0)
+                                                                                    (q_here?.quantity.quantity_sellable ?? 0)
                                                                                     ?
-                                                                                    <p className="text-sm text-red-400">Out of stock - {(q_here?.quantity.quantity_on_floor ?? 0) + (q_here?.quantity.quantity_on_hand ?? 0)} here, {total_stock - (q_here?.quantity.quantity_on_floor ?? 0) - (q_here?.quantity.quantity_on_hand ?? 0)} in other stores</p>
+                                                                                    <p className="text-sm text-red-400">Out of stock - {(q_here?.quantity.quantity_sellable ?? 0)} here, {(total_stock - (q_here?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
 
                                                                                     :
                                                                                     <></>
@@ -1267,7 +1272,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             (p,c) => 
                                                                 p += applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
-                                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
                                                                 , c.discount)
                                                             , 0)
@@ -1277,7 +1282,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             (p,c) => 
                                                                 p += applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
-                                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
                                                                 , c.discount)
                                                             , 0)
@@ -1286,7 +1291,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             (p,c) => 
                                                                 p += 
                                                                     c.products.reduce(function (prev, curr) {
-                                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
                                                             , 0) 
                                                         ?
@@ -1297,7 +1302,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 (p,c) => 
                                                                     p += applyDiscount(
                                                                         c.products.reduce(function (prev, curr) {
-                                                                            return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
+                                                                            return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                         }, 0)
                                                                     , c.discount)
                                                                 , 0)
@@ -1305,7 +1310,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             (orderState.reduce((p,c) => 
                                                             p += applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
-                                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0), c.discount
                                                                 )
                                                             , 0))
@@ -1337,17 +1342,34 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 })</p>
                                                 <p className="font-bold text-lg items-end self-end">
                                                 ${
-                                                    (orderState.reduce(
-                                                        (p,c) => 
-                                                            p += applyDiscount(
-                                                                c.products.reduce(function (prev, curr) {
-                                                                    return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
-                                                                }, 0) 
-                                                            , c.discount) 
-                                                        , 0)
+                                                    (
+                                                        orderState.reduce(
+                                                            (p,c) => 
+                                                                p += applyDiscount(
+                                                                    c.products.reduce(function (prev, curr) {
+                                                                        console.log(prev, curr.variant_information.retail_price )
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                                                                    }, 0) 
+                                                                , c.discount) 
+                                                            , 0)
                                                     ).toFixed(2)
                                                 }
                                                 </p>
+
+                                                {/* {(() => {
+                                                    console.log(
+                                                        "FINAL",
+                                                        orderState.reduce(
+                                                            (p,c) => 
+                                                                p += applyDiscount(
+                                                                    c.products.reduce(function (prev, curr) {
+                                                                        console.log(prev, curr.variant_information.retail_price )
+                                                                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                                                                    }, 0) 
+                                                                , c.discount) 
+                                                            , 0)
+                                                    )
+                                                })()} */}
                                             </div>
                                         </div>
                                         

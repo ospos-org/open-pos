@@ -134,9 +134,9 @@ export type StockInfo = {
 }
 
 export type Quantity = {
-    quantity_on_hand: number,
+    quantity_sellable: number,
     quantity_on_order: number,
-    quantity_on_floor: number
+    quantity_unsellable: number
 }
 
 export type Store = {
