@@ -285,7 +285,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 onError={() => {}}
             />
 
-            <div className="flex flex-col justify-between h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] flex-1" onKeyDownCapture={(e) => {
+            <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
                 if(e.key == "Escape") setSearchFocused(false)
             }}>
                 <div className="flex flex-col p-4 gap-4">
@@ -1828,7 +1828,7 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "ship-to-customer":
                             return (
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {

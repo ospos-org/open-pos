@@ -83,7 +83,7 @@ export default function App() {
 	}, []);
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex flex-col max-h-screen overflow-hidden">
 			<div className="bg-black h-[18px] flex flex-row justify-between items-center px-2 gap-8">
 				<div className="flex flex-row gap-2 items-center">
 					<p className="text-xs text-white font-bold">OPENPOS</p>
