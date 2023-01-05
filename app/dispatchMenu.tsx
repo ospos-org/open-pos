@@ -11,7 +11,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     
     const [ selectedItems, setSelectedItems ] = useState<string[]>([]);
     const [ editFields, setEditFields ] = useState(false);
-    const [ pageState, setPageState ] = useState<"origin" | "destination" | "rate">("origin");
+    const [ pageState, setPageState ] = useState<"origin" | "rate">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>(generateOrders(generateProductMap(orderState)));
 
     return (
@@ -23,11 +23,9 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                             return (
                                 <>
                                     <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                                        <p className="bg-gray-800 py-2 px-4 rounded-md">Set Origin</p>
-                                        <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
-                                        <p className="text-gray-600">Set Destination</p>
-                                        <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
-                                        <p className="text-gray-600">Set Shipping Rate</p>
+                                        <p className="">Overview</p>
+                                        <hr className="flex-1 border-gray-800 h-[3px] border-[2px] bg-gray-800 rounded-md" />
+                                        <p className="text-gray-600">Shipping Rate</p>
                                     </div>
 
                                     <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full pr-2">
@@ -206,26 +204,117 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={() => {
-                                                setPageState("destination");
+                                                setPageState("rate");
                                             }}
                                             className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-white font-semibold ${""}`}>Checkout</p>
+                                            <p className={`text-white font-semibold ${""}`}>Continue</p>
                                         </div>
                                     </div>
                                 </>
                             )
-                        case "destination":
+                        case "rate":
                             return (
                                 <>
                                     <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                                        <p className="">Set Origin</p>
+                                        <p className="cursor-pointer" onClick={() => setPageState("origin")}>Overview</p>
                                         <hr className="flex-1 border-gray-400 h-[3px] border-[2px] bg-gray-400 rounded-md" />
-                                        <p className="bg-gray-800 py-2 px-4 rounded-md">Set Destination</p>
-                                        <hr className="flex-1 border-gray-600 h-[3px] border-[2px] bg-gray-600 rounded-md" />
-                                        <p className="text-gray-600">Set Shipping Rate</p>
+                                        <p>Shipping Rate</p>
                                     </div>
 
-                                    
+                                    <div className="flex-col flex gap-2 flex-1 overflow-y-scroll max-h-full pr-2">
+                                        <div className=" flex flex-row items-center justify-between bg-gray-200 text-gray-900 px-4 py-2 rounded-sm cursor-pointer">
+                                            <div className="flex flex-col items-start flex-start">
+                                                <p className="font-semibold">Priority Mail</p>
+                                                <p className="text-sm text-gray-400">1 day shipping</p>
+                                            </div>
+
+                                            <p className="font-semibold">${15.00}</p>
+                                        </div>
+
+                                        <div className="text-white flex flex-row items-center justify-between bg-gray-800 px-4 py-2 rounded-sm cursor-pointer">
+                                            <div className="flex flex-col items-start flex-start">
+                                                <p className="font-semibold">Express Shipping</p>
+                                                <p className="text-sm text-gray-400">1-3 day shipping</p>
+                                            </div>
+
+                                            <p className="font-semibold">${7.00}</p>
+                                        </div>
+
+                                        <div className="text-white flex flex-row items-center justify-between bg-gray-800 px-4 py-2 rounded-sm cursor-pointer">
+                                            <div className="flex flex-col items-start flex-start">
+                                                <p className="font-semibold">Standard Shipping</p>
+                                                <p className="text-sm text-gray-400">3+ day shipping</p>
+                                            </div>
+
+                                            <p className="font-semibold">${3.00}</p>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        onClick={() => {
+                                            const inverse_order: { store: string, items: ProductPurchase[] }[] = [];
+
+                                            generatedOrder.map(k => {
+                                                const found = inverse_order.find(e => e.store == k.store);
+
+                                                if(found) {
+                                                    inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, k.item ] } : e)
+                                                } else if(k.item) {
+                                                    inverse_order.push({
+                                                        store: k.store,
+                                                        items: [ k.item ]
+                                                    })
+                                                }
+                                            })
+
+                                            const job = orderJob[0];
+
+                                            inverse_order.map(k => {
+                                                const new_order: Order = {
+                                                    id: "",
+                                                    destination: null,
+                                                    origin: {
+                                                        code: "",
+                                                        contact: {
+                                                            name: "",
+                                                            mobile: {
+                                                                region_code: "",
+                                                                root: ""
+                                                            },
+                                                            email: {
+                                                                root: "",
+                                                                domain: "",
+                                                                full: ""
+                                                            },
+                                                            landline: "",
+                                                            address: {
+                                                                street: "",
+                                                                street2: "",
+                                                                city: "",
+                                                                country: "",
+                                                                po_code: ""
+                                                            }
+                                                        }
+                                                    },
+                                                    products: k.items,
+                                                    status: [],
+                                                    status_history: [],
+                                                    order_history: [],
+                                                    order_notes: [],
+                                                    reference: "",
+                                                    creation_date: "",
+                                                    discount: "",
+                                                    order_type: "shipment"
+                                                };
+
+                                                job.push(new_order);
+                                            })
+
+                                            orderJob[1](job);
+                                        }}
+                                        className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                        <p className={`text-white font-semibold ${""}`}>Continue</p>
+                                    </div>
                                 </>
                             )
                     }
@@ -309,8 +398,6 @@ function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase
         })
     })
 
-    console.log(map);
-
     // map<map<double (weighting), vector(items)>, string (strore)>
     // let m: [number, Map<string, ProductPurchase[]>][] = [];
 
@@ -328,9 +415,6 @@ function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase
     });
 
     const weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
-
-    console.log(weighted_vector);
-
     const product_assignment: [string, string][] = [];
 
     weighted_vector.map(e => {
