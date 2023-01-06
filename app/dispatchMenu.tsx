@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { join } from "path";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { Customer, Order, ProductPurchase, VariantInformation } from "./stock-types";
 
-const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ] }> = ({ orderJob, customerJob }) => {
+const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
     
@@ -13,6 +13,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ editFields, setEditFields ] = useState(false);
     const [ pageState, setPageState ] = useState<"origin" | "rate">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>(generateOrders(generateProductMap(orderState)));
+
+    useEffect(() => {
+        setGeneratedOrder(generateOrders(generateProductMap(orderState)));
+    }, [orderState])
 
     return (
         <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
@@ -252,29 +256,36 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                     <div
                                         onClick={() => {
-                                            const inverse_order: { store: string, items: ProductPurchase[] }[] = [];
+                                            let inverse_order: { store: string, items: ProductPurchase[] }[] = [];
 
                                             generatedOrder.map(k => {
                                                 const found = inverse_order.find(e => e.store == k.store);
 
-                                                if(found) {
-                                                    inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, k.item ] } : e)
+                                                if(found && k.item) {
+                                                    inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, k.item! ] } : e)
                                                 } else if(k.item) {
                                                     inverse_order.push({
                                                         store: k.store,
                                                         items: [ k.item ]
                                                     })
                                                 }
+
+                                                console.log(k, found, inverse_order)
                                             })
 
-                                            const job = orderJob[0];
+                                            console.log(inverse_order);
+
+                                            let job = orderJob[0];
 
                                             inverse_order.map(k => {
                                                 const new_order: Order = {
-                                                    id: "",
-                                                    destination: null,
+                                                    id: v4(),
+                                                    destination: {
+                                                        code: "000",
+                                                        contact: customerState?.contact!
+                                                    },
                                                     origin: {
-                                                        code: "",
+                                                        code: k.store,
                                                         contact: {
                                                             name: "",
                                                             mobile: {
@@ -308,12 +319,14 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 };
 
                                                 job.push(new_order);
+                                                job = job.filter(k => k.order_type != "direct")
                                             })
 
                                             orderJob[1](job);
+                                            setPadState("cart")
                                         }}
                                         className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                        <p className={`text-white font-semibold ${""}`}>Continue</p>
+                                        <p className={`text-white font-semibold ${""}`}>Complete</p>
                                     </div>
                                 </>
                             )

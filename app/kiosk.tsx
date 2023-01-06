@@ -976,9 +976,9 @@ export default function Kiosk({ master_state }: { master_state: {
                         case "cart":
                             return (
                                 <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
-                                    <div className="flex flex-col gap-4 flex-1">
+                                    <div className="flex flex-col gap-4 flex-1 max-h-full">
                                         {/* Order Information */}
-                                        <div className="flex flex-row items-center justify-between">
+                                        <div className="flex flex-row items-center justify-between max-h-screen overflow-hidden">
                                             <div className="text-white">
                                                 {
                                                     customerState ?
@@ -1042,7 +1042,7 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                         <hr className="border-gray-400 opacity-25"/>
                                         
-                                        <div className="flex flex-col flex-1 h-full gap-4">
+                                        <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full">
                                         {
                                             orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) <= 0 ?
                                             <div className="flex flex-col items-center w-full">
@@ -1052,6 +1052,12 @@ export default function Kiosk({ master_state }: { master_state: {
                                             orderState.map(n => {
                                                 return (
                                                     <div key={n.id} className="flex flex-col gap-4">
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                            <hr className="border-gray-400 opacity-25 flex-1"/>
+                                                            <p className="text-gray-400">{n.destination?.code}</p>
+                                                        </div>
+
                                                         {
                                                             n.products.map(e => {
                                                                 // Find the variant of the product for name and other information...
@@ -1063,7 +1069,6 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                                                 return (
                                                                     <div
-                                                                        
                                                                         key={e.id} className="text-white">
                                                                         <div className="flex flex-row items-center gap-4">
                                                                             <div className="relative">
@@ -1844,7 +1849,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                     
                                     {
                                         customerState ? 
-                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} />
+                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} />
                                         :
                                         <div className="flex items-center justify-center flex-1 gap-8 flex-col">
                                             <p className="text-gray-400">Must have an assigned customer to send products.</p>
