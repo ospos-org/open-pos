@@ -14,6 +14,8 @@ export function isValidVariant(activeProduct: Product, activeVariant: StrictVari
 }
 
 export function applyDiscount(price: number, discount: string) {
+    if(discount == "") discount = "a|0";
+    
     let d = discount.split("|");
 
     if(d[0] == "a" || d[0] == "A") {

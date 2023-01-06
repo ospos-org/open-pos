@@ -14,7 +14,7 @@ import DispatchMenu from "./dispatchMenu";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
-    employee: Employee | null,
+    employee: Employee | null | undefined,
     store_contact: ContactInformation
 } }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -1030,10 +1030,26 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                             <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
                                                 <p className="text-white" onClick={() => {
-                                                    const reduced = orderState.filter(e => e.order_type == "direct");
-                                                    const cleared = reduced.map(e => { return {...e, products: []} });
+                                                    // const reduced = orderState.filter(e => e.order_type == "direct");
+                                                    // const cleared = reduced.map(e => { return {...e, products: []} });
 
-                                                    setOrderState(cleared)
+                                                    setOrderState([{
+                                                        id: v4(),
+                                                        destination: null,
+                                                        origin: {
+                                                            code: master_state.store_id,
+                                                            contact: master_state.store_contact
+                                                        },
+                                                        products: [],
+                                                        status: [],
+                                                        status_history: [],
+                                                        order_history: [],
+                                                        order_notes: [],
+                                                        reference: "",
+                                                        creation_date: Date.now().toString(),
+                                                        discount: "a|0",
+                                                        order_type: "direct"
+                                                    }])
                                                 }}>Clear Cart</p>
                                                 {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
                                             </div>
@@ -1042,7 +1058,7 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                         <hr className="border-gray-400 opacity-25"/>
                                         
-                                        <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full">
+                                        <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full py-2">
                                         {
                                             orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) <= 0 ?
                                             <div className="flex flex-col items-center w-full">
@@ -1052,12 +1068,17 @@ export default function Kiosk({ master_state }: { master_state: {
                                             orderState.map(n => {
                                                 return (
                                                     <div key={n.id} className="flex flex-col gap-4">
-                                                        <div className="flex flex-row items-center gap-2">
-                                                            <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
-                                                            <hr className="border-gray-400 opacity-25 flex-1"/>
-                                                            <p className="text-gray-400">{n.destination?.code}</p>
-                                                        </div>
-
+                                                        {
+                                                            orderState.length !== 1 ?
+                                                            <div className="flex flex-row items-center gap-2">
+                                                                <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                                <hr className="border-gray-400 opacity-25 flex-1"/>
+                                                                <p className="text-gray-400">{n.destination?.code}</p>
+                                                            </div>
+                                                            :
+                                                            <></>
+                                                        }
+                                                        
                                                         {
                                                             n.products.map(e => {
                                                                 // Find the variant of the product for name and other information...
@@ -1093,8 +1114,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                             <div className="flex flex-col gap-2 items-center justify-center">
                                                                                 <Image
                                                                                     onClick={() => {
-                                                                                        console.log((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0)), total_stock);
-
                                                                                         if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
                                                                                             const product_list_clone = n.products.map(k => {
                                                                                                 if(k.id == e.id) {
@@ -1275,7 +1294,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     ${
                                                         orderState.reduce(
                                                             (p,c) => 
-                                                                p += applyDiscount(
+                                                                p + applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
                                                                         return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
@@ -1285,7 +1304,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     } {
                                                         orderState.reduce(
                                                             (p,c) => 
-                                                                p += applyDiscount(
+                                                                p + applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
                                                                         return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
@@ -1294,7 +1313,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         == 
                                                         orderState.reduce(
                                                             (p,c) => 
-                                                                p += 
+                                                                p + 
                                                                     c.products.reduce(function (prev, curr) {
                                                                         return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0)
@@ -1305,7 +1324,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         `(-${
                                                             orderState.reduce(
                                                                 (p,c) => 
-                                                                    p += applyDiscount(
+                                                                    p + applyDiscount(
                                                                         c.products.reduce(function (prev, curr) {
                                                                             return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                         }, 0)
@@ -1313,12 +1332,12 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 , 0)
                                                             -
                                                             (orderState.reduce((p,c) => 
-                                                            p += applyDiscount(
-                                                                    c.products.reduce(function (prev, curr) {
-                                                                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                                                    }, 0), c.discount
-                                                                )
-                                                            , 0))
+                                                                p + applyDiscount(
+                                                                        c.products.reduce(function (prev, curr) {
+                                                                            return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                                                                        }, 0), c.discount
+                                                                    )
+                                                                , 0))
                                                         })`
                                                     }
                                                 </p>
@@ -1352,7 +1371,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             (p,c) => 
                                                                 p += applyDiscount(
                                                                     c.products.reduce(function (prev, curr) {
-                                                                        console.log(prev, curr.variant_information.retail_price )
                                                                         return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
                                                                     }, 0) 
                                                                 , c.discount) 
@@ -1360,21 +1378,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     ).toFixed(2)
                                                 }
                                                 </p>
-
-                                                {/* {(() => {
-                                                    console.log(
-                                                        "FINAL",
-                                                        orderState.reduce(
-                                                            (p,c) => 
-                                                                p += applyDiscount(
-                                                                    c.products.reduce(function (prev, curr) {
-                                                                        console.log(prev, curr.variant_information.retail_price )
-                                                                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                                                    }, 0) 
-                                                                , c.discount) 
-                                                            , 0)
-                                                    )
-                                                })()} */}
                                             </div>
                                         </div>
                                         

@@ -314,7 +314,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     order_notes: [],
                                                     reference: "",
                                                     creation_date: "",
-                                                    discount: "",
+                                                    discount: "a|0",
                                                     order_type: "shipment"
                                                 };
 
