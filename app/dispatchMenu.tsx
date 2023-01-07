@@ -26,11 +26,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                         case "origin":
                             return (
                                 <>
-                                    <div className="flex flex-row items-center gap-4 self-center text-white w-full">
+                                    {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
                                         <p className="">Overview</p>
                                         <hr className="flex-1 border-gray-800 h-[3px] border-[2px] bg-gray-800 rounded-md" />
                                         <p className="text-gray-600">Shipping Rate</p>
-                                    </div>
+                                    </div> */}
 
                                     <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full pr-2">
                                         <div className="flex flex-1 flex-col gap-4">
@@ -39,16 +39,16 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 <hr className="border-gray-400 opacity-25 w-full flex-1"/>
                                             </div>
 
-                                            <div className="grid items-center justify-center text-gray-300 gap-4 " style={{ gridTemplateColumns: "1fr 75px 50px" }}>
+                                            <div className="grid items-center justify-center text-gray-300 gap-4 " style={{ gridTemplateColumns: "1fr 75px 120px" }}>
                                                 <p className="font-semibold flex-1">Product</p>
                                                 <p className="font-semibold content-center self-center flex">Quantity</p>
-                                                <p className="font-semibold content-center self-center flex">Store</p>
+                                                <p className="font-semibold content-center self-center flex">Source Store</p>
                                             </div>
 
                                             {
                                                 generatedOrder.map(k => {
                                                     return (
-                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "1fr 75px 50px" }}>
+                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "1fr 75px 120px" }}>
                                                             <div className="flex-1">
                                                                 <p className="font-semibold">{k.item?.product.company} {k.item?.product.name}</p>
                                                                 <p className="text-sm text-gray-400">{k.item?.variant_information.name}</p>
@@ -79,7 +79,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         <div className="flex flex-col gap-4">
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Customer Name" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Customer Name" value={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -93,7 +93,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                             
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Address Line 1" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Address Line 1" value={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -107,7 +107,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Address Line 2" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Address Line 2" value={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -121,7 +121,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Suburb" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="City" value={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -135,7 +135,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="City" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Postal Code" value={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -149,7 +149,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Postal Code" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Phone Number" value={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -163,21 +163,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Phone Number" className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Email Address" className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Email Address" value={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
                                                                     }}
                                                                     onFocus={(e) => {
@@ -219,11 +205,12 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                         case "rate":
                             return (
                                 <>
-                                    <div className="flex flex-row items-center gap-4 self-center text-white w-full">
+                                    <p className="cursor-pointer text-white">Shipping Rate</p>
+                                    {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
                                         <p className="cursor-pointer" onClick={() => setPageState("origin")}>Overview</p>
                                         <hr className="flex-1 border-gray-400 h-[3px] border-[2px] bg-gray-400 rounded-md" />
                                         <p>Shipping Rate</p>
-                                    </div>
+                                    </div> */}
 
                                     <div className="flex-col flex gap-2 flex-1 overflow-y-scroll max-h-full pr-2">
                                         <div className=" flex flex-row items-center justify-between bg-gray-200 text-gray-900 px-4 py-2 rounded-sm cursor-pointer">
