@@ -1073,7 +1073,14 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             <div className="flex flex-row items-center gap-2">
                                                                 <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
                                                                 <hr className="border-gray-400 opacity-25 flex-1"/>
-                                                                <p className="text-gray-400">{n.destination?.code}</p>
+                                                                <p className="text-gray-400">{n.origin?.code}</p>
+                                                            </div>
+                                                            :
+                                                            orderState[0].order_type !== "direct" ?
+                                                            <div className="flex flex-row items-center gap-2">
+                                                                <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                                <hr className="border-gray-400 opacity-25 flex-1"/>
+                                                                <p className="text-gray-400">{n.origin?.code}</p>
                                                             </div>
                                                             :
                                                             <></>

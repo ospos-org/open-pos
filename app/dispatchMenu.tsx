@@ -1,22 +1,46 @@
+import { debounce } from "lodash";
 import Image from "next/image";
 import { join } from "path";
-import { FC, useEffect, useState } from "react";
+import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
-import { Customer, Order, ProductPurchase, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, Employee, Order, ProductPurchase, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
-    
+
     const [ selectedItems, setSelectedItems ] = useState<string[]>([]);
     const [ editFields, setEditFields ] = useState(false);
     const [ pageState, setPageState ] = useState<"origin" | "rate">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>(generateOrders(generateProductMap(orderState)));
 
+    const debouncedResults = useMemo(() => {
+        return debounce(async (state: ContactInformation | undefined) => {
+            fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
+                method: "POST",
+                body: JSON.stringify(state),
+                credentials: "include",
+                redirect: "follow"
+            }).then(e => {
+                console.log(e)
+            })
+        }, 50)
+    }, [customerState]);
+
+    useEffect(() => {
+        debouncedResults(customerState?.contact);
+    }, [customerState, debouncedResults])
+
     useEffect(() => {
         setGeneratedOrder(generateOrders(generateProductMap(orderState)));
     }, [orderState])
+
+    useEffect(() => {
+        return () => {
+            debouncedResults.cancel();
+        };
+    });
 
     return (
         <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
@@ -79,8 +103,16 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         <div className="flex flex-col gap-4">
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Customer Name" value={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Customer Name" defaultValue={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    name: e.target.value
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -93,8 +125,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                             
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Address Line 1" value={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Address Line 1" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    address: {
+                                                                                        ...customerState.contact.address,
+                                                                                        street: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -107,8 +150,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Address Line 2" value={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Address Line 2" defaultValue={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    address: {
+                                                                                        ...customerState.contact.address,
+                                                                                        street2: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -121,8 +175,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="City" value={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="City" defaultValue={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    address: {
+                                                                                        ...customerState.contact.address,
+                                                                                        city: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -135,8 +200,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Postal Code" value={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Postal Code" defaultValue={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    address: {
+                                                                                        ...customerState.contact.address,
+                                                                                        po_code: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -149,8 +225,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Phone Number" value={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    mobile: {
+                                                                                        region_code: "+64",
+                                                                                        root: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
@@ -163,8 +250,20 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                                 <input 
-                                                                    placeholder="Email Address" value={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                                    placeholder="Email Address" defaultValue={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
                                                                     onChange={(e) => {
+                                                                        if(customerState)
+                                                                            setCustomerState({
+                                                                                ...customerState,
+                                                                                contact: {
+                                                                                    ...customerState.contact,
+                                                                                    email: {
+                                                                                        root: e.target.value.split("@")[0],
+                                                                                        domain: e.target.value.split("@")[1],
+                                                                                        full: e.target.value
+                                                                                    }
+                                                                                }
+                                                                            })  
                                                                     }}
                                                                     onFocus={(e) => {
                                                                     }}
