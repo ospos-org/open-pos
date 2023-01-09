@@ -39,6 +39,7 @@ export default function Kiosk({ master_state }: { master_state: {
         },
         products: [],
         status: [],
+        previous_failed_fulfillment_attempts: [],
         status_history: [],
         order_history: [],
         order_notes: [],
@@ -1017,7 +1018,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                                     </div>
                                                 }
-                                                <p className="text-sm text-gray-400">{
+                                                <div className="text-sm text-gray-400">
+                                                    {
                                                         orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
                                                         ? 
                                                         "Cart Empty" 
@@ -1025,7 +1027,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         <p>
                                                             {orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 1 ? "s" : "")}
                                                         </p>
-                                                }</p>
+                                                    }
+                                                </div>
                                             </div>
 
                                             <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
@@ -1044,6 +1047,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         status: [],
                                                         status_history: [],
                                                         order_history: [],
+                                                        previous_failed_fulfillment_attempts: [],
                                                         order_notes: [],
                                                         reference: "",
                                                         creation_date: Date.now().toString(),
@@ -1077,10 +1081,16 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             </div>
                                                             :
                                                             orderState[0].order_type !== "direct" ?
-                                                            <div className="flex flex-row items-center gap-2">
-                                                                <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
-                                                                <hr className="border-gray-400 opacity-25 flex-1"/>
-                                                                <p className="text-gray-400">{n.origin?.code}</p>
+                                                            <div className="flex flex-col w-full justify-between gap-2">
+                                                                <div className="flex flex-1 flex-row items-center gap-2">
+                                                                    <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                                    <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
+                                                                </div>
+
+                                                                <div className="flex flex-col gap-1">
+                                                                    <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
+                                                                    <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                </div>
                                                             </div>
                                                             :
                                                             <></>
@@ -1615,7 +1625,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     reference: "",
                                                     creation_date: Date.now().toString(),
                                                     discount: "a|0",
-                                                    order_type: "direct"
+                                                    order_type: "direct",
+                                                    previous_failed_fulfillment_attempts: []
                                                 }])
                                                 
                                                 setCustomerState(null)

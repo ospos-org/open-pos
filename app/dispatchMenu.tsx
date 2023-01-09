@@ -1,8 +1,9 @@
 import { debounce } from "lodash";
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
+import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -11,7 +12,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ error, setError ] = useState<string | null>(null);
     const [ selectedItems, setSelectedItems ] = useState<[string, boolean][]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[] }[]>([]);
+    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
 
     useEffect(() => {
         fetchDistanceData().then(data => {
@@ -60,22 +61,46 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 <hr className="border-gray-400 opacity-25 w-full flex-1"/>
                                             </div>
 
-                                            <div className="grid items-center justify-center text-gray-300 gap-4 " style={{ gridTemplateColumns: "1fr 75px 120px" }}>
-                                                <p className="font-semibold flex-1">Product</p>
-                                                <p className="font-semibold content-center self-center flex">Quantity</p>
-                                                <p className="font-semibold content-center self-center flex">Source Store</p>
-                                            </div>
+                                            {
+                                                generatedOrder.length < 1 ? 
+                                                <></> 
+                                                :
+                                                <div className="grid items-center justify-center text-gray-300 gap-4 " style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
+                                                    <p className="font-semibold flex-1"></p>
+                                                    <p className="font-semibold flex-1">Product</p>
+                                                    <p className="font-semibold content-center self-center flex">Quantity</p>
+                                                    <p className="font-semibold content-center self-center flex text-center justify-self-center">Source</p>
+                                                </div>
+                                            }
 
                                             {
+                                                generatedOrder.length < 1 ?
+                                                <div className="flex items-center justify-center">
+                                                    <p className="text-gray-400 py-4">No products</p>
+                                                </div>
+                                                :
                                                 generatedOrder.map(k => {
                                                     return (
-                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} id={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "1fr 75px 120px" }}>
+                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} id={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
+                                                            <div onClick={() => {
+                                                                setGeneratedOrder(
+                                                                    generatedOrder.map(b => b?.item?.id == k?.item?.id ? { ...b, ship: !b.ship } : b)
+                                                                )
+                                                            }} className="cursor-pointer select-none">
+                                                                {
+                                                                    k.ship ?
+                                                                    <Image src="/icons/check-square.svg" alt="" height={20} width={20} style={{ filter: "invert(95%) sepia(100%) saturate(20%) hue-rotate(289deg) brightness(104%) contrast(106%)" }}></Image>
+                                                                    :
+                                                                    <Image src="/icons/square.svg" alt="" height={20} width={20} style={{ filter: "invert(70%) sepia(11%) saturate(294%) hue-rotate(179deg) brightness(92%) contrast(87%)" }}></Image>
+                                                                }
+                                                            </div>
+
                                                             <div className="flex-1">
                                                                 <p className="font-semibold">{k.item?.product.company} {k.item?.product.name}</p>
                                                                 <p className="text-sm text-gray-400">{k.item?.variant_information.name}</p>
                                                             </div>
 
-                                                            <p className="self-center content-center items-center justify-center flex">{k.item?.quantity}</p>
+                                                            <p className="self-center content-center items-center justify-center flex">{k.item?.quantity} {k.quantity}</p>
                                                             <div className={`relative inline-block ${selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "z-50" : ""}`}>
                                                                 <p 
                                                                 onClick={() => {
@@ -128,9 +153,9 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={() => {
-                                                setPageState("rate");
+                                                if(generatedOrder.length >= 1) setPageState("rate");
                                             }}
-                                            className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                            className={`${generatedOrder.length >= 1 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 cursor-not-allowed bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                             <p className={`text-white font-semibold ${""}`}>Continue</p>
                                         </div>
                                     </div>
@@ -176,7 +201,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                     </div>
 
                                     <div
-                                        onClick={() => {
+                                        onClick={async () => {
                                             let inverse_order: { store: string, items: ProductPurchase[] }[] = [];
 
                                             generatedOrder.map(k => {
@@ -190,16 +215,16 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         items: [ k.item ]
                                                     })
                                                 }
-
-                                                console.log(k, found, inverse_order)
                                             })
 
-                                            console.log(inverse_order);
+                                            Promise.all(inverse_order.map(async k => {
+                                                const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
+                                                    method: "GET",
+                                                    credentials: "include",
+                                                    redirect: "follow"
+                                                })).json();
 
-                                            let job = orderJob[0];
-
-                                            inverse_order.map(k => {
-                                                const new_order: Order = {
+                                                return await {
                                                     id: v4(),
                                                     destination: {
                                                         code: "000",
@@ -207,29 +232,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     },
                                                     origin: {
                                                         code: k.store,
-                                                        contact: {
-                                                            name: "",
-                                                            mobile: {
-                                                                region_code: "",
-                                                                root: ""
-                                                            },
-                                                            email: {
-                                                                root: "",
-                                                                domain: "",
-                                                                full: ""
-                                                            },
-                                                            landline: "",
-                                                            address: {
-                                                                street: "",
-                                                                street2: "",
-                                                                city: "",
-                                                                country: "",
-                                                                po_code: ""
-                                                            }
-                                                        }
+                                                        contact: data.contact 
                                                     },
                                                     products: k.items,
                                                     status: [],
+                                                    previous_failed_fulfillment_attempts: [],
                                                     status_history: [],
                                                     order_history: [],
                                                     order_notes: [],
@@ -238,13 +245,14 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     discount: "a|0",
                                                     order_type: "shipment"
                                                 };
-
-                                                job.push(new_order);
+                                            })).then((k) => {
+                                                let job = orderJob[0];
+                                                k.map(b => job.push(b as Order));
                                                 job = job.filter(k => k.order_type != "direct")
-                                            })
-
-                                            orderJob[1](job);
-                                            setPadState("cart")
+                                                
+                                                orderJob[1](job);
+                                                setPadState("cart")
+                                            });
                                         }}
                                         className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                         <p className={`text-white font-semibold ${""}`}>Complete</p>
@@ -500,15 +508,17 @@ function generateProductMap(orders: Order[]) {
     let pdt_map: ProductPurchase[] = [];
 
     for(let i = 0; i < orders.length; i++) {
-        orders[i].products.map(e => {
-            pdt_map.push(e)
-        })
+        if(orders[i].order_type == "direct") {
+            orders[i].products.map(e => {
+                pdt_map.push(e)
+            })
+        }
     }
 
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[] }[] {
+function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[] {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -573,33 +583,45 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
 
         const distance_weighting = (smallest_distance / (distance_data.find(k => k.store_code == key)?.distance ?? 12756000.01));
 
-        // console.log(key, ":", smallest_distance, "/", distance_data.find(k => k.store_code == key)?.distance, "=", distance_weighting)
-
         val.weighting = (0.1 * item_weighting) + (0.9 * distance_weighting)
         console.log(`${key}:: ${val.weighting} 0.1x${item_weighting} and 0.9x${distance_weighting}`)
         kvp.push([val.weighting, key, val.items]);
     });
 
+    // [weighting, store_id, { item_id, quantity - that are instore }[]]
     const weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
-    const product_assignment: [string, string][] = [];
+
+    // [item_id, store_code, quantity][]
+    const product_assignment: [string, string, number][] = [];
 
     // impl! If products need to be shipped from separate stores; i.e. 1 in two stores, need two, ship from both...
-
-    weighted_vector.map(e => {
-        e[2].map(k => {
-            const req = product_map.find(n => n.id == k.item_id)?.quantity ?? 0;
-
-            if(k.quantity >= req && !(product_assignment.find(b => b[0] == k.item_id))) {
-                product_assignment.push([ k.item_id, e[1] ])
-            }
-        })
-    });
+    // while(product_map.filter(k => k.quantity !== 0).length > 0) {
+        weighted_vector.map(e => {
+            let arr = e[2];
+    
+            arr.map(k => {
+                const req = product_map.find(n => n.id == k.item_id)?.quantity ?? 0;
+    
+                if(req <= 0) return;
+    
+                if(k.quantity >= req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
+                    product_assignment.push([ k.item_id, e[1], req ]);
+                    product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: 0 } : n)
+                }else if(k.quantity > 0 && k.quantity < req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
+                    product_assignment.push([ k.item_id, e[1], k.quantity ]);
+                    product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: n.quantity - k.quantity } : n)
+                }
+            })
+        }); 
+    // }
 
     return product_assignment.map(e => {
         return {
             item: product_map.find(k => k.id == e[0]),
             store: e[1],
-            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= 1) ?? []
+            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= 1) ?? [],
+            ship: true,
+            quantity: e[2]
         }
     });
 }

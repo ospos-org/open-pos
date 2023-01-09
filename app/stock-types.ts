@@ -15,12 +15,19 @@ export type KioskState = {
     till: string | null
 };
 
+type StoreStatus = {
+    item: Store;
+    assigned_products: string[];
+    timestamp: string;
+}
+
 export type Order = {
     id: string,
     destination: Move | null,
     origin: Move,
     products: ProductPurchase[],
     status: OrderStatus[],
+    previous_failed_fulfillment_attempts: (StoreStatus[])[],
     status_history: (OrderStatus[])[],
     order_history: string[],
     order_notes: Note[],
@@ -141,7 +148,9 @@ export type Quantity = {
 
 export type Store = {
     code: string,
-    contact: string
+    contact: ContactInformation,
+    id: string,
+    name: string
 }
 
 export type Customer = {
