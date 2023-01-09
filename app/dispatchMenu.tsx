@@ -2,7 +2,7 @@ import { debounce } from "lodash";
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { ContactInformation, Customer, Employee, Order, ProductPurchase, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -11,14 +11,15 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ error, setError ] = useState<string | null>(null);
     const [ selectedItems, setSelectedItems ] = useState<[string, boolean][]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>([]);
+    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[] }[]>([]);
 
     useEffect(() => {
         fetchDistanceData().then(data => {
-            setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
+            const ord = generateOrders(generateProductMap(orderState), data);
+            setGeneratedOrder(ord);
+            setSelectedItems(ord.map(e => [ e.item?.id ?? "", false ]))
         });
 
-        setSelectedItems(generatedOrder.map(e => [ e.item?.id ?? "", false ]))
     }, [orderState])
 
     const fetchDistanceData = async () => {
@@ -81,9 +82,20 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                     setSelectedItems(selectedItems.map(b => b[0] == k.item?.id ? [b[0], true] : b))
                                                                 }}
                                                                 className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
-                                                                <div className={selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "absolute flex flex-col gap-2 items-center justify-center w-full bg-gray-600 rounded-md mt-2 z-50" : "hidden absolute"}>
+                                                                <div className={selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                     {
-
+                                                                        k.alt_stores.map(n => {
+                                                                            return (
+                                                                                <div 
+                                                                                    onClick={() => {
+                                                                                        const new_order = generatedOrder.map(b => b.item?.id == k?.item?.id ? { ...b, store: n.store.code } : b)
+                                                                                        setGeneratedOrder(new_order)
+                                                                                    }}
+                                                                                    key={`${k.item?.id}is-also-available-@${n.store.code}`} className={` ${k.store == n.store.code ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
+                                                                                    {n.store.code}
+                                                                                </div>
+                                                                            )
+                                                                        })
                                                                     }
                                                                 </div>
                                                             </div>
@@ -496,7 +508,7 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string }[] {
+function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[] }[] {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -587,7 +599,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
         return {
             item: product_map.find(k => k.id == e[0]),
             store: e[1],
-            alt_stores: []
+            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= 1) ?? []
         }
     });
 }
