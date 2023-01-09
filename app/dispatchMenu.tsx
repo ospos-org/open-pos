@@ -1,49 +1,45 @@
 import { debounce } from "lodash";
 import Image from "next/image";
-import { join } from "path";
-import { createRef, FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { ContactInformation, Customer, Employee, Order, ProductPurchase, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
 
-    const [ selectedItems, setSelectedItems ] = useState<string[]>([]);
-    const [ editFields, setEditFields ] = useState(false);
-    const [ pageState, setPageState ] = useState<"origin" | "rate">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>(generateOrders(generateProductMap(orderState)));
-
-    const debouncedResults = useMemo(() => {
-        return debounce(async (state: ContactInformation | undefined) => {
-            fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
-                method: "POST",
-                body: JSON.stringify(state),
-                credentials: "include",
-                redirect: "follow"
-            }).then(e => {
-                console.log(e)
-            })
-        }, 50)
-    }, [customerState]);
+    const [ error, setError ] = useState<string | null>(null);
+    const [ selectedItems, setSelectedItems ] = useState<[string, boolean][]>([]);
+    const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
+    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string }[]>([]);
 
     useEffect(() => {
-        debouncedResults(customerState?.contact);
-    }, [customerState, debouncedResults])
+        fetchDistanceData().then(data => {
+            setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
+        });
 
-    useEffect(() => {
-        setGeneratedOrder(generateOrders(generateProductMap(orderState)));
+        setSelectedItems(generatedOrder.map(e => [ e.item?.id ?? "", false ]))
     }, [orderState])
 
-    useEffect(() => {
-        return () => {
-            debouncedResults.cancel();
-        };
-    });
+    const fetchDistanceData = async () => {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`http://127.0.0.1:8000/helpers/distance/${customerState?.id}`, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow"
+        })?.then(async e => {
+            return await e.json();
+        })
+
+        return distance_data;
+    }
 
     return (
-        <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
+        <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
+            let sel = selectedItems.find(k => k[1]);
+            if(sel && e.currentTarget.id != `PPURCH-SHIP-${sel[0]}`) {
+                setSelectedItems(selectedItems.map(k => [k[0], false]))
+            }
+        }}>
             {
                 (() => {
                     switch(pageState) {
@@ -72,14 +68,25 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                             {
                                                 generatedOrder.map(k => {
                                                     return (
-                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "1fr 75px 120px" }}>
+                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} id={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "1fr 75px 120px" }}>
                                                             <div className="flex-1">
                                                                 <p className="font-semibold">{k.item?.product.company} {k.item?.product.name}</p>
                                                                 <p className="text-sm text-gray-400">{k.item?.variant_information.name}</p>
                                                             </div>
 
                                                             <p className="self-center content-center items-center justify-center flex">{k.item?.quantity}</p>
-                                                            <p className="self-center content-center items-center justify-center font-semibold flex">{k.store}</p>
+                                                            <div className={`relative inline-block ${selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "z-50" : ""}`}>
+                                                                <p 
+                                                                onClick={() => {
+                                                                    setSelectedItems(selectedItems.map(b => b[0] == k.item?.id ? [b[0], true] : b))
+                                                                }}
+                                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
+                                                                <div className={selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "absolute flex flex-col gap-2 items-center justify-center w-full bg-gray-600 rounded-md mt-2 z-50" : "hidden absolute"}>
+                                                                    {
+
+                                                                    }
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     )
                                                 })
@@ -90,205 +97,21 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                             <div className="flex flex-row items-center gap-2 text-gray-400">
                                                 <p>SHIPPING DETAILS</p>
                                                 <Image 
-                                                    onClick={() => setEditFields(!editFields)}
+                                                    onClick={() => setPageState("edit")}
                                                     src="/icons/edit-03.svg" alt="" width="16" height="16" style={{ filter: "invert(65%) sepia(9%) saturate(354%) hue-rotate(179deg) brightness(99%) contrast(92%)" }} />
                                                 <hr className="border-gray-400 opacity-25 w-full flex-1"/>
                                             </div>
 
-                                            {
-                                                editFields ?
-                                                (
-
-                                                    <>
-                                                        <div className="flex flex-col gap-4">
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Customer Name" defaultValue={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    name: e.target.value
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-                                                            
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Address Line 1" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    address: {
-                                                                                        ...customerState.contact.address,
-                                                                                        street: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Address Line 2" defaultValue={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    address: {
-                                                                                        ...customerState.contact.address,
-                                                                                        street2: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="City" defaultValue={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    address: {
-                                                                                        ...customerState.contact.address,
-                                                                                        city: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Postal Code" defaultValue={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    address: {
-                                                                                        ...customerState.contact.address,
-                                                                                        po_code: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    mobile: {
-                                                                                        region_code: "+64",
-                                                                                        root: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-
-                                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                                <input 
-                                                                    placeholder="Email Address" defaultValue={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                                    onChange={(e) => {
-                                                                        if(customerState)
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState.contact,
-                                                                                    email: {
-                                                                                        root: e.target.value.split("@")[0],
-                                                                                        domain: e.target.value.split("@")[1],
-                                                                                        full: e.target.value
-                                                                                    }
-                                                                                }
-                                                                            })  
-                                                                    }}
-                                                                    onFocus={(e) => {
-                                                                    }}
-                                                                    tabIndex={0}
-                                                                    // onBlur={() => setSearchFocused(false)}
-                                                                    onKeyDown={(e) => {
-                                                                    }}
-                                                                    />
-                                                            </div>
-                                                        </div>
-                                                    </>
-                                                )
-                                                :
-                                                <div className="text-white">
-                                                    <p className="font-semibold">{customerState?.contact.name}</p>
-                                                    <p className="">{customerState?.contact.email.full}</p>
-                                                    <p className="">{customerState?.contact.mobile.region_code} {customerState?.contact.mobile.root}</p>
-                                                    <br />
-                                                    <p className="font-semibold">{customerState?.contact.address.street}</p>
-                                                    <p>{customerState?.contact.address.street2}</p>
-                                                    <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
-                                                    <p className="text-gray-400">{customerState?.contact.address.country}</p>
-                                                </div>
-                                            }
-                                            
+                                            <div className="text-white">
+                                                <p className="font-semibold">{customerState?.contact.name}</p>
+                                                <p className="">{customerState?.contact.email.full}</p>
+                                                <p className="">{customerState?.contact.mobile.region_code} {customerState?.contact.mobile.root}</p>
+                                                <br />
+                                                <p className="font-semibold">{customerState?.contact.address.street}</p>
+                                                <p>{customerState?.contact.address.street2}</p>
+                                                <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
+                                                <p className="text-gray-400">{customerState?.contact.address.country}</p>
+                                            </div>
                                         </div>
 
                                         <div
@@ -416,29 +239,247 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                     </div>
                                 </>
                             )
+                        case "edit":
+                            return (
+                                <div className="flex flex-col gap-8 flex-1">
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-white font-semibold">Contact Information</p>
+                                        
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400 pb-0 mb-0">Customer Name</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Customer Name" defaultValue={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    name: e.target.value
+                                                                }
+                                                            }) 
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">Phone Number</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    mobile: {
+                                                                        region_code: "+64",
+                                                                        root: e.target.value
+                                                                    }
+                                                                }
+                                                            }) 
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">Email Address</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Email Address" defaultValue={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    email: {
+                                                                        root: e.target.value.split("@")[0],
+                                                                        domain: e.target.value.split("@")[1],
+                                                                        full: e.target.value
+                                                                    }
+                                                                }
+                                                            }) 
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-white font-semibold">Shipping Details</p>
+                                        
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">Street</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Address Line 1" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    address: {
+                                                                        ...customerState.contact.address,
+                                                                        street: e.target.value
+                                                                    }
+                                                                }
+                                                            })
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">Suburb</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Address Line 2" defaultValue={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    address: {
+                                                                        ...customerState.contact.address,
+                                                                        street2: e.target.value
+                                                                    }
+                                                                }
+                                                            })
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">City</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="City" defaultValue={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    address: {
+                                                                        ...customerState.contact.address,
+                                                                        city: e.target.value
+                                                                    }
+                                                                }
+                                                            })
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-gray-400">Postal Code</p>
+                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                <input 
+                                                    placeholder="Postal Code" defaultValue={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                    onChange={(e) => {
+                                                        if(customerState)
+                                                            setCustomerState({
+                                                                ...customerState,
+                                                                contact: {
+                                                                    ...customerState.contact,
+                                                                    address: {
+                                                                        ...customerState.contact.address,
+                                                                        po_code: e.target.value
+                                                                    }
+                                                                }
+                                                            })
+                                                    }}
+                                                    onFocus={(e) => {
+                                                    }}
+                                                    tabIndex={0}
+                                                    // onBlur={() => setSearchFocused(false)}
+                                                    onKeyDown={(e) => {
+                                                    }}
+                                                    />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-1 h-full">
+                                        <div className="flex flex-row items-center gap-4 bg-red-300 rounded-md px-3 py-2">
+                                            <p className="text-red-400">{error}</p>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        onClick={() => {
+                                            fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
+                                                method: "POST",
+                                                body: JSON.stringify(customerState?.contact),
+                                                credentials: "include",
+                                                redirect: "follow"
+                                            })?.then(async e => {
+                                                const data = await e.json();
+
+                                                if(e.ok) {
+                                                    fetchDistanceData().then(data => {
+                                                        setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
+                                                    });
+
+                                                    setError(null);
+                                                    setPageState("origin");
+                                                }else {
+                                                    setError("Malformed Street Address")
+                                                }
+                                            })
+                                        }}
+                                        className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                        <p className={`text-white font-semibold ${""}`}>Save</p>
+                                    </div>
+                                </div>
+                            )
                     }
                 })()
             }
-
-            
-            
-            {/* <div className="flex flex-col">
-                <div className="flex flex-row items-center gap-2">
-                    <p className="text-gray-400">ADDRESS</p>
-                    <Image 
-                        onClick={() => {
-
-                        }}
-                        height={18} width={18} quality={100} alt="Edit Address" className="rounded-sm cursor-pointer" src="/icons/edit-03.svg" style={{ filter: "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }}></Image>
-                </div>
-
-                <div className="text-white">
-                    <p>{customerState?.contact.address.street}</p>
-                    <p>{customerState?.contact.address.street2}</p>
-                    <p>{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
-                    <p>{customerState?.contact.address.country}</p>
-                </div>
-            </div> */}
         </div>
     )
 }
@@ -455,7 +496,7 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase | undefined, store: string }[] {
+function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string }[] {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -464,6 +505,14 @@ function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase
     /// Generate a valid list of store options
     /// => Sort by closeness
     /// => Give to user
+
+    let smallest_distance = 12756000.01;
+
+    distance_data.map(k => {
+        if(k.distance < smallest_distance) {
+            smallest_distance = k.distance;
+        }
+    })
 
     const map = new Map<string, {
         items: { item_id: string, quantity: number }[],
@@ -505,16 +554,24 @@ function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase
     const total_items = product_map.reduce((p, c) => p += c.quantity, 0);
 
     map.forEach((val, key) => {
-        val.weighting = val.items.reduce((p, e) => {
+        const item_weighting = (val.items.reduce((p, e) => {
             const n = e.quantity - (product_map.find(k => k.id == e.item_id)?.quantity ?? 0);
             return p += n;
-        }, 0) / total_items;
+        }, 0) + 1) / total_items;
 
+        const distance_weighting = (smallest_distance / (distance_data.find(k => k.store_code == key)?.distance ?? 12756000.01));
+
+        // console.log(key, ":", smallest_distance, "/", distance_data.find(k => k.store_code == key)?.distance, "=", distance_weighting)
+
+        val.weighting = (0.1 * item_weighting) + (0.9 * distance_weighting)
+        console.log(`${key}:: ${val.weighting} 0.1x${item_weighting} and 0.9x${distance_weighting}`)
         kvp.push([val.weighting, key, val.items]);
     });
 
     const weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
     const product_assignment: [string, string][] = [];
+
+    // impl! If products need to be shipped from separate stores; i.e. 1 in two stores, need two, ship from both...
 
     weighted_vector.map(e => {
         e[2].map(k => {
@@ -529,7 +586,8 @@ function generateOrders(product_map: ProductPurchase[]): { item: ProductPurchase
     return product_assignment.map(e => {
         return {
             item: product_map.find(k => k.id == e[0]),
-            store: e[1]
+            store: e[1],
+            alt_stores: []
         }
     });
 }

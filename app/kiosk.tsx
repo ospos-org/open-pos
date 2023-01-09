@@ -873,7 +873,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                             <p className="font-medium select-none">Select Customer</p>
                                         </div>
                                     }
-                                    
+
                                     <div
                                         onClick={() => {
                                             setPadState("discount")
