@@ -252,7 +252,7 @@ export default function Kiosk({ master_state }: { master_state: {
                     const new_pdt_list = addToCart(e, active_product_variant, cOs.products);
                     const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
 
-                    setOrderState(new_order_state)
+                    setOrderState(sortOrders(new_order_state))
                 }else {
                     setActiveProduct(e);
                     setActiveVariantPossibilities(vmap_list);
@@ -647,7 +647,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             const new_pdt_list = addToCart(activeProduct, activeProductVariant, cOs.products)
                                                             const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
 
-                                                            setOrderState(new_order_state)
+                                                            setOrderState(sortOrders(new_order_state))
                                                         }
                                                     }}
                                                     >
@@ -1069,31 +1069,45 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 <p className="text-sm text-gray-400 py-4 select-none">No products in cart</p>
                                             </div>
                                             :
-                                            orderState.map(n => {
+                                            sortOrders(orderState).map(n => {
                                                 return (
                                                     <div key={n.id} className="flex flex-col gap-4">
                                                         {
                                                             orderState.length !== 1 ?
-                                                            <div className="flex flex-row items-center gap-2">
-                                                                <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
-                                                                <hr className="border-gray-400 opacity-25 flex-1"/>
-                                                                <p className="text-gray-400">{n.origin?.code}</p>
-                                                            </div>
-                                                            :
-                                                            orderState[0].order_type !== "direct" ?
-                                                            <div className="flex flex-col w-full justify-between gap-2">
-                                                                <div className="flex flex-1 flex-row items-center gap-2">
-                                                                    <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
-                                                                    <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
-                                                                </div>
+                                                                n.order_type !== "direct" ?
+                                                                    <div className="flex flex-col w-full justify-between gap-2 mt-4">
+                                                                        <div className="flex flex-1 flex-row-reverse items-center gap-2">
+                                                                            <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                                            <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
+                                                                        </div>
 
-                                                                <div className="flex flex-col gap-1">
-                                                                    <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
-                                                                    <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
-                                                                </div>
-                                                            </div>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
+                                                                            <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                :
+                                                                    <div className="flex flex-col w-full justify-between gap-2">
+                                                                        <div className="flex flex-1 flex-row-reverse items-center gap-2">
+                                                                            <p className="text-gray-400">TAKE HOME TODAY</p>
+                                                                            {/* <hr className="border-gray-400 opacity-25 flex-1 w-full"/> */}
+                                                                        </div>
+                                                                    </div>
                                                             :
-                                                            <></>
+                                                                orderState[0].order_type !== "direct" ?
+                                                                <div className="flex flex-col w-full justify-between gap-2">
+                                                                    <div className="flex flex-1 flex-row items-center gap-2">
+                                                                        <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
+                                                                        <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
+                                                                    </div>
+
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
+                                                                        <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                    </div>
+                                                                </div>
+                                                                :
+                                                                <></>
                                                         }
                                                         
                                                         {
@@ -1113,18 +1127,21 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
                 
                                                                                 {
-                                                                                    (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
-                                                                                    >
-                                                                                    (q_here?.quantity.quantity_sellable ?? 0)
-                                                                                    ?
-                                                                                    <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                                    n.order_type == "direct" ?
+                                                                                        (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
+                                                                                        >
+                                                                                        (q_here?.quantity.quantity_sellable ?? 0)
+                                                                                        ?
+                                                                                        <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                                        :
+                                                                                        // e.variant_information.stock.map(e => (e.store.code == master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                                        // Determine the accurate representation of a non-diminishing item.
+                                                                                        e.variant_information.stock_information.non_diminishing ?
+                                                                                        <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                                        :
+                                                                                        <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
                                                                                     :
-                                                                                    // e.variant_information.stock.map(e => (e.store.code == master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
-                                                                                    // Determine the accurate representation of a non-diminishing item.
-                                                                                    e.variant_information.stock_information.non_diminishing ?
-                                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                                                                    :
-                                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                                        <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
                                                                                 }
                                                                             </div>
                 
@@ -1150,7 +1167,7 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                                                                             const new_order = orderState.map(e => e.id == n.id ? new_state : e)
 
-                                                                                            setOrderState(new_order)
+                                                                                            setOrderState(sortOrders(new_order))
                                                                                         }
                                                                                     }} 
                                                                                     onMouseOver={(v) => {
@@ -1201,7 +1218,7 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                                                                         const new_order = orderState.map(e => e.id == n.id ? new_state : e)
 
-                                                                                        setOrderState(new_order)
+                                                                                        setOrderState(sortOrders(new_order))
                                                                                     }} 
                                                                                     draggable="false"
                                                                                     className="select-none"
@@ -1231,14 +1248,16 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 <p className="text-sm text-gray-400">{e.variant_information.name}</p>
                                                                                 
                                                                                 {
-                                                                                    (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
-                                                                                    > 
-                                                                                    (q_here?.quantity.quantity_sellable ?? 0)
-                                                                                    ?
-                                                                                    <p className="text-sm text-red-400">Out of stock - {(q_here?.quantity.quantity_sellable ?? 0)} here, {(total_stock - (q_here?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
-
+                                                                                    n.order_type == "direct" ?
+                                                                                        (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
+                                                                                        > 
+                                                                                        (q_here?.quantity.quantity_sellable ?? 0)
+                                                                                        ?
+                                                                                            <p className="text-sm text-red-400">Out of stock - {(q_here?.quantity.quantity_sellable ?? 0)} here, {(total_stock - (q_here?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
+                                                                                        :
+                                                                                            <></>
                                                                                     :
-                                                                                    <></>
+                                                                                        <></>
                                                                                 }
                                                                             </div>
                 
@@ -1516,7 +1535,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 }
                                             });
 
-                                            setOrderState(new_state);
+                                            setOrderState(sortOrders(new_state));
                                         }
                                     }}>skip to completion</p>
                                 </div>
@@ -1709,7 +1728,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     }
                                                 })
 
-                                                setOrderState(new_state)
+                                                setOrderState(sortOrders(new_state))
                                             }else {
                                                 const new_state = orderState.map(n => {
                                                     return {
@@ -1734,7 +1753,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     }
                                                 });
 
-                                                setOrderState(new_state)
+                                                setOrderState(sortOrders(new_state))
                                             }
                                         }else {
                                             const new_state = orderState.map(n => {
@@ -1744,7 +1763,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 }
                                             });
 
-                                            setOrderState(new_state)
+                                            setOrderState(sortOrders(new_state))
                                         }
                                     }} multiple={orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0} />
                                 </div>
@@ -1828,7 +1847,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                             }
 
                                             const new_order_state = orderState.map(e => e.id == active_order ? { ...e, order_notes: [...e.order_notes, note_obj] } : e)
-                                            setOrderState(new_order_state)
+                                            setOrderState(sortOrders(new_order_state))
                                         }
                                     }} />
                                 </div>
@@ -1898,4 +1917,8 @@ export default function Kiosk({ master_state }: { master_state: {
             }
         </>
     )
+}
+
+function sortOrders(orders: Order[]) {
+    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
 }

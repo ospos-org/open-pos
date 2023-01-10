@@ -10,9 +10,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ customerState, setCustomerState ] = customerJob;
 
     const [ error, setError ] = useState<string | null>(null);
-    const [ selectedItems, setSelectedItems ] = useState<[string, boolean][]>([]);
+    const [ selectedItems, setSelectedItems ] = useState<[string, string, boolean][]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
+    const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
 
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
     const [ searching, setSearching ] = useState(false);
@@ -21,8 +22,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     useEffect(() => {
         fetchDistanceData().then(data => {
             const ord = generateOrders(generateProductMap(orderState), data);
-            setGeneratedOrder(ord);
-            setSelectedItems(ord.map(e => [ e.item?.id ?? "", false ]))
+            console.log(ord);
+            setGeneratedOrder(ord.assignment_sheet);
+            setProductMap(ord.product_map);
+            setSelectedItems(ord.assignment_sheet.map(e => [ e.item?.id ?? "", e.store ?? "", false ]))
         });
     }, [orderState])
 
@@ -70,8 +73,9 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     return (
         <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
             let sel = selectedItems.find(k => k[1]);
-            if(sel && e.currentTarget.id != `PPURCH-SHIP-${sel[0]}`) {
-                setSelectedItems(selectedItems.map(k => [k[0], false]))
+            alert(e.currentTarget.id)
+            if(sel && e.currentTarget.id != `PPURCH-SHIP-${sel[0]}-${sel[1]}`) {
+                setSelectedItems(selectedItems.map(k => [k[0], k[1], false]))
             }
         }}>
             {
@@ -113,10 +117,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 :
                                                 generatedOrder.map(k => {
                                                     return (
-                                                        <div key={`PPURCH-SHIP-${k.item?.id}`} id={`PPURCH-SHIP-${k.item?.id}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
+                                                        <div key={`PPURCH-SHIP-${k.item?.id}-${k.store}`} id={`PPURCH-SHIP-${k.item?.id}-${k.store}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
                                                             <div onClick={() => {
                                                                 setGeneratedOrder(
-                                                                    generatedOrder.map(b => b?.item?.id == k?.item?.id ? { ...b, ship: !b.ship } : b)
+                                                                    generatedOrder.map(b => b?.item?.id == k?.item?.id && b.store == k.store ? { ...b, ship: !b.ship } : b)
                                                                 )
                                                             }} className="cursor-pointer select-none">
                                                                 {
@@ -132,20 +136,24 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                 <p className="text-sm text-gray-400">{k.item?.variant_information.name}</p>
                                                             </div>
 
-                                                            <p className="self-center content-center items-center justify-center flex">{k.item?.quantity} {k.quantity}</p>
-                                                            <div className={`relative inline-block ${selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "z-50" : ""}`}>
+                                                            <div className="self-center content-center items-center justify-center flex">
+                                                                <p className="font-semibold text-white"></p>{k.quantity}  
+                                                                <p className="font-semibold text-gray-400">/{k.item?.quantity}</p>
+                                                            </div>
+                                                            <div className={`relative inline-block ${selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "z-50" : ""}`}>
                                                                 <p 
                                                                 onClick={() => {
-                                                                    setSelectedItems(selectedItems.map(b => b[0] == k.item?.id ? [b[0], true] : b))
+                                                                    const sel_items: [string, string, boolean][] = selectedItems.map(b => (b[0] == k.item?.id && b[1] == k.store) ? [b[0], b[1], true] : b);
+                                                                    setSelectedItems(sel_items)
                                                                 }}
-                                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
-                                                                <div className={selectedItems.find(b => b[0] == k.item?.id)?.[1] ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
+                                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store} {selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "yes" : "no"}</p>
+                                                                <div className={selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                     {
                                                                         k.alt_stores.map(n => {
                                                                             return (
                                                                                 <div 
                                                                                     onClick={() => {
-                                                                                        const new_order = generatedOrder.map(b => b.item?.id == k?.item?.id ? { ...b, store: n.store.code } : b)
+                                                                                        const new_order = generatedOrder.map(b => b.item?.id == k?.item?.id && b.store == k.store ? { ...b, store: n.store.code } : b)
                                                                                         setGeneratedOrder(new_order)
                                                                                     }}
                                                                                     key={`${k.item?.id}is-also-available-@${n.store.code}`} className={` ${k.store == n.store.code ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
@@ -161,7 +169,9 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 })
                                             }
                                         </div>
-                                        
+                                            
+                                        {JSON.stringify(selectedItems)}
+
                                         <div className="flex flex-1 flex-col gap-4">
                                             <div className="flex flex-row items-center gap-2 text-gray-400">
                                                 <p>SHIPPING DETAILS</p>
@@ -234,20 +244,23 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                     <div
                                         onClick={async () => {
-                                            let inverse_order: { store: string, items: ProductPurchase[] }[] = [];
+                                            let inverse_order: { store: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
 
                                             generatedOrder.map(k => {
-                                                const found = inverse_order.find(e => e.store == k.store);
+                                                const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
 
                                                 if(found && k.item) {
-                                                    inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, k.item! ] } : e)
+                                                    inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
                                                 } else if(k.item) {
                                                     inverse_order.push({
                                                         store: k.store,
-                                                        items: [ k.item ]
+                                                        items: [ { ...k.item, quantity: k.quantity } ],
+                                                        type: k.ship ? "shipment" : "direct"
                                                     })
                                                 }
                                             })
+
+                                            console.log(inverse_order);
 
                                             Promise.all(inverse_order.map(async k => {
                                                 const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
@@ -275,12 +288,12 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     reference: "",
                                                     creation_date: "",
                                                     discount: "a|0",
-                                                    order_type: "shipment"
+                                                    order_type: k.type
                                                 };
                                             })).then((k) => {
                                                 let job = orderJob[0];
-                                                k.map(b => job.push(b as Order));
                                                 job = job.filter(k => k.order_type != "direct")
+                                                k.map(b => job.push(b as Order));
                                                 
                                                 orderJob[1](job);
                                                 setPadState("cart")
@@ -461,7 +474,9 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     
                                                     if(e.ok) {
                                                         fetchDistanceData().then(data => {
-                                                            setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
+                                                            const ord = generateOrders(generateProductMap(orderState), data);
+                                                            setGeneratedOrder(ord.assignment_sheet);
+                                                            setProductMap(ord.product_map);
                                                             setLoading(false);
                                                         });
     
@@ -500,7 +515,7 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[] {
+function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { assignment_sheet: { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[], product_map: ProductPurchase[] } {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -553,7 +568,12 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
     // map<map<double (weighting), vector(items)>, string (strore)>
     // let m: [number, Map<string, ProductPurchase[]>][] = [];
 
-    let kvp: [number, string, { item_id: string, quantity: number }[]][] = [];
+    let kvp: 
+        {
+            weighting: number,
+            store_id: string,
+            items: { item_id: string, quantity: number }[]
+        }[] = [];
 
     const total_items = product_map.reduce((p, c) => p += c.quantity, 0);
 
@@ -566,58 +586,59 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
         const distance_weighting = (smallest_distance / (distance_data.find(k => k.store_code == key)?.distance ?? 12756000.01));
 
         val.weighting = (0.1 * item_weighting) + (0.9 * distance_weighting)
-        console.log(`${key}:: ${val.weighting} 0.1x${item_weighting} and 0.9x${distance_weighting}`)
-        kvp.push([val.weighting, key, val.items]);
+        // console.log(`${key}:: ${val.weighting} 0.1x${item_weighting} and 0.9x${distance_weighting}`)
+        kvp.push({
+            weighting: val.weighting,
+            store_id: key,
+            items: val.items
+        });
     });
 
     // [weighting, store_id, { item_id, quantity - that are instore }[]]
-    let weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
+    let weighted_vector = kvp.sort((a, b) => b.weighting - a.weighting);
 
     // [item_id, store_code, quantity][]
     const product_assignment: [string, string, number][] = [];
 
-    // impl! If products need to be shipped from separate stores; i.e. 1 in two stores, need two, ship from both... product_map.filter(k => k.quantity !== 0).length > 0
-    for(let i = 0; i < 2; i++) {
-        console.log(weighted_vector, product_map.filter(k => k.quantity !== 0))
+    weighted_vector.map(k => {
+        k.items.map(b => {
+            const required_quantity = product_map.find(n => n.id == b.item_id)?.quantity ?? 0;
+            const fulfilled = product_assignment.reduce((p,c) => c[0] == b.item_id ? p + c[2] : p + 0, 0);
+            const net_required = required_quantity - fulfilled;
 
-        weighted_vector = weighted_vector.map(e => {
-            let arr = e[2];
-    
-            return [ e[0], e[1], arr.map(k => {
-                const req = product_map.find(n => n.id == k.item_id)?.quantity ?? 0;
-    
-                if(req <= 0) k;
+            if(b.quantity >= net_required && net_required > 0) {
+                console.log(`Store: ${k.store_id} has enough to fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
+                // Assign store to fulfil this quantity.
+                product_assignment.push([b.item_id, k.store_id, net_required])
 
-                console.log("Check", product_assignment.find(b => b[0] == k.item_id));
-    
-                if(k.quantity >= req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
-                    product_assignment.push([ k.item_id, e[1], req ]);
-                    product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: 0 } : n)
-                    
-                    return { ...k, quantity: k.quantity - req }
-                }else if(k.quantity > 0 && k.quantity < req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
-                    product_assignment.push([ k.item_id, e[1], k.quantity ]);
-                    product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: n.quantity - k.quantity } : n)
+                // Reduce the quantity the store has...
+                weighted_vector.map(z => z.store_id == k.store_id ? { ...z, items: z.items.map(n => n.item_id == b.item_id ? { ...n, quantity: n.quantity - net_required } : n)} : z)
+                // product_map = product_map.map(n => n.id == b.item_id ? { ...n, variant_information: { ...n.variant_information, stock: n.variant_information.stock.map(g => g.store.code == k.store_id ? { ...g, quantity: { ...g.quantity, quantity_sellable: g.quantity.quantity_sellable - net_required }} : g) } } : n)
+            }else if (net_required > 0 && b.quantity < net_required && b.quantity > 0) {
+                console.log(`Store: ${k.store_id} has enough to ONLY fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
 
-                    return { ...k, quantity: 0 }
-                }else {
-                    return k
-                }
-            }) as { quantity: number; item_id: string; }[]]
-        }); 
+                product_assignment.push([b.item_id, k.store_id, b.quantity])
+                weighted_vector.map(z => z.store_id == k.store_id ? { ...z, items: z.items.map(n => n.item_id == b.item_id ? { ...n, quantity: 0 } : n)} : z)
+                // product_map = product_map.map(n => n.id == b.item_id ? { ...n, variant_information: { ...n.variant_information, stock: n.variant_information.stock.map(g => g.store.code == k.store_id ? { ...g, quantity: { ...g.quantity, quantity_sellable: g.quantity.quantity_sellable - net_required }} : g) } } : n)
+            }else {
+                // Store cannot fulfil
+                console.log(`Store: ${k.store_id} cannot fulfil any of ${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
+            }
+        })
+    })
 
-        console.log(weighted_vector, product_map.filter(k => k.quantity !== 0))
-    }
-
-    return product_assignment.map(e => {
-        return {
-            item: product_map.find(k => k.id == e[0]),
-            store: e[1],
-            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= e[2]) ?? [],
-            ship: true,
-            quantity: e[2]
-        }
-    });
+    return {
+        assignment_sheet: product_assignment.map(e => {
+            return {
+                item: product_map.find(k => k.id == e[0]),
+                store: e[1],
+                alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.code ? p + c[2] : p, 0)) >= e[2]) ?? [],
+                ship: true,
+                quantity: e[2]
+            }
+        }),
+        product_map: product_map
+    };
 }
 
 export default DispatchMenu;
