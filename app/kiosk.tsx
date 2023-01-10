@@ -1069,25 +1069,23 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 <p className="text-sm text-gray-400 py-4 select-none">No products in cart</p>
                                             </div>
                                             :
-                                            sortOrders(orderState).map(n => {
+                                            sortOrders(orderState).map((n, indx) => {
                                                 return (
                                                     <div key={n.id} className="flex flex-col gap-4">
                                                         {
                                                             orderState.length !== 1 ?
                                                                 n.order_type !== "direct" ?
-                                                                    <div className="flex flex-col w-full justify-between gap-2 mt-4">
-                                                                        <div className="flex flex-1 flex-row-reverse items-center gap-2">
-                                                                            <p className="text-gray-400 text-sm font-semibold">{n.order_type.toUpperCase()}</p>
-                                                                            <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
-                                                                        </div>
-
+                                                                    <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                                         <div className="flex flex-col gap-1">
-                                                                            <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
+                                                                            <div className="flex flex-row items-center gap-2">
+                                                                                <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p></div>
+                                                                            </div>
                                                                             <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                                         </div>
                                                                     </div>
                                                                 :
-                                                                    <div className="flex flex-col w-full justify-between gap-2">
+                                                                    <div className="flex select-none flex-col w-full justify-between gap-2">
                                                                         <div className="flex flex-1 flex-row-reverse items-center gap-2">
                                                                             <p className="text-gray-400 text-sm font-semibold">TAKE HOME TODAY</p>
                                                                             {/* <hr className="border-gray-400 opacity-25 flex-1 w-full"/> */}
@@ -1095,14 +1093,14 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                     </div>
                                                             :
                                                                 orderState[0].order_type !== "direct" ?
-                                                                <div className="flex flex-col w-full justify-between gap-2">
+                                                                <div className="flex select-none flex-col w-full justify-between gap-2">
                                                                     <div className="flex flex-1 flex-row items-center gap-2">
                                                                         <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
                                                                         <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
                                                                     </div>
 
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <p className="text-white font-semibold">{n.origin?.code} - {n.origin.contact.name}</p>
+                                                                    <div className="flex select-none flex-col gap-1">
+                                                                        <div className="text-white font-semibold">{n.origin.contact.name} ({n.origin?.code})</div>
                                                                         <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                                     </div>
                                                                 </div>
@@ -1419,18 +1417,23 @@ export default function Kiosk({ master_state }: { master_state: {
                                         
                                         <div className="flex flex-row items-center gap-4">
                                             <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
-                                                <p className="text-blue-500 font-semibold">Park Sale</p>
+                                                <p className="text-gray-800 font-semibold">Park Sale</p>
                                             </div>
 
                                             <div
                                                 onClick={() => {
                                                     setPadState("select-payment-method");
 
-                                                    const price = orderState.reduce((p, c) => 
-                                                        p += applyDiscount(c.products.reduce(function (prev, curr) {
-                                                            return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
-                                                        }, 0), c.discount) * 1.15
-                                                    , 0).toFixed(2);
+                                                    const price =  
+                                                        orderState.reduce(
+                                                        (p,c) => 
+                                                            p += applyDiscount(
+                                                                c.products.reduce(function (prev, curr) {
+                                                                    return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                                                                }, 0) 
+                                                            , c.discount) 
+                                                        , 0)
+                                                    .toFixed(2);
 
                                                     setKioskState({
                                                         ...kioskState,
@@ -1889,7 +1892,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                     
                                     {
                                         customerState ? 
-                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} />
+                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
                                         :
                                         <div className="flex items-center justify-center flex-1 gap-8 flex-col">
                                             <p className="text-gray-400">Must have an assigned customer to send products.</p>

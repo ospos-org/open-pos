@@ -5,7 +5,7 @@ import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { Address, ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
-const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
+const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
 
@@ -21,7 +21,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
     useEffect(() => {
         fetchDistanceData().then(data => {
-            const ord = generateOrders(generateProductMap(orderState), data);
+            const ord = generateOrders(generateProductMap(orderState), data, currentStore);
             console.log(ord);
             setGeneratedOrder(ord.assignment_sheet);
             setProductMap(ord.product_map);
@@ -222,7 +222,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                         case "rate":
                             return (
                                 <>
-                                    <p className="cursor-pointer text-white">Shipping Rate</p>
+                                    <p className="cursor-pointer font-semibold text-white">Shipping Rate</p>
                                     {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
                                         <p className="cursor-pointer" onClick={() => setPageState("origin")}>Overview</p>
                                         <hr className="flex-1 border-gray-400 h-[3px] border-[2px] bg-gray-400 rounded-md" />
@@ -490,7 +490,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     
                                                     if(e.ok) {
                                                         fetchDistanceData().then(data => {
-                                                            const ord = generateOrders(generateProductMap(orderState), data);
+                                                            const ord = generateOrders(generateProductMap(orderState), data, currentStore);
                                                             setGeneratedOrder(ord.assignment_sheet);
                                                             setProductMap(ord.product_map);
                                                             setLoading(false);
@@ -531,7 +531,7 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[]): { assignment_sheet: { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[], product_map: ProductPurchase[] } {
+function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[], currentStore: string): { assignment_sheet: { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[], product_map: ProductPurchase[] } {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -649,7 +649,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
                 item: product_map.find(k => k.id == e[0]),
                 store: e[1],
                 alt_stores: [product_map.find(k => k.id == e[0])?.variant_information.stock.find(b => b.store.code == e[1])!, ...product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.store.code !== e[1] && (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.code ? p + c[2] : p, 0)) >= e[2]) ?? [] ],
-                ship: true,
+                ship: !(e[1] == currentStore),
                 quantity: e[2]
             }
         }),
