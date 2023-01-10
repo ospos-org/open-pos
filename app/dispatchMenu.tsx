@@ -10,7 +10,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ customerState, setCustomerState ] = customerJob;
 
     const [ error, setError ] = useState<string | null>(null);
-    const [ selectedItems, setSelectedItems ] = useState<[string, string, boolean][]>([]);
+    const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
     const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
@@ -25,7 +25,13 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
             console.log(ord);
             setGeneratedOrder(ord.assignment_sheet);
             setProductMap(ord.product_map);
-            setSelectedItems(ord.assignment_sheet.map(e => [ e.item?.id ?? "", e.store ?? "", false ]))
+            setSelectedItems(ord.assignment_sheet.map(e => {
+                return {
+                    item_id: e.item?.id ?? "", 
+                    store_id: e.store ?? "", 
+                    selected: false 
+                }
+            }))
         });
     }, [orderState])
 
@@ -72,11 +78,15 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
     return (
         <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
-            let sel = selectedItems.find(k => k[1]);
-            alert(e.currentTarget.id)
-            if(sel && e.currentTarget.id != `PPURCH-SHIP-${sel[0]}-${sel[1]}`) {
-                setSelectedItems(selectedItems.map(k => [k[0], k[1], false]))
-            }
+            // let sel = selectedItems.find(k => k.selected);
+            // if(sel) {
+            //     setSelectedItems(selectedItems.map(k => {
+            //         return {
+            //             ...k,
+            //             selected: false
+            //         }
+            //     }))
+            // }
         }}>
             {
                 (() => {
@@ -117,10 +127,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 :
                                                 generatedOrder.map(k => {
                                                     return (
-                                                        <div key={`PPURCH-SHIP-${k.item?.id}-${k.store}`} id={`PPURCH-SHIP-${k.item?.id}-${k.store}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
+                                                        <div key={`PPURCH-SHIP-${k.item?.id}-${k.store}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
                                                             <div onClick={() => {
                                                                 setGeneratedOrder(
-                                                                    generatedOrder.map(b => b?.item?.id == k?.item?.id && b.store == k.store ? { ...b, ship: !b.ship } : b)
+                                                                    generatedOrder.map(b => (b?.item?.id == k?.item?.id && b.store == k.store) ? { ...b, ship: !b.ship } : b)
                                                                 )
                                                             }} className="cursor-pointer select-none">
                                                                 {
@@ -140,21 +150,24 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                 <p className="font-semibold text-white"></p>{k.quantity}  
                                                                 <p className="font-semibold text-gray-400">/{k.item?.quantity}</p>
                                                             </div>
-                                                            <div className={`relative inline-block ${selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "z-50" : ""}`}>
+                                                            <div className={`relative inline-block ${selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "z-50" : ""}`}>
                                                                 <p 
                                                                 onClick={() => {
-                                                                    const sel_items: [string, string, boolean][] = selectedItems.map(b => (b[0] == k.item?.id && b[1] == k.store) ? [b[0], b[1], true] : b);
+                                                                    const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
                                                                     setSelectedItems(sel_items)
                                                                 }}
-                                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store} {selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "yes" : "no"}</p>
-                                                                <div className={selectedItems.find(b => (b[0] == k.item?.id && b[1] == k.store))?.[2] ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
+                                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
+                                                                <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                     {
                                                                         k.alt_stores.map(n => {
                                                                             return (
                                                                                 <div 
                                                                                     onClick={() => {
-                                                                                        const new_order = generatedOrder.map(b => b.item?.id == k?.item?.id && b.store == k.store ? { ...b, store: n.store.code } : b)
+                                                                                        const new_order = generatedOrder.map(b => (b.item?.id == k?.item?.id && b.store == k.store) ? { ...b, store: n.store.code } : b)
                                                                                         setGeneratedOrder(new_order)
+
+                                                                                        const sel = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, store_id: n.store.code, selected: false } : b);
+                                                                                        setSelectedItems(sel)
                                                                                     }}
                                                                                     key={`${k.item?.id}is-also-available-@${n.store.code}`} className={` ${k.store == n.store.code ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
                                                                                     {n.store.code}
@@ -162,6 +175,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                             )
                                                                         })
                                                                     }
+
+                                                                    {/* <div 
+                                                                        className={`bg-white text-gray-700 cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
+                                                                        {k.store}
+                                                                    </div> */}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -169,8 +187,6 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 })
                                             }
                                         </div>
-                                            
-                                        {JSON.stringify(selectedItems)}
 
                                         <div className="flex flex-1 flex-col gap-4">
                                             <div className="flex flex-row items-center gap-2 text-gray-400">
@@ -632,7 +648,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
             return {
                 item: product_map.find(k => k.id == e[0]),
                 store: e[1],
-                alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.code ? p + c[2] : p, 0)) >= e[2]) ?? [],
+                alt_stores: [product_map.find(k => k.id == e[0])?.variant_information.stock.find(b => b.store.code == e[1])!, ...product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.store.code !== e[1] && (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.code ? p + c[2] : p, 0)) >= e[2]) ?? [] ],
                 ship: true,
                 quantity: e[2]
             }
