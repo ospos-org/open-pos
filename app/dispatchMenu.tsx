@@ -1,9 +1,9 @@
 import { debounce } from "lodash";
 import Image from "next/image";
-import { FC, useEffect, useState } from "react";
+import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import { Address, ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function }> = ({ orderJob, customerJob, setPadState }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -14,14 +14,44 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
 
+    const [ suggestions, setSuggestions ] = useState<Address[]>([]);
+    const [ searching, setSearching ] = useState(false);
+    const [ loading, setLoading ] = useState(false);
+
     useEffect(() => {
         fetchDistanceData().then(data => {
             const ord = generateOrders(generateProductMap(orderState), data);
             setGeneratedOrder(ord);
             setSelectedItems(ord.map(e => [ e.item?.id ?? "", false ]))
         });
-
     }, [orderState])
+
+    const debouncedResults = useMemo(() => {
+        return debounce(async (address: string) => {
+            setLoading(true);
+
+            const data = await fetch(`http://127.0.0.1:8000/helpers/suggest/`, {
+                method: "POST",
+                credentials: "include",
+                redirect: "follow",
+                body: address
+            })?.then(async e => {
+                const data: Address[] = await e.json();
+                console.log(data);
+    
+                return data;
+            });
+
+            setSuggestions(data);
+            setLoading(false);
+        }, 250);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            debouncedResults.cancel();
+        };
+    });
 
     const fetchDistanceData = async () => {
         const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`http://127.0.0.1:8000/helpers/distance/${customerState?.id}`, {
@@ -34,6 +64,8 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
         return distance_data;
     }
+
+    const input_ref = createRef<HTMLInputElement>();
 
     return (
         <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
@@ -261,7 +293,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                             )
                         case "edit":
                             return (
-                                <div className="flex flex-col gap-8 flex-1">
+                                <div className="flex flex-col gap-8 flex-1 overflow-auto">
                                     <div className="flex flex-col gap-2">
                                         <p className="text-white font-semibold">Contact Information</p>
                                         
@@ -348,152 +380,102 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                         </div>
                                     </div>
                                     
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col flex-1 gap-2 rounded-md">
                                         <p className="text-white font-semibold">Shipping Details</p>
                                         
-                                        <div className="flex flex-col gap-1">
-                                            <p className="text-gray-400">Street</p>
-                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                <input 
-                                                    placeholder="Address Line 1" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                    onChange={(e) => {
-                                                        if(customerState)
-                                                            setCustomerState({
-                                                                ...customerState,
-                                                                contact: {
-                                                                    ...customerState.contact,
-                                                                    address: {
-                                                                        ...customerState.contact.address,
-                                                                        street: e.target.value
-                                                                    }
-                                                                }
-                                                            })
-                                                    }}
-                                                    onFocus={(e) => {
-                                                    }}
-                                                    tabIndex={0}
-                                                    // onBlur={() => setSearchFocused(false)}
-                                                    onKeyDown={(e) => {
-                                                    }}
-                                                    />
+                                        <div className="flex-1 h-full">
+                                            <div className="flex flex-col gap-1">
+                                                <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                                                    <input 
+                                                        autoComplete="off"
+                                                        ref={input_ref}
+                                                        placeholder="Address" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                        onChange={(e) => {
+                                                            debouncedResults(e.target.value);
+                                                        }}
+                                                        onFocus={() => setSearching(true)}
+                                                        tabIndex={0}
+                                                        />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex flex-col gap-1">
-                                            <p className="text-gray-400">Suburb</p>
-                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                <input 
-                                                    placeholder="Address Line 2" defaultValue={customerState?.contact.address.street2} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                    onChange={(e) => {
-                                                        if(customerState)
-                                                            setCustomerState({
-                                                                ...customerState,
-                                                                contact: {
-                                                                    ...customerState.contact,
-                                                                    address: {
-                                                                        ...customerState.contact.address,
-                                                                        street2: e.target.value
-                                                                    }
-                                                                }
-                                                            })
-                                                    }}
-                                                    onFocus={(e) => {
-                                                    }}
-                                                    tabIndex={0}
-                                                    // onBlur={() => setSearchFocused(false)}
-                                                    onKeyDown={(e) => {
-                                                    }}
-                                                    />
-                                            </div>
-                                        </div>
+                                            <div className={`flex flex-col gap-2 flex-1 px-2 py-2 ${searching ? "bg-gray-800" : ""}`}>
+                                            {
+                                                searching ? 
+                                                    loading ? 
+                                                        <div className="flex items-center justify-center w-full h-full">
+                                                            <p className="text-gray-400 self-center">Loading...</p>
+                                                        </div>
+                                                    :
+                                                        suggestions.map(k => {
+                                                            return (
+                                                                <div
+                                                                    onClick={() => {
+                                                                        setSearching(false);
 
-                                        <div className="flex flex-col gap-1">
-                                            <p className="text-gray-400">City</p>
-                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                <input 
-                                                    placeholder="City" defaultValue={customerState?.contact.address.city} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                    onChange={(e) => {
-                                                        if(customerState)
-                                                            setCustomerState({
-                                                                ...customerState,
-                                                                contact: {
-                                                                    ...customerState.contact,
-                                                                    address: {
-                                                                        ...customerState.contact.address,
-                                                                        city: e.target.value
-                                                                    }
-                                                                }
-                                                            })
-                                                    }}
-                                                    onFocus={(e) => {
-                                                    }}
-                                                    tabIndex={0}
-                                                    // onBlur={() => setSearchFocused(false)}
-                                                    onKeyDown={(e) => {
-                                                    }}
-                                                    />
-                                            </div>
-                                        </div>
+                                                                        setCustomerState({
+                                                                            ...customerState,
+                                                                            contact: {
+                                                                                ...customerState?.contact,
+                                                                                address: k
+                                                                            }
+                                                                        })
 
-                                        <div className="flex flex-col gap-1">
-                                            <p className="text-gray-400">Postal Code</p>
-                                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
-                                                <input 
-                                                    placeholder="Postal Code" defaultValue={customerState?.contact.address.po_code} className="bg-transparent focus:outline-none text-white flex-1" 
-                                                    onChange={(e) => {
-                                                        if(customerState)
-                                                            setCustomerState({
-                                                                ...customerState,
-                                                                contact: {
-                                                                    ...customerState.contact,
-                                                                    address: {
-                                                                        ...customerState.contact.address,
-                                                                        po_code: e.target.value
-                                                                    }
-                                                                }
-                                                            })
-                                                    }}
-                                                    onFocus={(e) => {
-                                                    }}
-                                                    tabIndex={0}
-                                                    // onBlur={() => setSearchFocused(false)}
-                                                    onKeyDown={(e) => {
-                                                    }}
-                                                    />
+                                                                        input_ref.current ? input_ref.current.value = "" : {}
+                                                                    }} 
+                                                                    className="px-4 py-2 cursor-pointer hover:bg-gray-700 rounded-md" key={`${k.city}-${k.country}-${k.po_code}-${k.street}-${k.street2}`}>
+                                                                    <p className="text-white font-semibold">{k.street.trim() == "0" ? "" : k.street} {k.street2} {k.po_code}</p>
+                                                                    <p className="text-gray-400">{k.city} - {k.country}</p>
+                                                                </div>
+                                                            )
+                                                        })
+                                                :
+                                                <div className="flex flex-row items-start gap-4 px-2 py-4">
+                                                    <Image src="/icons/check-verified-02.svg" style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} className="mt-1" height={20} width={20} alt="Verified Address" />
+
+                                                    <div className="text-white">
+                                                        <p className="font-semibold">{customerState?.contact.address.street}</p>
+                                                        <p>{customerState?.contact.address.street2}</p>
+                                                        <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
+                                                        <p className="text-gray-400">{customerState?.contact.address.country}</p>
+                                                    </div>
+                                                </div>
+                                            }
                                             </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex flex-1 h-full">
-                                        <div className="flex flex-row items-center gap-4 bg-red-300 rounded-md px-3 py-2">
-                                            <p className="text-red-400">{error}</p>
                                         </div>
                                     </div>
 
                                     <div
                                         onClick={() => {
-                                            fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
-                                                method: "POST",
-                                                body: JSON.stringify(customerState?.contact),
-                                                credentials: "include",
-                                                redirect: "follow"
-                                            })?.then(async e => {
-                                                const data = await e.json();
+                                            if(!loading) {
+                                                setLoading(true);
 
-                                                if(e.ok) {
-                                                    fetchDistanceData().then(data => {
-                                                        setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
-                                                    });
-
-                                                    setError(null);
-                                                    setPageState("origin");
-                                                }else {
-                                                    setError("Malformed Street Address")
-                                                }
-                                            })
+                                                fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
+                                                    method: "POST",
+                                                    body: JSON.stringify(customerState?.contact),
+                                                    credentials: "include",
+                                                    redirect: "follow"
+                                                })?.then(async e => {
+                                                    const data: Customer = await e.json();
+                                                    setCustomerState(data);
+    
+                                                    if(e.ok) {
+                                                        fetchDistanceData().then(data => {
+                                                            setGeneratedOrder(generateOrders(generateProductMap(orderState), data));
+                                                            setLoading(false);
+                                                        });
+    
+                                                        setError(null);
+                                                        setPageState("origin");
+                                                    }else {
+                                                        setError("Malformed Street Address")
+                                                    }
+                                                })
+                                            }
                                         }}
-                                        className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                        <p className={`text-white font-semibold ${""}`}>Save</p>
+                                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                                        
+                                        <p className={`text-white font-semibold ${""}`}>{loading ? "Saving..." : "Save"}</p>
                                     </div>
                                 </div>
                             )
@@ -589,37 +571,49 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
     });
 
     // [weighting, store_id, { item_id, quantity - that are instore }[]]
-    const weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
+    let weighted_vector = kvp.sort((a, b) => b[0] - a[0]);
 
     // [item_id, store_code, quantity][]
     const product_assignment: [string, string, number][] = [];
 
-    // impl! If products need to be shipped from separate stores; i.e. 1 in two stores, need two, ship from both...
-    // while(product_map.filter(k => k.quantity !== 0).length > 0) {
-        weighted_vector.map(e => {
+    // impl! If products need to be shipped from separate stores; i.e. 1 in two stores, need two, ship from both... product_map.filter(k => k.quantity !== 0).length > 0
+    for(let i = 0; i < 2; i++) {
+        console.log(weighted_vector, product_map.filter(k => k.quantity !== 0))
+
+        weighted_vector = weighted_vector.map(e => {
             let arr = e[2];
     
-            arr.map(k => {
+            return [ e[0], e[1], arr.map(k => {
                 const req = product_map.find(n => n.id == k.item_id)?.quantity ?? 0;
     
-                if(req <= 0) return;
+                if(req <= 0) k;
+
+                console.log("Check", product_assignment.find(b => b[0] == k.item_id));
     
                 if(k.quantity >= req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
                     product_assignment.push([ k.item_id, e[1], req ]);
                     product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: 0 } : n)
+                    
+                    return { ...k, quantity: k.quantity - req }
                 }else if(k.quantity > 0 && k.quantity < req && !(product_assignment.find(b => b[0] == k.item_id)?.[2] ?? 0 >= req)) {
                     product_assignment.push([ k.item_id, e[1], k.quantity ]);
                     product_map = product_map.map(n => n.id == k.item_id ? { ...n, quantity: n.quantity - k.quantity } : n)
+
+                    return { ...k, quantity: 0 }
+                }else {
+                    return k
                 }
-            })
+            }) as { quantity: number; item_id: string; }[]]
         }); 
-    // }
+
+        console.log(weighted_vector, product_map.filter(k => k.quantity !== 0))
+    }
 
     return product_assignment.map(e => {
         return {
             item: product_map.find(k => k.id == e[0]),
             store: e[1],
-            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= 1) ?? [],
+            alt_stores: product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.quantity.quantity_sellable >= e[2]) ?? [],
             ship: true,
             quantity: e[2]
         }
