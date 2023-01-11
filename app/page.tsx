@@ -38,7 +38,8 @@ export default function App() {
 				po_code: "100",
 			},
 		},
-		employee: user
+		employee: user,
+		kiosk: "A"
 	});
 
 	useEffect(() => {
@@ -51,7 +52,7 @@ export default function App() {
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async () => {
-		fetch('http://127.0.0.1:8000/employee/auth/9e7b9ed7-a699-40ad-b1f9-294bb927fa07', {
+		fetch('http://127.0.0.1:8000/employee/auth/a446754e-a05b-46cf-abd1-9ae532b1aef4', {
 			method: "POST",
 			body: JSON.stringify({
 				pass: "1232"
@@ -62,7 +63,7 @@ export default function App() {
 			const cookie = await e.text();
 			setAuthCookie(cookie);
 
-			fetch('http://127.0.0.1:8000/employee/9e7b9ed7-a699-40ad-b1f9-294bb927fa07', {
+			fetch('http://127.0.0.1:8000/employee/a446754e-a05b-46cf-abd1-9ae532b1aef4', {
 				method: "GET",
 				credentials: "include",
 				redirect: "follow"

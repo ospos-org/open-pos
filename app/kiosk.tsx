@@ -6,7 +6,7 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note, Order, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note, Order, PaymentIntent, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
@@ -15,7 +15,8 @@ import DispatchMenu from "./dispatchMenu";
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
     employee: Employee | null | undefined,
-    store_contact: ContactInformation
+    store_contact: ContactInformation,
+    kiosk: string
 } }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
@@ -296,7 +297,7 @@ export default function Kiosk({ master_state }: { master_state: {
                             <Image onClick={() => {
                                 setActiveProduct(null);
                                 setSearchFocused(false);
-                            }} width="20" height="20" src="/icons/arrow-narrow-left.svg" className="select-none" alt={''} draggable={false} ></Image>
+                            }} width="20" height="20" src="/icons/arrow-narrow-left.svg" className="select-none cursor-pointer" alt={''} draggable={false} ></Image>
                             :
                             <Image width="20" height="20" src="/icons/search-sm.svg" className="select-none" alt={''} draggable={false}></Image>
                         }
@@ -875,6 +876,18 @@ export default function Kiosk({ master_state }: { master_state: {
                                         </div>
                                     }
 
+                                    <div onClick={() => {
+                                        fetch('http://127.0.0.1:8000/transaction/generate', {
+                                            method: "POST",
+                                            credentials: "include",
+			                                redirect: "follow"
+                                        }).then(async l => {
+                                            console.log(await l.json());
+                                        })
+                                    }}>
+                                        click me :D
+                                    </div>
+
                                     <div
                                         onClick={() => {
                                             setPadState("discount")
@@ -941,9 +954,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                         onClick={() => {
                                             setPadState("pickup-from-store")
                                         }}
-                                        className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
-                                        <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                        <p className="font-medium">Pickup from Store</p>
+                                        className={`flex flex-col justify-between gap-8 ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
+                                        <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                        <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
                                     </div>
             
                                     <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
@@ -1079,7 +1092,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                         <div className="flex flex-col gap-1">
                                                                             <div className="flex flex-row items-center gap-2">
                                                                                 <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
-                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p></div>
+                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p> <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p></div>
                                                                             </div>
                                                                             <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                                         </div>
@@ -1476,11 +1489,29 @@ export default function Kiosk({ master_state }: { master_state: {
                                     </div>
 
                                     <p onClick={() => {
-                                        const new_payment = [ ...kioskState.payment, {
-                                            payment_method: "card",
-                                            fulfillment_date: new Date().toString(),
-                                            amount: currentTransactionPrice
+                                        const new_payment: PaymentIntent[] = [ ...kioskState.payment, {
+                                            amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
+                                            delay_action: "Cancel",
+                                            delay_duration: "PT12H",
+                                            fulfillment_date: new Date().toISOString(),
+                                            id: v4(),
+                                            order_id: "?",
+                                            payment_method: "Card",
+                                            processing_fee: {quantity: 0.1, currency: 'NZD'},
+                                            processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
+                                            status: "Complete"
                                         }];
+
+                                        // amount: {quantity: 115, currency: 'NZD'}
+                                        // delay_action: "Cancel"
+                                        // delay_duration: "PT12H"
+                                        // fulfillment_date: "2023-01-11T07:58:58.244506404Z"
+                                        // id: "dffc8e97-2c98-4deb-b2c3-e1f6350935e6"
+                                        // order_id: "5982da33-1582-4f2f-994d-2f151c148f0e"
+                                        // payment_method: "Card"
+                                        // processing_fee: {quantity: 0.1, currency: 'NZD'}
+                                        // processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'}
+                                        // status: "Unfulfilled"
 
                                         setKioskState({
                                             ...kioskState,
@@ -1488,7 +1519,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                         });
 
                                         const qua = new_payment.reduce(function (prev, curr) {
-                                            return prev + (curr.amount ?? 0)
+                                            return prev + (curr.amount.quantity ?? 0)
                                         }, 0);
 
                                         if(qua < (kioskState.order_total ?? 0)) {
@@ -1510,14 +1541,14 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             contact: master_state.store_contact
                                                         },
                                                         destination: {
-                                                            code: "cust",
+                                                            code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
                                                         status: [
                                                             ...e.status,
                                                             {   
                                                                 status: "fulfilled",
-                                                                assigned_products: e.products.map<string>(e => { return e.product_code + "-" + e.variant.join("-") }) as string[],
+                                                                assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                 timestamp: date
                                                             }
                                                         ],
@@ -1527,18 +1558,51 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 ...e.status,
                                                                 {   
                                                                     status: "fulfilled",
-                                                                    assigned_products: e.products.map<string>(e => { return e.product_code + "-" + e.variant.join("-") }) as string[],
+                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
                                                                 }
                                                             ]
                                                         ]
                                                     }
                                                 }else {
-                                                    return e
+                                                    return {
+                                                        ...e,
+                                                        status: [
+                                                            ...e.status,
+                                                            {   
+                                                                status: "queued",
+                                                                assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                                timestamp: date
+                                                            }
+                                                        ],
+                                                        status_history: [
+                                                            ...e.status_history,
+                                                            [
+                                                                ...e.status,
+                                                                {   
+                                                                    status: "queued",
+                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                                    timestamp: date
+                                                                }
+                                                            ]
+                                                        ]
+                                                    }
                                                 }
                                             });
 
                                             setOrderState(sortOrders(new_state));
+
+                                            const transaction = {
+                                                ...kioskState,
+                                                customer: customerState,
+                                                payment: new_payment,
+                                                products: sortOrders(new_state),
+                                                order_date: date,
+                                                salesperson: master_state.employee?.id ?? "",
+                                                till: master_state.kiosk
+                                            };
+
+                                            console.log(transaction);
                                         }
                                     }}>skip to completion</p>
                                 </div>
@@ -1586,7 +1650,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`} className="flex flex-row justify-between items-center text-white gap-4 w-full flex-1">
                                                         <p className="text-gray-300 font-bold">{e.payment_method?.toUpperCase()}</p>
                                                         <hr className="flex-1 border-gray-500 h-[3px] border-[2px] bg-gray-500 rounded-md" />
-                                                        <p>${e.amount?.toFixed(2)}</p>
+                                                        <p>${e.amount?.quantity.toFixed(2)}</p>
                                                     </div>
                                                 )
                                             })
@@ -1796,10 +1860,23 @@ export default function Kiosk({ master_state }: { master_state: {
                                         <div
                                             className={`${cashContinuable ? "bg-white" : "bg-blue-400"} w-full rounded-md p-4 flex items-center justify-center`}
                                             onClick={() => {
-                                                const new_payment = [ ...kioskState.payment, {
-                                                    payment_method: "cash",
-                                                    fulfillment_date: new Date().toString(),
-                                                    amount: currentTransactionPrice
+                                                // const new_payment = [ ...kioskState.payment, {
+                                                //     payment_method: "cash",
+                                                //     fulfillment_date: new Date().toString(),
+                                                //     amount: currentTransactionPrice
+                                                // }];
+
+                                                const new_payment: PaymentIntent[] = [ ...kioskState.payment, {
+                                                    amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
+                                                    delay_action: "Cancel",
+                                                    delay_duration: "PT12H",
+                                                    fulfillment_date: new Date().toISOString(),
+                                                    id: v4(),
+                                                    order_id: "?",
+                                                    payment_method: "Card",
+                                                    processing_fee: {quantity: 0.1, currency: 'NZD'},
+                                                    processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
+                                                    status: "Complete"
                                                 }];
         
                                                 setKioskState({
@@ -1808,7 +1885,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 });
         
                                                 const qua = new_payment.reduce(function (prev, curr) {
-                                                    return prev + (curr.amount ?? 0)
+                                                    return prev + (curr.amount.quantity ?? 0)
                                                 }, 0);
         
                                                 if(qua < (kioskState.order_total ?? 0)) {
@@ -1876,44 +1953,27 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "ship-to-customer":
                             return (
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
-                                    <div className="flex flex-row justify-between cursor-pointer">
+                                    customerState ? 
+                                    <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                    :
+                                    <div className="flex items-center justify-center flex-1 gap-8 flex-col">
+                                        <p className="text-gray-400">Must have an assigned customer to send products.</p>
+
                                         <div 
                                             onClick={() => {
-                                                setPadState("cart")
+                                                setResult([]); 
+                                                setSearchType("customer");    
+
+                                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                input_ref.current?.focus()
                                             }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
+                                            className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                            <p>Select Customer</p>
+                                            <Image 
+                                                className=""
+                                                height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                         </div>
-                                        <p className="text-gray-400">Ship Order to Customer</p>
                                     </div>
-                                    
-                                    {
-                                        customerState ? 
-                                        <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
-                                        :
-                                        <div className="flex items-center justify-center flex-1 gap-8 flex-col">
-                                            <p className="text-gray-400">Must have an assigned customer to send products.</p>
-
-                                            <div 
-                                                onClick={() => {
-                                                    setResult([]); 
-                                                    setSearchType("customer");    
-
-                                                    input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                    input_ref.current?.focus()
-                                                }}
-                                                className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
-                                                <p>Select Customer</p>
-                                                <Image 
-                                                    className=""
-                                                    height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
                             )
                     }
                 })()

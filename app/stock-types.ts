@@ -3,17 +3,42 @@ export type KioskState = {
     transaction_type: string | null,
     products: Order[] | null,
     order_total: number | null,
-    payment: {
-        payment_method: "cash" | "card" | string | null,
-        fulfillment_date: string | null,
-        amount: number | null
-    }[],
+    payment: PaymentIntent[],
     order_date: string | null,
     order_notes: string[] | null,
     order_history: string[] | null,
     salesperson: string | null,
     till: string | null
 };
+
+export type PaymentIntent = {
+    amount: Price
+    delay_action: "Cancel" | "Complete" | "RequireFurtherAction"
+    /// defaults to PT12H
+    delay_duration: string 
+    fulfillment_date: string
+    id: string
+    order_id: string
+    payment_method: "Card" | "Cash" | "Transfer"
+    processing_fee: Price
+    processor: {
+        /// Store Code
+        location: string,
+        /// Employee ID 
+        employee: string,
+        /// k: kiosk
+        /// w: web
+        /// c: direct entry 
+        software_version: 'k0.5.2', 
+        token: string
+    }
+    status: "Unfulfilled" | "Pending" | "Processing" | "Failed" | "Complete" 
+}
+
+export type Price = {
+    quantity: number,
+    currency: string
+}
 
 type StoreStatus = {
     item: Store;
