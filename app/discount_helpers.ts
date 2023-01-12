@@ -60,6 +60,24 @@ export function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: str
     }
 }
 
+export function toDbDiscount(discount: string): { Absolute?: string, Percentage?: string } {
+    let d = discount.split("|");
+
+    if(d[0] == "a" || d[0] == "A") {
+        return {
+            Absolute: d[1] ?? "0"
+        }
+    }else if (d[0] == "p" || d[0] == "P") {
+        return {
+            Percentage: d[1] ?? "0"
+        }
+    }
+
+    return {
+        Absolute: d[1] ?? "0"
+    }
+}
+
 export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean) {
     let max_discount = {
         value: "a|0",

@@ -1,7 +1,7 @@
 export type KioskState = {
     customer: string | null,
     transaction_type: string | null,
-    products: Order[] | null,
+    products: DbOrder[] | null,
     order_total: number | null,
     payment: PaymentIntent[],
     order_date: string | null,
@@ -46,6 +46,22 @@ type StoreStatus = {
     timestamp: string;
 }
 
+export type DbOrder = {
+    id: string,
+    destination: Move | null,
+    origin: Move,
+    products: DbProductPurchase[],
+    status: OrderStatus[],
+    previous_failed_fulfillment_attempts: (StoreStatus[])[],
+    status_history: (OrderStatus[])[],
+    order_history: string[],
+    order_notes: Note[],
+    reference: string,
+    creation_date: string,
+    discount: { Absolute?: string, Percentage?: string },
+    order_type: "shipment" | "collection" | "direct"
+}
+
 export type Order = {
     id: string,
     destination: Move | null,
@@ -73,6 +89,21 @@ export type ProductPurchase = {
     product_code: string,
     variant: string[],
     discount: DiscountValue[],
+
+    product_cost: number,
+    quantity: number,
+
+    /// Extra information that should be removed before sending to server
+    product: Product,
+    variant_information: VariantInformation
+}
+
+export type DbProductPurchase = {
+    id: string,
+
+    product_code: string,
+    variant: string[],
+    discount: { Absolute?: string, Percentage?: string },
 
     product_cost: number,
     quantity: number,

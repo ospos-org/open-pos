@@ -6,9 +6,9 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DiscountValue, Employee, KioskState, Note, Order, PaymentIntent, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DiscountValue, Employee, KioskState, Note, Order, PaymentIntent, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
-import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
 import DispatchMenu from "./dispatchMenu";
 
@@ -20,7 +20,7 @@ export default function Kiosk({ master_state }: { master_state: {
 } }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
-        transaction_type: "OUT",
+        transaction_type: "Out",
         products: [],
         order_total: null,
         payment: [],
@@ -876,18 +876,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                         </div>
                                     }
 
-                                    <div onClick={() => {
-                                        fetch('http://127.0.0.1:8000/transaction/generate', {
-                                            method: "POST",
-                                            credentials: "include",
-			                                redirect: "follow"
-                                        }).then(async l => {
-                                            console.log(await l.json());
-                                        })
-                                    }}>
-                                        click me :D
-                                    </div>
-
                                     <div
                                         onClick={() => {
                                             setPadState("discount")
@@ -1532,10 +1520,11 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                             // Following state change is for an in-store purchase, modifications to status and destination are required for shipments
                                             // Fulfil the orders taken in-store and leave the others as open.
-                                            const new_state = orderState.map(e => {
+                                            const new_state: DbOrder[] = orderState.map(e => {
                                                 if(e.order_type == "direct") {
                                                     return {
                                                         ...e,
+                                                        discount: toDbDiscount(e.discount),
                                                         origin: {
                                                             code: master_state.store_id,
                                                             contact: master_state.store_contact
@@ -1544,6 +1533,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
+                                                        products: e.products.map(k => { return { ...k, discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)}}),
                                                         status: [
                                                             ...e.status,
                                                             {   
@@ -1567,6 +1557,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 }else {
                                                     return {
                                                         ...e,
+                                                        discount: toDbDiscount(e.discount),
                                                         status: [
                                                             ...e.status,
                                                             {   
@@ -1575,6 +1566,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 timestamp: date
                                                             }
                                                         ],
+                                                        products: e.products.map(k => { return { ...k, discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)}}),
                                                         status_history: [
                                                             ...e.status_history,
                                                             [
@@ -1590,19 +1582,28 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 }
                                             });
 
-                                            setOrderState(sortOrders(new_state));
+                                            // setOrderState(sortDbOrders(new_state));
 
                                             const transaction = {
                                                 ...kioskState,
-                                                customer: customerState,
+                                                customer: customerState?.id,
                                                 payment: new_payment,
-                                                products: sortOrders(new_state),
+                                                products: sortDbOrders(new_state),
                                                 order_date: date,
                                                 salesperson: master_state.employee?.id ?? "",
                                                 till: master_state.kiosk
                                             };
+                                            
+                                            console.log(transaction)
 
-                                            console.log(transaction);
+                                            fetch('http://127.0.0.1:8000/transaction', {
+                                                method: "POST",
+                                                body: JSON.stringify(transaction),
+                                                credentials: "include",
+                                                redirect: "follow"
+                                            }).then(async k => {
+                                                console.log(await k.json())
+                                            })
                                         }
                                     }}>skip to completion</p>
                                 </div>
@@ -1685,7 +1686,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                             onClick={() => {
                                                 setKioskState({
                                                     customer: null,
-                                                    transaction_type: "OUT",
+                                                    transaction_type: "Out",
                                                     products: [],
                                                     order_total: null,
                                                     payment: [],
@@ -1983,5 +1984,9 @@ export default function Kiosk({ master_state }: { master_state: {
 }
 
 function sortOrders(orders: Order[]) {
+    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
+}
+
+function sortDbOrders(orders: DbOrder[]) {
     return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
 }
