@@ -323,8 +323,8 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     };
                                                 })).then((k) => {
                                                     let job = orderJob[0];
-                                                    job = job.filter(k => k.order_type != "direct")
-                                                    k.map(b => job.push(b as Order));
+                                                    job = job.filter(k => k.order_type != "Direct")
+                                                    k.map(b => job.push(b as unknown as Order));
                                                     
                                                     orderJob[1](job);
                                                     setPadState("cart")
@@ -537,7 +537,7 @@ function generateProductMap(orders: Order[]) {
     let pdt_map: ProductPurchase[] = [];
 
     for(let i = 0; i < orders.length; i++) {
-        if(orders[i].order_type == "direct") {
+        if(orders[i].order_type == "Direct") {
             orders[i].products.map(e => {
                 pdt_map.push(e)
             })

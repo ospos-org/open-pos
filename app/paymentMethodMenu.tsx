@@ -41,20 +41,11 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                         editPrice ? 
                             <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
                                 (
-                                    (
-                                        orderState.reduce(
-                                            (p,c) => 
-                                                p += applyDiscount(
-                                                    c.products.reduce(function (prev, curr) {
-                                                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, customer).value)
-                                                    }, 0)
-                                                , c.discount)
-                                            , 0) * 1.15
-                                    )
+                                    (kioskState.order_total ?? 0)
                                 - 
                                     (
                                         kioskState.payment.reduce(function (prev, curr) {
-                                            return prev + (curr.amount ?? 0)
+                                            return prev + (curr.amount.quantity ?? 0)
                                         }, 0)
                                     ) 
                                 ).toFixed(2)
@@ -98,9 +89,15 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     }
 
                     {
-                        (currentTransactionPrice ?? kioskState?.order_total ?? 0) < (kioskState?.order_total ?? 0) ?
+                        (currentTransactionPrice ?? kioskState?.order_total ?? 0) < ((kioskState.order_total ?? 0)
+                        - 
+                            (
+                                kioskState.payment.reduce(function (prev, curr) {
+                                    return prev + (curr.amount.quantity ?? 0)
+                                }, 0)
+                            ) ) ?
                         <p className="text-gray-500">${(kioskState.order_total! - (currentTransactionPrice! + kioskState.payment.reduce(function (prev, curr) {
-                            return prev + (curr.amount ?? 0)
+                            return prev + (curr.amount.quantity ?? 0)
                         }, 0))).toFixed(2)} remains</p>
                         :
                         <></>

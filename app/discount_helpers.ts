@@ -52,7 +52,7 @@ export function parseDiscount(discount: string) {
     }
 }
 
-export function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: string }) {
+export function fromDbDiscount(dbDiscount: { Absolute?: number, Percentage?: number }) {
     if(dbDiscount.Absolute) {
         return `a|${dbDiscount.Absolute}`
     }else {
@@ -60,21 +60,21 @@ export function fromDbDiscount(dbDiscount: { Absolute?: string, Percentage?: str
     }
 }
 
-export function toDbDiscount(discount: string): { Absolute?: string, Percentage?: string } {
+export function toDbDiscount(discount: string): { Absolute?: number, Percentage?: number } {
     let d = discount.split("|");
 
     if(d[0] == "a" || d[0] == "A") {
         return {
-            Absolute: d[1] ?? "0"
+            Absolute: parseFloat(d[1] ?? "0")
         }
     }else if (d[0] == "p" || d[0] == "P") {
         return {
-            Percentage: d[1] ?? "0"
+            Percentage: parseFloat(d[1] ?? "0")
         }
     }
 
     return {
-        Absolute: d[1] ?? "0"
+        Absolute: parseFloat(d[1] ?? "0")
     }
 }
 

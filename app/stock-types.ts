@@ -6,7 +6,6 @@ export type KioskState = {
     payment: PaymentIntent[],
     order_date: string | null,
     order_notes: string[] | null,
-    order_history: string[] | null,
     salesperson: string | null,
     till: string | null
 };
@@ -18,7 +17,7 @@ export type PaymentIntent = {
     delay_duration: string 
     fulfillment_date: string
     id: string
-    order_id: string
+    order_ids: string[]
     payment_method: "Card" | "Cash" | "Transfer"
     processing_fee: Price
     processor: {
@@ -51,15 +50,15 @@ export type DbOrder = {
     destination: Move | null,
     origin: Move,
     products: DbProductPurchase[],
-    status: OrderStatus[],
+    status: OrderStatus,
     previous_failed_fulfillment_attempts: (StoreStatus[])[],
-    status_history: (OrderStatus[])[],
+    status_history: StatusHistory[],
     order_history: string[],
     order_notes: Note[],
     reference: string,
     creation_date: string,
-    discount: { Absolute?: string, Percentage?: string },
-    order_type: "shipment" | "collection" | "direct"
+    discount: { Absolute?: number, Percentage?: number },
+    order_type: "Shipment" | "Pickup" | "Direct" | "Quote"
 }
 
 export type Order = {
@@ -67,15 +66,21 @@ export type Order = {
     destination: Move | null,
     origin: Move,
     products: ProductPurchase[],
-    status: OrderStatus[],
+    status: OrderStatus,
     previous_failed_fulfillment_attempts: (StoreStatus[])[],
-    status_history: (OrderStatus[])[],
+    status_history: StatusHistory[],
     order_history: string[],
     order_notes: Note[],
     reference: string,
     creation_date: string,
     discount: string,
-    order_type: "shipment" | "collection" | "direct"
+    order_type: "Shipment" | "Pickup" | "Direct" | "Quote"
+}
+
+export type StatusHistory = {
+    item: OrderStatus,
+    reason: string,
+    timestamp: string
 }
 
 export type Move = {
@@ -99,18 +104,15 @@ export type ProductPurchase = {
 }
 
 export type DbProductPurchase = {
-    id: string,
-
-    product_code: string,
-    variant: string[],
-    discount: { Absolute?: string, Percentage?: string },
+    discount: { Absolute?: number, Percentage?: number }[],
 
     product_cost: number,
+    product_code: string,
     quantity: number,
 
-    /// Extra information that should be removed before sending to server
-    product: Product,
-    variant_information: VariantInformation
+    variant: string[],
+
+    id: string,
 }
 
 export type DiscountValue = {
@@ -119,7 +121,7 @@ export type DiscountValue = {
 }
 
 export type OrderStatus = {
-    status: "queued" | "transit" | "processing" | "in-store" | "fulfilled" | "failed" | string,
+    status: "Queued" | "Transit" | "Processing" | "InStore" | "Fulfilled" | "Failed",
     assigned_products: string[],
     timestamp: string
 }
@@ -149,8 +151,8 @@ export type VariantInformation = {
     stock_information: StockInformation,
     barcode: string,
     loyalty_discount: {
-        Absolute?: string,
-        Percentage?: string
+        Absolute?: number,
+        Percentage?: number
     },
 }
 
@@ -260,6 +262,8 @@ export type Address = {
     city: string,
     country: string,
     po_code: string
+    lat: number,
+    lon: number
 }
 
 export type Email = {

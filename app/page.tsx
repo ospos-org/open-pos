@@ -8,15 +8,15 @@ import Inventory from './inventory';
 import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
-import { Employee } from './stock-types';
+import { ContactInformation, Employee } from './stock-types';
 
 const ICON_SIZE = 30
 
 export default function App() {
 	const [ page, setPage ] = useState(0);
-	const [ user, setUser ] = useState<Employee | null>();
+	const [ user, setUser ] = useState<Employee | null>(null);
 
-	const [ masterState, setMasterState ] = useState({
+	const [ masterState, setMasterState ] = useState<{ store_id: string, store_contact: ContactInformation, employee: Employee | null, kiosk: string }>({
 		store_id: "001",
 		store_contact: {
 			name: "Torpedo7",
@@ -36,6 +36,8 @@ export default function App() {
 				city: "Auckland",
 				country: "New Zealand",
 				po_code: "100",
+				lat: 100,
+				lon: 100
 			},
 		},
 		employee: user,
@@ -52,7 +54,7 @@ export default function App() {
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async () => {
-		fetch('http://127.0.0.1:8000/employee/auth/a446754e-a05b-46cf-abd1-9ae532b1aef4', {
+		fetch('http://127.0.0.1:8000/employee/auth/24f0a7d3-f879-4f36-ac51-9597bdfaaea6', {
 			method: "POST",
 			body: JSON.stringify({
 				pass: "1232"
@@ -63,7 +65,7 @@ export default function App() {
 			const cookie = await e.text();
 			setAuthCookie(cookie);
 
-			fetch('http://127.0.0.1:8000/employee/a446754e-a05b-46cf-abd1-9ae532b1aef4', {
+			fetch('http://127.0.0.1:8000/employee/24f0a7d3-f879-4f36-ac51-9597bdfaaea6', {
 				method: "GET",
 				credentials: "include",
 				redirect: "follow"

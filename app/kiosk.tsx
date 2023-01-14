@@ -6,11 +6,13 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DbOrder, DiscountValue, Employee, KioskState, Note, Order, PaymentIntent, Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, StatusHistory, StrictVariantCategory, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
 import DispatchMenu from "./dispatchMenu";
+import { kMaxLength } from "buffer";
+import moment from "moment";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -25,8 +27,7 @@ export default function Kiosk({ master_state }: { master_state: {
         order_total: null,
         payment: [],
         order_date: null,
-        order_notes: null,
-        order_history: null,
+        order_notes: [],
         salesperson: null,
         till: null
     });
@@ -39,15 +40,19 @@ export default function Kiosk({ master_state }: { master_state: {
             contact: master_state.store_contact
         },
         products: [],
-        status: [],
+        status: {
+            status: "Queued",
+            assigned_products: [],
+            timestamp: getDate()
+        },
         previous_failed_fulfillment_attempts: [],
         status_history: [],
         order_history: [],
         order_notes: [],
         reference: "",
-        creation_date: Date.now().toString(),
+        creation_date: getDate(),
         discount: "a|0",
-        order_type: "direct"
+        order_type: "Direct"
     }])
 
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
@@ -176,7 +181,7 @@ export default function Kiosk({ master_state }: { master_state: {
                         non_diminishing: false
                     },
                     loyalty_discount: {
-                        Absolute: "0"
+                        Absolute: 0
                     },
                     barcode: "CART",
                     marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
@@ -240,7 +245,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 }
 
                 if(active_product_variant) {
-                    let cOs = orderState.find(e => e.order_type == "direct");
+                    let cOs = orderState.find(e => e.order_type == "Direct");
 
                     if(!cOs?.products) {
                         if(orderState[0].products) {
@@ -635,7 +640,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     className="select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
                                                     onClick={() => {
                                                         if(activeProductVariant) {
-                                                            let cOs = orderState.find(e => e.order_type == "direct");
+                                                            let cOs = orderState.find(e => e.order_type == "Direct");
 
                                                             if(!cOs?.products) {
                                                                 if(orderState[0].products) {
@@ -905,7 +910,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         non_diminishing: false
                                                     },
                                                     loyalty_discount: {
-                                                        Absolute: "0"
+                                                        Absolute: 0
                                                     },
                                                     barcode: "CART",
                                                     marginal_price: orderState.reduce((p, c) => p += c.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0), 0),
@@ -1045,15 +1050,19 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             contact: master_state.store_contact
                                                         },
                                                         products: [],
-                                                        status: [],
+                                                        status: {
+                                                            status: "Queued",
+                                                            assigned_products: [],
+                                                            timestamp: getDate()
+                                                        },
                                                         status_history: [],
                                                         order_history: [],
                                                         previous_failed_fulfillment_attempts: [],
                                                         order_notes: [],
                                                         reference: "",
-                                                        creation_date: Date.now().toString(),
+                                                        creation_date: getDate(),
                                                         discount: "a|0",
-                                                        order_type: "direct"
+                                                        order_type: "Direct"
                                                     }])
                                                 }}>Clear Cart</p>
                                                 {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
@@ -1075,7 +1084,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     <div key={n.id} className="flex flex-col gap-4">
                                                         {
                                                             orderState.length !== 1 ?
-                                                                n.order_type !== "direct" ?
+                                                                n.order_type !== "Direct" ?
                                                                     <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                                         <div className="flex flex-col gap-1">
                                                                             <div className="flex flex-row items-center gap-2">
@@ -1093,18 +1102,16 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                         </div>
                                                                     </div>
                                                             :
-                                                                orderState[0].order_type !== "direct" ?
-                                                                <div className="flex select-none flex-col w-full justify-between gap-2">
-                                                                    <div className="flex flex-1 flex-row items-center gap-2">
-                                                                        <p className="text-gray-400">{n.order_type.toUpperCase()}</p>
-                                                                        <hr className="border-gray-400 opacity-25 flex-1 w-full"/>
+                                                                orderState[0].order_type !== "Direct" ?
+                                                                <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <div className="flex flex-row items-center gap-2">
+                                                                                <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p> <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p></div>
+                                                                            </div>
+                                                                            <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                        </div>
                                                                     </div>
-
-                                                                    <div className="flex select-none flex-col gap-1">
-                                                                        <div className="text-white font-semibold">{n.origin.contact.name} ({n.origin?.code})</div>
-                                                                        <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
-                                                                    </div>
-                                                                </div>
                                                                 :
                                                                 <></>
                                                         }
@@ -1126,7 +1133,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
                 
                                                                                 {
-                                                                                    n.order_type == "direct" ?
+                                                                                    n.order_type == "Direct" ?
                                                                                         (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                                         >
                                                                                         (q_here?.quantity.quantity_sellable ?? 0)
@@ -1247,7 +1254,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 <p className="text-sm text-gray-400">{e.variant_information.name}</p>
                                                                                 
                                                                                 {
-                                                                                    n.order_type == "direct" ?
+                                                                                    n.order_type == "Direct" ?
                                                                                         (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                                         > 
                                                                                         (q_here?.quantity.quantity_sellable ?? 0)
@@ -1481,9 +1488,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                             amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
                                             delay_action: "Cancel",
                                             delay_duration: "PT12H",
-                                            fulfillment_date: new Date().toISOString(),
+                                            fulfillment_date: getDate(),
                                             id: v4(),
-                                            order_id: "?",
+                                            order_ids: ["?"],
                                             payment_method: "Card",
                                             processing_fee: {quantity: 0.1, currency: 'NZD'},
                                             processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
@@ -1516,12 +1523,12 @@ export default function Kiosk({ master_state }: { master_state: {
                                         }else {
                                             setPadState("completed");
 
-                                            const date = new Date().toString();
+                                            const date = getDate();
 
                                             // Following state change is for an in-store purchase, modifications to status and destination are required for shipments
                                             // Fulfil the orders taken in-store and leave the others as open.
                                             const new_state: DbOrder[] = orderState.map(e => {
-                                                if(e.order_type == "direct") {
+                                                if(e.order_type == "Direct") {
                                                     return {
                                                         ...e,
                                                         discount: toDbDiscount(e.discount),
@@ -1533,50 +1540,46 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
-                                                        products: e.products.map(k => { return { ...k, discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)}}),
-                                                        status: [
-                                                            ...e.status,
-                                                            {   
-                                                                status: "fulfilled",
-                                                                assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                                timestamp: date
-                                                            }
-                                                        ],
+                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        status: {   
+                                                            status: "Fulfilled",
+                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                            timestamp: date
+                                                        } as OrderStatus,
                                                         status_history: [
-                                                            ...e.status_history,
-                                                            [
-                                                                ...e.status,
-                                                                {   
-                                                                    status: "fulfilled",
+                                                            ...e.status_history as StatusHistory[],
+                                                            {
+                                                                item: {   
+                                                                    status: "Fulfilled",
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
-                                                                }
-                                                            ]
+                                                                } as OrderStatus,
+                                                                reason: "",
+                                                                timestamp: date
+                                                            } as StatusHistory
                                                         ]
                                                     }
                                                 }else {
                                                     return {
                                                         ...e,
                                                         discount: toDbDiscount(e.discount),
-                                                        status: [
-                                                            ...e.status,
-                                                            {   
-                                                                status: "queued",
-                                                                assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                                timestamp: date
-                                                            }
-                                                        ],
-                                                        products: e.products.map(k => { return { ...k, discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)}}),
+                                                        status: {   
+                                                            status: "Queued",
+                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                            timestamp: date
+                                                        } as OrderStatus,
+                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status_history: [
-                                                            ...e.status_history,
-                                                            [
-                                                                ...e.status,
-                                                                {   
-                                                                    status: "queued",
+                                                            ...e.status_history as StatusHistory[],
+                                                            {
+                                                                item: {   
+                                                                    status: "Queued",
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
-                                                                }
-                                                            ]
+                                                                } as OrderStatus,
+                                                                reason: "",
+                                                                timestamp: date
+                                                            } as StatusHistory
                                                         ]
                                                     }
                                                 }
@@ -1692,7 +1695,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     payment: [],
                                                     order_date: null,
                                                     order_notes: null,
-                                                    order_history: null,
                                                     salesperson: null,
                                                     till: null
                                                 })
@@ -1705,14 +1707,18 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         code: master_state.store_id
                                                     },
                                                     products: [],
-                                                    status: [],
+                                                    status: {
+                                                        status: "Queued",
+                                                        assigned_products: [],
+                                                        timestamp: getDate()
+                                                    },
                                                     status_history: [],
                                                     order_history: [],
                                                     order_notes: [],
                                                     reference: "",
-                                                    creation_date: Date.now().toString(),
+                                                    creation_date: getDate(),
                                                     discount: "a|0",
-                                                    order_type: "direct",
+                                                    order_type: "Direct",
                                                     previous_failed_fulfillment_attempts: []
                                                 }])
                                                 
@@ -1871,9 +1877,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
                                                     delay_action: "Cancel",
                                                     delay_duration: "PT12H",
-                                                    fulfillment_date: new Date().toISOString(),
+                                                    fulfillment_date: getDate(),
                                                     id: v4(),
-                                                    order_id: "?",
+                                                    order_ids: ["?"],
                                                     payment_method: "Card",
                                                     processing_fee: {quantity: 0.1, currency: 'NZD'},
                                                     processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
@@ -1923,7 +1929,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                         if(master_state?.employee) {
                                             const note_obj: Note = {
                                                 message: note,
-                                                timestamp: new Date().toString(),
+                                                timestamp: getDate(),
                                                 author: master_state?.employee
                                             }
 
@@ -1984,9 +1990,14 @@ export default function Kiosk({ master_state }: { master_state: {
 }
 
 function sortOrders(orders: Order[]) {
-    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
+    return orders.sort((a, b) => a.order_type == "Direct" ? -1 : 0)
 }
 
 function sortDbOrders(orders: DbOrder[]) {
-    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
+    return orders.sort((a, b) => a.order_type == "Direct" ? -1 : 0)
+}
+
+function getDate(): string {
+    return new Date().toString()
+    // return moment(new Date()).format()
 }
