@@ -1081,6 +1081,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                             </div>
                                             :
                                             sortOrders(orderState).map((n, indx) => {
+                                                console.log(n);
+
                                                 return (
                                                     <div key={n.id} className="flex flex-col gap-4">
                                                         {
@@ -1089,7 +1091,15 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                     <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                                         <div className="flex flex-col gap-1">
                                                                             <div className="flex flex-row items-center gap-2">
-                                                                                <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                {
+                                                                                    n.order_type == "Pickup" ?
+                                                                                    <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                    :
+                                                                                    n.order_type == "Quote" ?
+                                                                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                    :
+                                                                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                }
                                                                                 <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p> <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p></div>
                                                                             </div>
                                                                             <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
@@ -1107,9 +1117,28 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                 <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                                         <div className="flex flex-col gap-1">
                                                                             <div className="flex flex-row items-center gap-2">
-                                                                                <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
-                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p> <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p></div>
+                                                                                {
+                                                                                    n.order_type == "Pickup" ?
+                                                                                    <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                    :
+                                                                                    n.order_type == "Quote" ?
+                                                                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                    :
+                                                                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                                                                }
+                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">
+                                                                                    {n.origin.contact.name} 
+                                                                                    <p className="text-gray-400">({n.origin?.code})</p> 
+                                                                                    
+                                                                                    {
+                                                                                        n.order_type !== "Pickup" ?
+                                                                                        <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p>
+                                                                                        :
+                                                                                        <></>
+                                                                                    }
+                                                                                </div>
                                                                             </div>
+                                                                            
                                                                             <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                                         </div>
                                                                     </div>
@@ -2034,7 +2063,7 @@ function sortDbOrders(orders: DbOrder[]) {
     return orders.sort((a, b) => a.order_type == "Direct" ? -1 : 0)
 }
 
-function getDate(): string {
+export function getDate(): string {
     return new Date().toString()
     // return moment(new Date()).format()
 }

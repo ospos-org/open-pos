@@ -3,6 +3,7 @@ import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
+import { getDate } from "./kiosk";
 import { Address, ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
 const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
@@ -65,7 +66,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
             setPickupStores(stores)
             setPickupStore(stores.find(k => k.code == currentStore))
         })
-    }, [])
+    }, [currentStore])
 
     const fetchDistanceData = async () => {
         const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`http://127.0.0.1:8000/helpers/distance/${customerState?.id}`, {
@@ -282,10 +283,10 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
+                                                let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" | "Pickup" }[] = [];
 
                                                 generatedOrder.map(k => {
-                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
+                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct"));
 
                                                     if(found && k.item) {
                                                         inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
@@ -293,7 +294,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                         inverse_order.push({
                                                             store: k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
-                                                            type: k.ship ? "shipment" : "direct"
+                                                            type: k.ship ? "Pickup" : "Direct"
                                                         })
                                                     }
                                                 })
@@ -310,15 +311,19 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                     return await {
                                                         id: v4(),
                                                         destination: {
-                                                            code: "000",
-                                                            contact: customerState?.contact!
+                                                            code: pickupStore?.code,
+                                                            contact: pickupStore?.contact!
                                                         },
                                                         origin: {
                                                             code: k.store,
                                                             contact: data.contact 
                                                         },
                                                         products: k.items,
-                                                        status: [],
+                                                        status: {
+                                                            status: "Queued",
+                                                            assigned_products: k.items.map(b => b.id),
+                                                            timestamp: getDate()
+                                                        },
                                                         previous_failed_fulfillment_attempts: [],
                                                         status_history: [],
                                                         order_history: [],
@@ -329,9 +334,9 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                         order_type: k.type
                                                     };
                                                 })).then((k) => {
-                                                    let job = orderJob[0];
+                                                    let job: Order[] = orderJob[0];
                                                     job = job.filter(k => k.order_type != "Direct")
-                                                    k.map(b => job.push(b as unknown as Order));
+                                                    k.map(b => job.push(b as Order));
                                                     
                                                     orderJob[1](job);
                                                     setPadState("cart")
