@@ -17,12 +17,12 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                     <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
                 </div>
 
-                <div className={`${selectorOpen ? "absolute flex flex-col items-center w-full text-white justify-center bg-gray-600 overflow-hidden z-50 rounded-t-none rounded-b-md" : "hidden absolute"}`}>
+                <div className={`${selectorOpen ? "absolute flex flex-col items-center w-full text-white justify-center bg-gray-700  overflow-hidden z-50 rounded-t-none rounded-b-md" : "hidden absolute"}`}>
                     {
                         notes.map(k => {
                             return (
-                                <div key={k.id}>
-                                    {k.origin.code}
+                                <div key={k.id} className="hover:bg-gray-600 cursor-pointer">
+                                    {activeOrder.order_type.toUpperCase()} - {k.origin.code}
                                 </div>
                             )
                         })

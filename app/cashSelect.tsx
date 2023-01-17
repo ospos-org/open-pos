@@ -23,22 +23,22 @@ export default function CashSelect({ totalCost, changeCallback }: { totalCost: n
 
                 <div className="flex flex-row gap-6 flex-wrap items-center justify-center">
                     {/* For countries with 1c accuracy */}
-                    <p onClick={() => { setDegreeOption(0); setSelectedValue(totalCost) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 0 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${totalCost?.toFixed(2)}</p>
+                    <p onClick={() => { setDegreeOption(0); setSelectedValue(totalCost) }} className={`select-none text-2xl font-bold ${degreeOption == 0 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${totalCost?.toFixed(2)}</p>
 
                     {/* For countries with 10c accuracy */}
-                    <p onClick={() => { setDegreeOption(1); setSelectedValue(parseFloat((Math.ceil(totalCost * 10) / 10).toFixed(1)+"0")) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 1 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil(totalCost * 10) / 10).toFixed(1)+"0"}</p>
+                    <p onClick={() => { setDegreeOption(1); setSelectedValue(parseFloat((Math.ceil(totalCost * 10) / 10).toFixed(1)+"0")) }} className={`select-none text-2xl font-bold ${degreeOption == 1 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil(totalCost * 10) / 10).toFixed(1)+"0"}</p>
 
                     {/* For countries with $1 accuracy */}
-                    <p onClick={() => { setDegreeOption(2); setSelectedValue(parseFloat(totalCost?.toFixed(0)+".00")) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 2 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${totalCost?.toFixed(0)}.00</p>
+                    <p onClick={() => { setDegreeOption(2); setSelectedValue(parseFloat(totalCost?.toFixed(0)+".00")) }} className={`select-none text-2xl font-bold ${degreeOption == 2 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${totalCost?.toFixed(0)}.00</p>
 
                     {/* Payments with $5 accuracy */}
-                    <p onClick={() => { setDegreeOption(3); setSelectedValue(Math.ceil((totalCost)/5)*5) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 3 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/5)*5)?.toFixed(0)}.00</p>
+                    <p onClick={() => { setDegreeOption(3); setSelectedValue(Math.ceil((totalCost)/5)*5) }} className={`select-none text-2xl font-bold ${degreeOption == 3 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/5)*5)?.toFixed(0)}.00</p>
 
                     {/* Payments with $10 accuracy */}
-                    <p onClick={() => { setDegreeOption(4); setSelectedValue(Math.ceil((totalCost)/10)*10) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 4 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/10)*10)?.toFixed(0)}.00</p>
+                    <p onClick={() => { setDegreeOption(4); setSelectedValue(Math.ceil((totalCost)/10)*10) }} className={`select-none text-2xl font-bold ${degreeOption == 4 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/10)*10)?.toFixed(0)}.00</p>
 
                     {/* Payments with $100 accuracy */}
-                    <p onClick={() => { setDegreeOption(5); setSelectedValue(Math.ceil((totalCost)/100)*100) }} className={`text-blue-100 select-none text-2xl font-bold ${degreeOption == 5 ? "bg-blue-400" : ""} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/100)*100)?.toFixed(0)}.00</p>
+                    <p onClick={() => { setDegreeOption(5); setSelectedValue(Math.ceil((totalCost)/100)*100) }} className={`select-none text-2xl font-bold ${degreeOption == 5 ? "bg-blue-400 text-white" : "text-blue-100"} px-2 py-1 rounded-sm cursor-pointer`}>${(Math.ceil((totalCost)/100)*100)?.toFixed(0)}.00</p>
                 </div>
             </div>
 

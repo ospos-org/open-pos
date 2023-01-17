@@ -644,17 +644,41 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             let cOs = orderState.find(e => e.order_type == "Direct");
 
                                                             if(!cOs?.products) {
-                                                                if(orderState[0].products) {
-                                                                    cOs = orderState[0];
-                                                                }else {
-                                                                    return;
-                                                                }
+                                                                const new_pdt_list = addToCart(activeProduct, activeProductVariant, [])
+
+                                                                cOs = {
+                                                                    id: v4(),
+                                                                    destination: null,
+                                                                    origin: {
+                                                                        code: master_state.store_id,
+                                                                        contact: master_state.store_contact
+                                                                    },
+                                                                    products: new_pdt_list,
+                                                                    status: {
+                                                                        status: "Queued",
+                                                                        assigned_products: [],
+                                                                        timestamp: getDate()
+                                                                    },
+                                                                    previous_failed_fulfillment_attempts: [],
+                                                                    status_history: [],
+                                                                    order_history: [],
+                                                                    order_notes: [],
+                                                                    reference: "",
+                                                                    creation_date: getDate(),
+                                                                    discount: "a|0",
+                                                                    order_type: "Direct"
+                                                                };
+
+                                                                const k = orderState;
+                                                                k.push(cOs);
+    
+                                                                setOrderState(sortOrders(k))
+                                                            }else {
+                                                                const new_pdt_list = addToCart(activeProduct, activeProductVariant, cOs.products)
+                                                                const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
+    
+                                                                setOrderState(sortOrders(new_order_state))
                                                             }
-
-                                                            const new_pdt_list = addToCart(activeProduct, activeProductVariant, cOs.products)
-                                                            const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
-
-                                                            setOrderState(sortOrders(new_order_state))
                                                         }
                                                     }}
                                                     >
@@ -1100,7 +1124,17 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     :
                                                                                     <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                                                 }
-                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">{n.origin.contact.name} <p className="text-gray-400">({n.origin?.code})</p> <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p></div>
+                                                                                <div className="text-white font-semibold flex flex-row items-center gap-2">
+                                                                                    {n.origin.contact.name} 
+                                                                                    <p className="text-gray-400">({n.origin?.code})</p> 
+
+                                                                                    {
+                                                                                        n.order_type !== "Pickup" ?
+                                                                                        <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p>
+                                                                                        :
+                                                                                        <></>
+                                                                                    }
+                                                                                </div>
                                                                             </div>
                                                                             <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                                         </div>
@@ -1910,7 +1944,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     fulfillment_date: getDate(),
                                                     id: v4(),
                                                     order_ids: ["?"],
-                                                    payment_method: "Card",
+                                                    payment_method: "Cash",
                                                     processing_fee: {quantity: 0.1, currency: 'NZD'},
                                                     processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
                                                     status: "Complete"
