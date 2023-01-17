@@ -13,6 +13,7 @@ import PaymentMethod from "./paymentMethodMenu";
 import DispatchMenu from "./dispatchMenu";
 import { kMaxLength } from "buffer";
 import moment from "moment";
+import PickupMenu from "./pickupMenu";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -1941,6 +1942,9 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "pickup-from-store":
                             return (
+                                customerState ? 
+                                <PickupMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                :
                                 <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
@@ -1955,16 +1959,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                         <p className="text-gray-400">Pickup from Store</p>
                                     </div>
                                     
-                                    
-                                </div>
-                            )
-                        case "ship-to-customer":
-                            return (
-                                    customerState ? 
-                                    <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
-                                    :
                                     <div className="flex items-center justify-center flex-1 gap-8 flex-col">
-                                        <p className="text-gray-400">Must have an assigned customer to send products.</p>
+                                        <p className="text-gray-400">Must have an assigned customer to pickup products.</p>
 
                                         <div 
                                             onClick={() => {
@@ -1979,6 +1975,47 @@ export default function Kiosk({ master_state }: { master_state: {
                                             <Image 
                                                 className=""
                                                 height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        case "ship-to-customer":
+                            return (
+                                    customerState ? 
+                                    <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                    :
+                                    <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                        <div className="flex flex-row justify-between cursor-pointer">
+                                            <div 
+                                                onClick={() => {
+                                                    setPadState("cart")
+                                                }}
+                                                className="flex flex-row items-center gap-2"
+                                            >
+                                                <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                                <p className="text-gray-400">Back</p>
+                                            </div>
+                                            <p className="text-gray-400">Ship order to customer</p>
+                                        </div>
+                                        
+                                        
+                                        <div className="flex items-center justify-center flex-1 gap-8 flex-col">
+                                            <p className="text-gray-400">Must have an assigned customer to send products.</p>
+
+                                            <div 
+                                                onClick={() => {
+                                                    setResult([]); 
+                                                    setSearchType("customer");    
+
+                                                    input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                    input_ref.current?.focus()
+                                                }}
+                                                className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                                <p>Select Customer</p>
+                                                <Image 
+                                                    className=""
+                                                    height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
+                                            </div>
                                         </div>
                                     </div>
                             )
