@@ -233,8 +233,68 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                             </div>
 
                                             <div
-                                                onClick={() => {
-                                                    if(generatedOrder.length >= 1) setPageState("rate");
+                                                onClick={async () => {
+                                                    if(generatedOrder.length < 1) return 
+                                                    
+                                                    let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" | "Pickup" }[] = [];
+
+                                                    generatedOrder.map(k => {
+                                                        const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct"));
+
+                                                        if(found && k.item) {
+                                                            inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                        } else if(k.item) {
+                                                            inverse_order.push({
+                                                                store: k.store,
+                                                                items: [ { ...k.item, quantity: k.quantity } ],
+                                                                type: k.ship ? "Pickup" : "Direct"
+                                                            })
+                                                        }
+                                                    })
+
+                                                    console.log(inverse_order);
+
+                                                    Promise.all(inverse_order.map(async k => {
+                                                        const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
+                                                            method: "GET",
+                                                            credentials: "include",
+                                                            redirect: "follow"
+                                                        })).json();
+
+                                                        return await {
+                                                            id: v4(),
+                                                            destination: {
+                                                                code: pickupStore?.code,
+                                                                contact: pickupStore?.contact!
+                                                            },
+                                                            origin: {
+                                                                code: k.store,
+                                                                contact: data.contact 
+                                                            },
+                                                            products: k.items,
+                                                            status: {
+                                                                status: "Queued",
+                                                                assigned_products: k.items.map(b => b.id),
+                                                                timestamp: getDate()
+                                                            },
+                                                            previous_failed_fulfillment_attempts: [],
+                                                            status_history: [],
+                                                            order_history: [],
+                                                            order_notes: [],
+                                                            reference: "",
+                                                            creation_date: "",
+                                                            discount: "a|0",
+                                                            order_type: k.type
+                                                        };
+                                                    })).then((k) => {
+                                                        let job: Order[] = orderJob[0];
+                                                        job = job.filter(k => k.order_type != "Direct")
+                                                        k.map(b => job.push(b as Order));
+                                                        
+                                                        orderJob[1](job);
+                                                        setPadState("cart")
+                                                    });
+
                                                 }}
                                                 className={`${generatedOrder.length >= 1 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 cursor-not-allowed bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                                 <p className={`text-white font-semibold ${""}`}>Continue</p>
@@ -283,64 +343,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" | "Pickup" }[] = [];
-
-                                                generatedOrder.map(k => {
-                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct"));
-
-                                                    if(found && k.item) {
-                                                        inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
-                                                    } else if(k.item) {
-                                                        inverse_order.push({
-                                                            store: k.store,
-                                                            items: [ { ...k.item, quantity: k.quantity } ],
-                                                            type: k.ship ? "Pickup" : "Direct"
-                                                        })
-                                                    }
-                                                })
-
-                                                console.log(inverse_order);
-
-                                                Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
-                                                        method: "GET",
-                                                        credentials: "include",
-                                                        redirect: "follow"
-                                                    })).json();
-
-                                                    return await {
-                                                        id: v4(),
-                                                        destination: {
-                                                            code: pickupStore?.code,
-                                                            contact: pickupStore?.contact!
-                                                        },
-                                                        origin: {
-                                                            code: k.store,
-                                                            contact: data.contact 
-                                                        },
-                                                        products: k.items,
-                                                        status: {
-                                                            status: "Queued",
-                                                            assigned_products: k.items.map(b => b.id),
-                                                            timestamp: getDate()
-                                                        },
-                                                        previous_failed_fulfillment_attempts: [],
-                                                        status_history: [],
-                                                        order_history: [],
-                                                        order_notes: [],
-                                                        reference: "",
-                                                        creation_date: "",
-                                                        discount: "a|0",
-                                                        order_type: k.type
-                                                    };
-                                                })).then((k) => {
-                                                    let job: Order[] = orderJob[0];
-                                                    job = job.filter(k => k.order_type != "Direct")
-                                                    k.map(b => job.push(b as Order));
-                                                    
-                                                    orderJob[1](job);
-                                                    setPadState("cart")
-                                                });
+                                                
                                             }}
                                             className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                             <p className={`text-white font-semibold ${""}`}>Complete</p>
@@ -445,7 +448,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                         <input 
                                                             autoComplete="off"
                                                             ref={input_ref}
-                                                            placeholder="Address" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                            placeholder="Address" defaultValue={""} className="bg-transparent focus:outline-none text-white flex-1" 
                                                             onChange={(e) => {
                                                                 debouncedResults(e.target.value);
                                                             }}

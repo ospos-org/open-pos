@@ -11,9 +11,8 @@ import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
 import DispatchMenu from "./dispatchMenu";
-import { kMaxLength } from "buffer";
-import moment from "moment";
 import PickupMenu from "./pickupMenu";
+import { customAlphabet } from "nanoid";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -50,7 +49,7 @@ export default function Kiosk({ master_state }: { master_state: {
         status_history: [],
         order_history: [],
         order_notes: [],
-        reference: "",
+        reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
         creation_date: getDate(),
         discount: "a|0",
         order_type: "Direct"
@@ -669,10 +668,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                     order_type: "Direct"
                                                                 };
 
-                                                                const k = orderState;
-                                                                k.push(cOs);
-    
-                                                                setOrderState(sortOrders(k))
+                                                                console.log("PUT", new_pdt_list, cOs);
+
+                                                                setOrderState([...sortOrders([ ...orderState, cOs])])
                                                             }else {
                                                                 const new_pdt_list = addToCart(activeProduct, activeProductVariant, cOs.products)
                                                                 const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
@@ -1125,8 +1123,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                                                 }
                                                                                 <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                                                    {n.origin.contact.name} 
-                                                                                    <p className="text-gray-400">({n.origin?.code})</p> 
+                                                                                    { n.order_type == "Pickup" ? n.destination?.contact.name : n.origin.contact.name} 
+                                                                                    <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.code : n.origin?.code})</p> 
 
                                                                                     {
                                                                                         n.order_type !== "Pickup" ?
@@ -1136,7 +1134,13 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     }
                                                                                 </div>
                                                                             </div>
-                                                                            <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                            
+                                                                            { 
+                                                                                n.order_type == "Pickup" ? 
+                                                                                <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
+                                                                                :
+                                                                                <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                            }
                                                                         </div>
                                                                     </div>
                                                                 :
@@ -1161,8 +1165,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                     <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                                                 }
                                                                                 <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                                                    {n.origin.contact.name} 
-                                                                                    <p className="text-gray-400">({n.origin?.code})</p> 
+                                                                                    { n.order_type == "Pickup" ? n.destination?.contact.name : n.origin.contact.name} 
+                                                                                    <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.code : n.origin?.code})</p> 
                                                                                     
                                                                                     {
                                                                                         n.order_type !== "Pickup" ?
@@ -1173,7 +1177,12 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                                 </div>
                                                                             </div>
                                                                             
-                                                                            <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                            { 
+                                                                                n.order_type == "Pickup" ? 
+                                                                                <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
+                                                                                :
+                                                                                <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                                            } 
                                                                         </div>
                                                                     </div>
                                                                 :
