@@ -275,10 +275,10 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
+                                                let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" }[] = [];
 
                                                 generatedOrder.map(k => {
-                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
+                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Shipment" : "Direct"));
 
                                                     if(found && k.item) {
                                                         inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
@@ -286,7 +286,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         inverse_order.push({
                                                             store: k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
-                                                            type: k.ship ? "shipment" : "direct"
+                                                            type: k.ship ? "Shipment" : "Direct"
                                                         })
                                                     }
                                                 })
