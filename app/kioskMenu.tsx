@@ -4,6 +4,7 @@ import { RefObject } from "react";
 import { v4 } from "uuid";
 import { isValidVariant } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
+import PromotionList from "./promotionList";
 import { ContactInformation, Customer, Employee, Order, Product, StrictVariantCategory, VariantInformation } from "./stock-types";
 
 export default function KioskMenu({
@@ -448,6 +449,8 @@ export default function KioskMenu({
 
                                 <div className="flex flex-row items-start gap-8">
                                     <div className="flex flex-col gap-8">
+                                        <PromotionList variant_id={activeProductVariant?.id} />
+
                                         <div className="flex flex-col gap-4">
                                             {
                                                 activeProduct.variant_groups.map(e => {

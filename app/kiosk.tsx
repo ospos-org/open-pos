@@ -185,6 +185,7 @@ export default function Kiosk({ master_state }: { master_state: {
                     loyalty_discount: {
                         Absolute: 0
                     },
+                    id: "",
                     barcode: "CART",
                     marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
                     retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
@@ -209,17 +210,19 @@ export default function Kiosk({ master_state }: { master_state: {
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : "search"}/${searchTerm}`, {
+            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : "search/with_promotions"}/${searchTerm}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
                 credentials: "include"
             });
     
-            const data: any[] = await fetchResult.json();
+            const data: { product: any, promotions: any[] }[] = await fetchResult.json();
+
+            console.log(data);
 
             if(data.length == 1 && searchType == "product") {
-                const e: Product = data[0];
+                const e: Product = data[0].product;
 
                 let vmap_list = [];
                 let active_variant = null;
@@ -269,7 +272,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 }
             }
     
-            setResult(data);
+            setResult(data.map(l => l.product));
         }, 50);
     }, [orderState, discount]);
 

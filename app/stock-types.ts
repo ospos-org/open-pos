@@ -154,6 +154,7 @@ export type VariantInformation = {
         Absolute?: number,
         Percentage?: number
     },
+    id: string
 }
 
 export type VariantCategory = {
