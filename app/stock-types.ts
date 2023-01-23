@@ -138,6 +138,26 @@ export type Product = {
     specifications: (string[])[]
 }
 
+export type Promotion = {
+    id: string,
+    name: String,
+    buy: PromotionBuy,
+    get: PromotionGet,
+    valid_till: string,
+    timestamp: string
+}
+
+export type PromotionBuy = {
+    Specific?: [string, number],
+    Any?: number
+}
+
+export type PromotionGet = {
+    This?: [number, { Absolute?: number, Percentage?: number }]
+    Specific?: [string, [number, { Absolute?: number, Percentage?: number }]],
+    Any?: [number, { Absolute?: number, Percentage?: number }]
+}
+
 export type VariantInformation = {
     name: string,
     stock: StockInfo[],

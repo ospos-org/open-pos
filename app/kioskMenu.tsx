@@ -1,11 +1,11 @@
 import { isEqual } from "lodash";
 import Image from "next/image";
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import { v4 } from "uuid";
 import { isValidVariant } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
-import { ContactInformation, Customer, Employee, Order, Product, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, Employee, Order, Product, Promotion, StrictVariantCategory, VariantInformation } from "./stock-types";
 
 export default function KioskMenu({
     setSearchFocused, searchFocused,
@@ -29,7 +29,7 @@ export default function KioskMenu({
     setSearchType: Function, searchType: "customer" | "product" | "transaction",
     setSearchTermState: Function, searchTermState: string,
     setCustomerState: Function, customerState: Customer | null,
-    setResult: Function, result: Product[] | Customer[] | Order[],
+    setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Order[],
     setOrderState: Function, orderState: Order[],
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
     setPadState: Function,
@@ -46,6 +46,8 @@ export default function KioskMenu({
     addToCart: Function,
     debouncedResults: Function
 }) {
+    const [ activeProductPromotions, setActiveProductPromotions ] = useState<Promotion[]>();
+
     return (
         <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
             if(e.key == "Escape") setSearchFocused(false)
@@ -126,10 +128,13 @@ export default function KioskMenu({
                                                 result.length == 0 ?
                                                     <p className="self-center text-gray-400 py-6">No products with this name</p>
                                                     :
-                                                    (result as Product[]).map((e: Product, indx) => {
+                                                    (result as { product: Product, promotions: Promotion[]}[]).map((b: { product: Product, promotions: Promotion[]}, indx) => {
+                                                        const e = b.product;
+
                                                         return (
                                                             <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
                                                                 setActiveProduct(e);
+                                                                setActiveProductPromotions(b.promotions);
                                                                 setSearchFocused(false);
 
                                                                 let vmap_list = [];
@@ -449,7 +454,7 @@ export default function KioskMenu({
 
                                 <div className="flex flex-row items-start gap-8">
                                     <div className="flex flex-col gap-8">
-                                        <PromotionList variant_id={activeProductVariant?.id} />
+                                        <PromotionList promotions={activeProductPromotions} />
 
                                         <div className="flex flex-col gap-4">
                                             {

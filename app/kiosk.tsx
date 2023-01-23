@@ -6,7 +6,7 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, StatusHistory, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
@@ -68,7 +68,7 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
 
     const [ searchTermState, setSearchTermState ] = useState("");
-    const [ result, setResult ] = useState<Product[] | Customer[] | Order[]>([]);
+    const [ result, setResult ] = useState<{ product: Product, promotions: Promotion[]}[] | Customer[] | Order[]>([]);
     const [ searchFocused, setSearchFocused ] = useState(false); 
 
     const [ discount, setDiscount ] = useState<{
@@ -210,7 +210,7 @@ export default function Kiosk({ master_state }: { master_state: {
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : "search/with_promotions"}/${searchTerm}`, {
+            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
@@ -272,7 +272,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 }
             }
     
-            setResult(data.map(l => l.product));
+            setResult(data);
         }, 50);
     }, [orderState, discount]);
 
