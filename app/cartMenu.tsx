@@ -4,7 +4,7 @@ import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, stringValueToObj } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
-import { ContactInformation, Customer, Employee, KioskState, Order, ProductPurchase } from "./stock-types";
+import { ContactInformation, Customer, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
 
 export default function CartMenu({ 
     customerState, 
@@ -44,6 +44,79 @@ export default function CartMenu({
     setCurrentTransactionPrice: Function,
     input_ref: RefObject<HTMLInputElement>
 }) {
+    const [ orderInfo, setOrderInfo ] = useState<{
+        total: number,
+        sub_total: number,
+        tax: number,
+        non_discounted_sub_total: number,
+        promotions: {
+            promotion_id: string,
+            affected_products: string[]
+        }[]
+    }>();
+
+    useEffect(() => {  
+        // Order state has been changed. Regenerate values
+        let non_discounted_sub_total = orderState.reduce(
+            (p,c) => 
+                p + applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                    }, 0)
+                , c.discount)
+            , 0);
+
+        let sub_total = orderState.reduce(
+            (p,c) => 
+                p + applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                    }, 0)
+                , c.discount)
+            , 0)
+
+        let total = orderState.reduce(
+            (p,c) => 
+                p += applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                    }, 0) 
+                , c.discount) 
+            , 0);
+        
+        let tax = total-sub_total;
+
+        let flat_products = orderState.map(k => k.products).flatMap(k => k);
+        console.log(flat_products);
+
+        const product_map = new Map<string, ProductPurchase>();
+        flat_products.map(k => {
+            const pdt = product_map.get(k.variant_information.barcode);
+
+            if(pdt) {
+                product_map.set(k.variant_information.barcode, {
+                    ...k,
+                    quantity: pdt.quantity+k.quantity
+                })
+            }else {
+                product_map.set(k.variant_information.barcode, k)
+            }
+        })
+
+        let flat_promotions: Promotion[] = [];
+        product_map.forEach(k => flat_promotions = [...flat_promotions, ...k.active_promotions]);
+
+        console.log(flat_promotions);
+
+        setOrderInfo({
+            sub_total,
+            total,
+            tax,
+            non_discounted_sub_total,
+            promotions: []
+        })
+    }, [orderState, customerState])
+
     return (
         <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
             <div className="flex flex-col gap-4 flex-1 max-h-full">
@@ -435,106 +508,19 @@ export default function CartMenu({
                     </div>
                     
                     <div className="flex flex-col gap-0">
-                        {/* {
-                            applyDiscount(orderState.products.reduce(function (prev, curr) {
-                                return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
-                            }, 0), orderState.discount) == orderState.products.reduce(function (prev, curr) {
-                                return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
-                            }, 0) ?
-                                <></>
-                                :
-                                <p>${orderState.products.reduce(function (prev, curr) {
-                                    return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, curr.discount)
-                                }, 0)}</p>
-                        } */}
                         <p className="text-gray-400 font-bold items-end self-end">
-                            ${
-                                orderState.reduce(
-                                    (p,c) => 
-                                        p + applyDiscount(
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                            }, 0)
-                                        , c.discount)
-                                    , 0)
-                                .toFixed(2)
-                            } {
-                                orderState.reduce(
-                                    (p,c) => 
-                                        p + applyDiscount(
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                            }, 0)
-                                        , c.discount)
-                                    , 0)
-                                == 
-                                orderState.reduce(
-                                    (p,c) => 
-                                        p + 
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                            }, 0)
-                                    , 0) 
+                            ${(orderInfo?.sub_total ?? 0).toFixed(2)} 
+                            {
+                                orderInfo?.sub_total == orderInfo?.non_discounted_sub_total
                                 ?
                                 <></>
                                 :
-                                `(-${
-                                    orderState.reduce(
-                                        (p,c) => 
-                                            p + applyDiscount(
-                                                c.products.reduce(function (prev, curr) {
-                                                    return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                                }, 0)
-                                            , c.discount)
-                                        , 0)
-                                    -
-                                    (orderState.reduce((p,c) => 
-                                        p + applyDiscount(
-                                                c.products.reduce(function (prev, curr) {
-                                                    return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                                }, 0), c.discount
-                                            )
-                                        , 0))
-                                })`
+                                ` (-$${((orderInfo?.non_discounted_sub_total ?? 0) - (orderInfo?.sub_total ?? 0)).toFixed(2)})`
                             }
                         </p>
-                        <p className="text-gray-600 font-bold items-end self-end">+15% (${
-                            (
-                                (orderState.reduce(
-                                    (p,c) => 
-                                        p += applyDiscount(
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
-                                            }, 0) 
-                                        , c.discount) 
-                                    , 0)
-                                )
-                                -
-                                (orderState.reduce(
-                                    (p,c) => 
-                                        p += applyDiscount(
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value)
-                                            }, 0)
-                                        , c.discount)
-                                    , 0)
-                                )
-                            ).toFixed(2)
-                        })</p>
-                        <p className="font-bold text-lg items-end self-end">
-                        ${
-                            (
-                                orderState.reduce(
-                                    (p,c) => 
-                                        p += applyDiscount(
-                                            c.products.reduce(function (prev, curr) {
-                                                return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                            }, 0) 
-                                        , c.discount) 
-                                    , 0)
-                            ).toFixed(2)
-                        }
-                        </p>
+
+                        <p className="text-gray-600 font-bold items-end self-end">+15% (${(orderInfo?.tax ?? 0).toFixed(2)})</p>
+                        <p className="font-bold text-lg items-end self-end">${(orderInfo?.total ?? 0).toFixed(2)}</p>
                     </div>
                 </div>
                 
@@ -547,16 +533,7 @@ export default function CartMenu({
                         onClick={() => {
                             setPadState("select-payment-method");
 
-                            const price =  
-                                orderState.reduce(
-                                (p,c) => 
-                                    p += applyDiscount(
-                                        c.products.reduce(function (prev, curr) {
-                                            return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                                        }, 0) 
-                                    , c.discount) 
-                                , 0)
-                            .toFixed(2);
+                            const price = (orderInfo?.total ?? 0).toFixed(2);
 
                             setKioskState({
                                 ...kioskState,

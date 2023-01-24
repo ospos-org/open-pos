@@ -100,7 +100,9 @@ export type ProductPurchase = {
 
     /// Extra information that should be removed before sending to server
     product: Product,
-    variant_information: VariantInformation
+    variant_information: VariantInformation,
+
+    active_promotions: Promotion[]
 }
 
 export type DbProductPurchase = {
@@ -153,6 +155,7 @@ export type PromotionBuy = {
 }
 
 export type PromotionGet = {
+    SoloThis?: { Absolute?: number, Percentage?: number },
     This?: [number, { Absolute?: number, Percentage?: number }]
     Specific?: [string, [number, { Absolute?: number, Percentage?: number }]],
     Any?: [number, { Absolute?: number, Percentage?: number }]

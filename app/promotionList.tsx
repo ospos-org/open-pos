@@ -25,6 +25,10 @@ export default function PromotionList({
 }
 
 function formatPromotion(promo: Promotion) {
+    if(promo.get.SoloThis) {
+        return `${promo.name} - Get ${parseDiscount(fromDbDiscount(promo.get.SoloThis)) + " off."}`
+    }
+
     let val = "Buy ";
 
     if(promo.buy.Any) {

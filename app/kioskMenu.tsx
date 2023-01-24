@@ -403,7 +403,7 @@ export default function KioskMenu({
                                                         let cOs = orderState.find(e => e.order_type == "Direct");
 
                                                         if(!cOs?.products) {
-                                                            const new_pdt_list = addToCart(activeProduct, activeProductVariant, [])
+                                                            const new_pdt_list = addToCart(activeProduct, activeProductPromotions, activeProductVariant, [])
 
                                                             cOs = {
                                                                 id: v4(),
@@ -432,7 +432,7 @@ export default function KioskMenu({
 
                                                             setOrderState([...sortOrders([ ...orderState, cOs])])
                                                         }else {
-                                                            const new_pdt_list = addToCart(activeProduct, activeProductVariant, cOs.products)
+                                                            const new_pdt_list = addToCart(activeProduct, activeProductPromotions, activeProductVariant, cOs.products)
                                                             const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
 
                                                             setOrderState(sortOrders(new_order_state))

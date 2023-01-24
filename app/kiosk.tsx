@@ -88,7 +88,7 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
     const [ cashContinuable, setCashContinuable ] = useState(false);
 
-    const addToCart = (product: Product, variant: VariantInformation, orderProducts: ProductPurchase[]) => {
+    const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         const existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
         let new_order_products_state = [];
 
@@ -127,7 +127,8 @@ export default function Kiosk({ master_state }: { master_state: {
                     quantity: 1,
     
                     product: product,
-                    variant_information: variant ?? product.variants[0]
+                    variant_information: variant ?? product.variants[0],
+                    active_promotions: promotions
                 };
     
                 new_order_products_state = [ ...orderProducts, po ]
@@ -149,7 +150,8 @@ export default function Kiosk({ master_state }: { master_state: {
                 quantity: 1,
 
                 product: product,
-                variant_information: variant ?? product.variants[0]
+                variant_information: variant ?? product.variants[0],
+                active_promotions: promotions
             };
 
             new_order_products_state = [ ...orderProducts, po ]
@@ -260,7 +262,7 @@ export default function Kiosk({ master_state }: { master_state: {
                         }
                     }
 
-                    const new_pdt_list = addToCart(e, active_product_variant, cOs.products);
+                    const new_pdt_list = addToCart(e, data[0].promotions, active_product_variant, cOs.products);
                     const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
 
                     setOrderState(sortOrders(new_order_state))
