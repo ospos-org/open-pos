@@ -453,7 +453,7 @@ export default function KioskMenu({
                                 </div>
 
                                 <div className="flex flex-row items-start gap-8">
-                                    <div className="flex flex-col gap-8">
+                                    <div className="flex flex-col gap-8 max-w-[550px] w-full">
                                         <PromotionList promotions={activeProductPromotions} />
 
                                         <div className="flex flex-col gap-4">
@@ -615,7 +615,7 @@ export default function KioskMenu({
                                                                     setActiveVariant(variant);
                                                                     setActiveProductVariant(e);
                                                                 }}
-                                                                className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 50px" }}>
+                                                                className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 75px" }}>
                                                                 <p className="flex-1 w-full">{e.name}</p>
 
                                                                 <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>

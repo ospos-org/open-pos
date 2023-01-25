@@ -1,4 +1,4 @@
-import { DiscountValue, Product, StrictVariantCategory } from "./stock-types";
+import { DiscountValue, Order, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stock-types";
 
 export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {
@@ -119,4 +119,37 @@ export function toAbsoluteDiscount(discount: string, price: number) {
     }else {
         return `a|${(parseFloat(d[1]) / 100) * price}`
     }
+}
+
+export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>, cart: Order[]): number {
+    // If the product does not match the BUY criterion
+    if(promo.get.Specific && pdt.id != promo.get.Specific?.[0]) return 0;
+    // If promotion is a SoloThis or This type and the bought product is not <pdt>
+    else if((promo.get.SoloThis || promo.get.This) && promo.buy.Specific && pdt.id != promo.buy.Specific[0]) return 0;
+
+    // Product is the one in the GET condition...
+    // Note: Any will only match the current product, and will not incur a search for another matching product as the function is called in a search-pattern.
+    
+    // Determine if product in the BUY condition is in the cart, if instead fits <promo.buy.Any>, no condition is necessary as the product is within categoric bounds.
+    if(promo.buy.Specific && !pdt_map.get(promo.buy.Specific[0])) return 0
+
+    // Check matches quantity condition for buy
+    if(promo.buy.Any && promo.buy.Any > pdt.quantity) return 0;
+    else if(promo.buy.Specific && promo.buy.Specific[1] > (pdt_map.get(promo.buy.Specific[0])?.quantity ?? 0)) return 0;
+
+    const discount: { Absolute?: number | undefined, Percentage?: number | undefined } 
+        = promo.get.Any 
+            ? promo.get.Any[1] : 
+          promo.get.SoloThis 
+          ? promo.get.SoloThis : 
+          promo.get.Specific 
+          ? promo.get.Specific[1][1] : 
+          promo.get.This 
+          ? promo.get.This[1] : 
+          { Absolute: 0 };
+    
+    const normal_price = (pdt.variant_information.retail_price * 1.15);
+    const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+ 
+    return normal_price - discounted_price;
 }

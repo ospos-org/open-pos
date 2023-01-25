@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, findMaxDiscount, stringValueToObj } from "./discount_helpers";
+import { applyDiscount, applyPromotion, findMaxDiscount, stringValueToObj } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { ContactInformation, Customer, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
 
@@ -103,10 +103,29 @@ export default function CartMenu({
             }
         })
 
-        let flat_promotions: Promotion[] = [];
-        product_map.forEach(k => flat_promotions = [...flat_promotions, ...k.active_promotions]);
+        // let flat_promotions: Promotion[] = [];
+        // product_map.forEach(k => flat_promotions = [...flat_promotions, ...k.active_promotions]);
 
-        console.log(flat_promotions);
+        // console.log(flat_promotions);
+
+        // // Iterate over all promotions, sort them such that the most effectual (greatest discount) promotion is at index 0, and the most ineffectual (smallest discount) at index <length>
+        // for(let i = 0; i < flat_promotions.length; i++) {
+
+        // }
+
+        let sorted_promotions: Order[] = orderState.map(k => {
+            return {
+                ...k,
+                products: k.products.map(j => {
+                    return {
+                        ...j,
+                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(a, j, product_map, orderState) - applyPromotion(b, j, product_map, orderState))
+                    }
+                })
+            }
+        });
+
+        console.log(sorted_promotions)
 
         setOrderInfo({
             sub_total,
@@ -153,7 +172,7 @@ export default function CartMenu({
                                     input_ref.current?.value ? input_ref.current.value = "" : {};
                                     input_ref.current?.focus()
                                 }}
-                                className="bg-gray-800 rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
                                 <p>Select Customer</p>
                                 <Image 
                                     className=""

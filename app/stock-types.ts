@@ -142,7 +142,7 @@ export type Product = {
 
 export type Promotion = {
     id: string,
-    name: String,
+    name: string,
     buy: PromotionBuy,
     get: PromotionGet,
     valid_till: string,

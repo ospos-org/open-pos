@@ -8,7 +8,7 @@ export default function PromotionList({
     promotions: Promotion[] | undefined
 }) {
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 max-h-32 overflow-auto ">
             <p className="text-sm text-gray-400">PROMOTIONS</p>
 
             {
@@ -42,7 +42,8 @@ function formatPromotion(promo: Promotion) {
     if(promo.get.This) {
         val += "another " + promo.get.This[0] + ", " + parseDiscount(fromDbDiscount(promo.get.This[1]))
     }else if(promo.get.Specific) {
-        val += ((promo.get.Specific?.[1] ?? "") + (promo.get.Specific?.[0] ?? ""))
+        val = promo.name;
+        // val += ((promo.get.Specific?.[1] ?? "") + (promo.get.Specific?.[0] ?? ""))
     }else if(promo.get.Any) {
         val += " any other " + promo.get.Any[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Any[1])) + " off."
     }
