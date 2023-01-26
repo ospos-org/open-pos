@@ -122,8 +122,12 @@ export function toAbsoluteDiscount(discount: string, price: number) {
 }
 
 export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>, cart: Order[]): number {
+    console.log(`TRYING "${promo.name}" ON ${pdt.product.name}:: ${JSON.stringify(promo.get)} & ${JSON.stringify(promo.buy)}.. ${pdt.product.sku} ${promo.get.Specific?.[0] ?? ""}`)
+
     // If the product does not match the BUY criterion
-    if(promo.get.Specific && pdt.id != promo.get.Specific?.[0]) return 0;
+    if(promo.get.Specific && pdt.product.sku != promo.get.Specific?.[0]) return 0;
+    if(promo.get.Category && !pdt.product.tags.includes(promo.get.Category?.[0])) return 0;
+
     // If promotion is a SoloThis or This type and the bought product is not <pdt>
     else if((promo.get.SoloThis || promo.get.This) && promo.buy.Specific && pdt.id != promo.buy.Specific[0]) return 0;
 
@@ -139,7 +143,7 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
 
     const discount: { Absolute?: number | undefined, Percentage?: number | undefined } 
         = promo.get.Any 
-            ? promo.get.Any[1] : 
+          ? promo.get.Any[1] : 
           promo.get.SoloThis 
           ? promo.get.SoloThis : 
           promo.get.Specific 
@@ -150,6 +154,8 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     
     const normal_price = (pdt.variant_information.retail_price * 1.15);
     const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+
+    console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
  
     return normal_price - discounted_price;
 }

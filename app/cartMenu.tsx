@@ -91,15 +91,15 @@ export default function CartMenu({
 
         const product_map = new Map<string, ProductPurchase>();
         flat_products.map(k => {
-            const pdt = product_map.get(k.variant_information.barcode);
+            const pdt = product_map.get(k.product.sku);
 
             if(pdt) {
-                product_map.set(k.variant_information.barcode, {
+                product_map.set(k.product.sku, {
                     ...k,
                     quantity: pdt.quantity+k.quantity
                 })
             }else {
-                product_map.set(k.variant_information.barcode, k)
+                product_map.set(k.product.sku, k)
             }
         })
 
@@ -119,13 +119,13 @@ export default function CartMenu({
                 products: k.products.map(j => {
                     return {
                         ...j,
-                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(a, j, product_map, orderState) - applyPromotion(b, j, product_map, orderState))
+                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map, orderState) - applyPromotion(a, j, product_map, orderState))
                     }
                 })
             }
         });
 
-        console.log(sorted_promotions)
+        console.log("Sorted Promotions: ", sorted_promotions)
 
         setOrderInfo({
             sub_total,

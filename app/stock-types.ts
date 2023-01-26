@@ -158,7 +158,8 @@ export type PromotionGet = {
     SoloThis?: { Absolute?: number, Percentage?: number },
     This?: [number, { Absolute?: number, Percentage?: number }]
     Specific?: [string, [number, { Absolute?: number, Percentage?: number }]],
-    Any?: [number, { Absolute?: number, Percentage?: number }]
+    Any?: [number, { Absolute?: number, Percentage?: number }],
+    Category?: [string, [number, { Absolute?: number, Percentage?: number }]],
 }
 
 export type VariantInformation = {
@@ -214,7 +215,8 @@ export type StockInformation = {
     max_volume: string,
     back_order: boolean,
     discontinued: boolean,
-    non_diminishing: boolean
+    non_diminishing: boolean,
+    shippable: boolean,
 }
 
 export type StockInfo = {
