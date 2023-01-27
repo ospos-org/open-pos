@@ -53,10 +53,12 @@ export function parseDiscount(discount: string) {
 }
 
 export function fromDbDiscount(dbDiscount: { Absolute?: number, Percentage?: number }) {
+    console.log(dbDiscount?.Absolute, dbDiscount?.Percentage);
+
     if(dbDiscount.Absolute) {
-        return `a|${dbDiscount.Absolute}`
+        return `a|${dbDiscount.Absolute ?? 0}`
     }else {
-        return `p|${dbDiscount.Percentage}`
+        return `p|${dbDiscount.Percentage ?? 0}`
     }
 }
 
@@ -122,7 +124,7 @@ export function toAbsoluteDiscount(discount: string, price: number) {
 }
 
 export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>, cart: Order[]): number {
-    console.log(`TRYING "${promo.name}" ON ${pdt.product.name}:: ${JSON.stringify(promo.get)} & ${JSON.stringify(promo.buy)}.. ${pdt.product.sku} ${promo.get.Specific?.[0] ?? ""}`)
+    // console.log(`TRYING "${promo.name}" ON ${pdt.product.name}:: ${JSON.stringify(promo.get)} & ${JSON.stringify(promo.buy)}.. ${pdt.product.sku} ${promo.get.Specific?.[0] ?? ""}`)
 
     // If the product does not match the BUY criterion
     if(promo.get.Specific && pdt.product.sku != promo.get.Specific?.[0]) return 0;
@@ -141,6 +143,17 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     if(promo.buy.Any && promo.buy.Any > pdt.quantity) return 0;
     else if(promo.buy.Specific && promo.buy.Specific[1] > (pdt_map.get(promo.buy.Specific[0])?.quantity ?? 0)) return 0;
 
+    const discount = discountFromPromotion(promo);
+    
+    const normal_price = (pdt.variant_information.retail_price * 1.15);
+    const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+
+    console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
+ 
+    return normal_price - discounted_price;
+}
+
+export function discountFromPromotion(promo: Promotion): { Absolute?: number | undefined, Percentage?: number | undefined } {
     const discount: { Absolute?: number | undefined, Percentage?: number | undefined } 
         = promo.get.Any 
           ? promo.get.Any[1] : 
@@ -150,12 +163,9 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
           ? promo.get.Specific[1][1] : 
           promo.get.This 
           ? promo.get.This[1] : 
+          promo.get.Category 
+          ? promo.get.Category[1][1] :
           { Absolute: 0 };
-    
-    const normal_price = (pdt.variant_information.retail_price * 1.15);
-    const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
 
-    console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
- 
-    return normal_price - discounted_price;
+    return discount;
 }

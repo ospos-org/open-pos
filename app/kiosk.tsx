@@ -182,7 +182,8 @@ export default function Kiosk({ master_state }: { master_state: {
                         max_volume: 'string',
                         back_order: false,
                         discontinued: false,
-                        non_diminishing: false
+                        non_diminishing: false,
+                        shippable: true
                     },
                     loyalty_discount: {
                         Absolute: 0
@@ -220,8 +221,6 @@ export default function Kiosk({ master_state }: { master_state: {
             });
     
             const data: { product: any, promotions: any[] }[] = await fetchResult.json();
-
-            console.log(data);
 
             if(data.length == 1 && searchType == "product") {
                 const e: Product = data[0].product;

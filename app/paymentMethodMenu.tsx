@@ -7,17 +7,6 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
 
-    console.log(
-        orderState.reduce(
-            (p,c) => 
-                p += applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + applyDiscount(curr.variant_information.retail_price * curr.quantity, findMaxDiscount(curr.discount, curr.variant_information.retail_price, customer).value)
-                    }, 0)
-                , c.discount)
-            , 0)
-    )
-
     return (
         <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
             <div className="flex flex-col h-full gap-24">

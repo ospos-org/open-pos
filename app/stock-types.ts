@@ -120,6 +120,7 @@ export type DbProductPurchase = {
 export type DiscountValue = {
     source: "user" | "promotion" | "loyalty",
     value: string
+    promotion?: Promotion
 }
 
 export type OrderStatus = {

@@ -22,7 +22,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     useEffect(() => {
         fetchDistanceData().then(data => {
             const ord = generateOrders(generateProductMap(orderState), data, currentStore);
-            console.log(ord);
+
             setGeneratedOrder(ord.assignment_sheet);
             setProductMap(ord.product_map);
             setSelectedItems(ord.assignment_sheet.map(e => {
@@ -46,7 +46,6 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                 body: address
             })?.then(async e => {
                 const data: Address[] = await e.json();
-                console.log(data);
     
                 return data;
             });
@@ -290,8 +289,6 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         })
                                                     }
                                                 })
-
-                                                console.log(inverse_order);
 
                                                 Promise.all(inverse_order.map(async k => {
                                                     const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
@@ -639,7 +636,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
             const net_required = required_quantity - fulfilled;
 
             if(b.quantity >= net_required && net_required > 0) {
-                console.log(`Store: ${k.store_id} has enough to fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
+                // console.log(`Store: ${k.store_id} has enough to fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
                 // Assign store to fulfil this quantity.
                 product_assignment.push([b.item_id, k.store_id, net_required])
 
@@ -647,14 +644,14 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
                 weighted_vector.map(z => z.store_id == k.store_id ? { ...z, items: z.items.map(n => n.item_id == b.item_id ? { ...n, quantity: n.quantity - net_required } : n)} : z)
                 // product_map = product_map.map(n => n.id == b.item_id ? { ...n, variant_information: { ...n.variant_information, stock: n.variant_information.stock.map(g => g.store.code == k.store_id ? { ...g, quantity: { ...g.quantity, quantity_sellable: g.quantity.quantity_sellable - net_required }} : g) } } : n)
             }else if (net_required > 0 && b.quantity < net_required && b.quantity > 0) {
-                console.log(`Store: ${k.store_id} has enough to ONLY fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
+                // console.log(`Store: ${k.store_id} has enough to ONLY fulfil ${b.quantity}x${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
 
                 product_assignment.push([b.item_id, k.store_id, b.quantity])
                 weighted_vector.map(z => z.store_id == k.store_id ? { ...z, items: z.items.map(n => n.item_id == b.item_id ? { ...n, quantity: 0 } : n)} : z)
                 // product_map = product_map.map(n => n.id == b.item_id ? { ...n, variant_information: { ...n.variant_information, stock: n.variant_information.stock.map(g => g.store.code == k.store_id ? { ...g, quantity: { ...g.quantity, quantity_sellable: g.quantity.quantity_sellable - net_required }} : g) } } : n)
             }else {
                 // Store cannot fulfil
-                console.log(`Store: ${k.store_id} cannot fulfil any of ${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
+                // console.log(`Store: ${k.store_id} cannot fulfil any of ${b.item_id} RQ${required_quantity}-FUL:${fulfilled}==NR${net_required}`)
             }
         })
     })

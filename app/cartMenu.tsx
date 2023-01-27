@@ -2,7 +2,7 @@ import { isEqual } from "lodash";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, applyPromotion, findMaxDiscount, stringValueToObj } from "./discount_helpers";
+import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, stringValueToObj } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { ContactInformation, Customer, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
 
@@ -52,44 +52,14 @@ export default function CartMenu({
         promotions: {
             promotion_id: string,
             affected_products: string[]
-        }[]
+        }[],
+        state: Order[]
     }>();
 
     useEffect(() => {  
-        // Order state has been changed. Regenerate values
-        let non_discounted_sub_total = orderState.reduce(
-            (p,c) => 
-                p + applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + (curr.variant_information.retail_price * curr.quantity)
-                    }, 0)
-                , c.discount)
-            , 0);
-
-        let sub_total = orderState.reduce(
-            (p,c) => 
-                p + applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                    }, 0)
-                , c.discount)
-            , 0)
-
-        let total = orderState.reduce(
-            (p,c) => 
-                p += applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
-                    }, 0) 
-                , c.discount) 
-            , 0);
-        
-        let tax = total-sub_total;
-
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
-        console.log(flat_products);
-
         const product_map = new Map<string, ProductPurchase>();
+
         flat_products.map(k => {
             const pdt = product_map.get(k.product.sku);
 
@@ -103,16 +73,7 @@ export default function CartMenu({
             }
         })
 
-        // let flat_promotions: Promotion[] = [];
-        // product_map.forEach(k => flat_promotions = [...flat_promotions, ...k.active_promotions]);
-
-        // console.log(flat_promotions);
-
-        // // Iterate over all promotions, sort them such that the most effectual (greatest discount) promotion is at index 0, and the most ineffectual (smallest discount) at index <length>
-        // for(let i = 0; i < flat_promotions.length; i++) {
-
-        // }
-
+        // Returns the order list with every products promotions sorted by effect (most effectual first, least last...)
         let sorted_promotions: Order[] = orderState.map(k => {
             return {
                 ...k,
@@ -125,14 +86,98 @@ export default function CartMenu({
             }
         });
 
-        console.log("Sorted Promotions: ", sorted_promotions)
+        // Now we must apply the best promotion to each product, keeping in mind that if a promotion's has a BUY condition with another product, that product must not have an alternate promotion applied,
+        // instead - the best promotion between the two must be applied, as the promotions are sorted by effectuality, this becomes the following index. If the following index proceeds to conflict with another product, further evaluation occurs. 
+        const applied_promotions = sorted_promotions.map(k => {
+            return {
+                ...k,
+                products: k.products.map(b => {
+                    const promo = b.active_promotions[0];
+                    const discount = discountFromPromotion(promo);
+    
+                    if(
+                        isGreaterDiscount(
+                            findMaxDiscount(
+                                b.discount, 
+                                b.variant_information.retail_price * 1.15, 
+                                !(!(customerState))
+                            ).value, 
+                            fromDbDiscount(discount), 
+                            b.variant_information.retail_price * 1.15
+                        )
+                    ) {
+                        // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
+    
+                        // Is the greatest discount
+                        console.log(`Promotion provides greater discount for ${b.product.name}`)
+    
+                        // Do:
+                        // 1. Check Discount is valid - Does the quantity required equal-?
+                        if(
+                            // If promotion requires purchase of any other item, and there are more than 1 item in the cart
+                            promo.buy.Any && product_map.size > 1
+                        ) {  
+                            if(
+                                // if is specific and specific product is in cart, with correct quantity
+                                promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1])
+                            ) {
+                                // Apply discount
+                                b.discount.push({
+                                    source: "promotion",
+                                    value: fromDbDiscount(discount),
+                                    promotion: promo
+                                })
+                            }
+                        }
+                    }else {
+                        console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
+                    }
+    
+                    return b;
+                })
+            } 
+        });
+
+        // Order state has been changed. Regenerate values
+        let non_discounted_sub_total = applied_promotions.reduce(
+            (p,c) => 
+                p + applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (curr.variant_information.retail_price * curr.quantity)
+                    }, 0)
+                , c.discount)
+            , 0);
+
+        let sub_total = applied_promotions.reduce(
+            (p,c) => 
+                p + applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                    }, 0)
+                , c.discount)
+            , 0)
+
+        let total = applied_promotions.reduce(
+            (p,c) => 
+                p += applyDiscount(
+                    c.products.reduce(function (prev, curr) {
+                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                    }, 0) 
+                , c.discount) 
+            , 0);
+        
+        let tax = total-sub_total;
+
+        // DANGER: Loop
+        // setOrderState(applied_promotions);
 
         setOrderInfo({
             sub_total,
             total,
             tax,
             non_discounted_sub_total,
-            promotions: []
+            promotions: [],
+            state: applied_promotions
         })
     }, [orderState, customerState])
 
@@ -181,12 +226,12 @@ export default function CartMenu({
                         }
                         <div className="text-sm text-gray-400">
                             {
-                                orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
+                                orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
                                 ? 
                                 "Cart Empty" 
                                 : 
                                 <p>
-                                    {orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 1 ? "s" : "")}
+                                    {orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{((orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 1 ? "s" : "")}
                                 </p>
                             }
                         </div>
@@ -194,7 +239,7 @@ export default function CartMenu({
 
                     <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
                         <p className="text-white" onClick={() => {
-                            // const reduced = orderState.filter(e => e.order_type == "direct");
+                            // const reduced = orderInfo.state.filter(e => e.order_type == "direct");
                             // const cleared = reduced.map(e => { return {...e, products: []} });
 
                             setOrderState([{
@@ -229,18 +274,16 @@ export default function CartMenu({
                 
                 <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full py-2">
                 {
-                    orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) <= 0 ?
+                    (orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) <= 0 ?
                     <div className="flex flex-col items-center w-full">
                         <p className="text-sm text-gray-400 py-4 select-none">No products in cart</p>
                     </div>
                     :
-                    sortOrders(orderState).map((n, indx) => {
-                        console.log(n);
-
+                    sortOrders(orderInfo?.state ?? []).map((n, indx) => {
                         return (
                             <div key={n.id} className="flex flex-col gap-4">
                                 {
-                                    orderState.length !== 1 ?
+                                    orderInfo?.state.length !== 1 ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex flex-row items-center gap-2">
@@ -282,7 +325,7 @@ export default function CartMenu({
                                             </div>
                                         </div>
                                     :
-                                        orderState[0].order_type !== "Direct" ?
+                                        orderInfo.state[0].order_type !== "Direct" ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex flex-row items-center gap-2">
@@ -378,9 +421,9 @@ export default function CartMenu({
                                                                         products: product_list_clone
                                                                     }
 
-                                                                    const new_order = orderState.map(e => e.id == n.id ? new_state : e)
+                                                                    const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
 
-                                                                    setOrderState(sortOrders(new_order))
+                                                                    setOrderState(sortOrders(new_order ?? []))
                                                                 }
                                                             }} 
                                                             onMouseOver={(v) => {
@@ -429,9 +472,9 @@ export default function CartMenu({
                                                                     products: product_list_clone.filter(k => k) as ProductPurchase[]
                                                                 }
 
-                                                                const new_order = orderState.map(e => e.id == n.id ? new_state : e)
+                                                                const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
 
-                                                                setOrderState(sortOrders(new_order))
+                                                                setOrderState(sortOrders(new_order ?? []))
                                                             }} 
                                                             draggable="false"
                                                             className="select-none"
@@ -544,7 +587,7 @@ export default function CartMenu({
                 </div>
                 
                 <div className="flex flex-row items-center gap-4">
-                    <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                    <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
                         <p className="text-gray-800 font-semibold">Park Sale</p>
                     </div>
 
@@ -561,7 +604,7 @@ export default function CartMenu({
 
                             setCurrentTransactionPrice(parseFloat(price));
                         }} 
-                        className={`${orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                        className={`${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                         <p className={`text-white font-semibold ${""}`}>Checkout</p>
                     </div>
                 </div>

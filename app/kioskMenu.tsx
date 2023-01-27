@@ -428,8 +428,6 @@ export default function KioskMenu({
                                                                 order_type: "Direct"
                                                             };
 
-                                                            console.log("PUT", new_pdt_list, cOs);
-
                                                             setOrderState([...sortOrders([ ...orderState, cOs])])
                                                         }else {
                                                             const new_pdt_list = addToCart(activeProduct, activeProductPromotions, activeProductVariant, cOs.products)
