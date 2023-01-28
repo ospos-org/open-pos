@@ -240,9 +240,10 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
 
                                                     generatedOrder.map(k => {
                                                         const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct"));
+                                                        console.log(k.item?.product.name, found, k);
 
                                                         if(found && k.item) {
-                                                            inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                            inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
                                                         } else if(k.item) {
                                                             inverse_order.push({
                                                                 store: k.store,
@@ -251,6 +252,8 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             })
                                                         }
                                                     })
+
+                                                    console.log(generatedOrder, inverse_order);
 
                                                     Promise.all(inverse_order.map(async k => {
                                                         const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {

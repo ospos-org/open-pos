@@ -109,7 +109,7 @@ export default function CartMenu({
                         // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
     
                         // Is the greatest discount
-                        console.log(`Promotion provides greater discount for ${b.product.name}`)
+                        // console.log(`Promotion provides greater discount for ${b.product.name}`)
     
                         // Do:
                         // 1. Check Discount is valid - Does the quantity required equal-?
@@ -130,7 +130,7 @@ export default function CartMenu({
                             }
                         }
                     }else {
-                        console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
+                        // console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
                     }
     
                     return b;

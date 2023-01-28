@@ -280,7 +280,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Shipment" : "Direct"));
 
                                                     if(found && k.item) {
-                                                        inverse_order = inverse_order.map(e => e.store == k.store ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                        inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
                                                     } else if(k.item) {
                                                         inverse_order.push({
                                                             store: k.store,

@@ -53,8 +53,6 @@ export function parseDiscount(discount: string) {
 }
 
 export function fromDbDiscount(dbDiscount: { Absolute?: number, Percentage?: number }) {
-    console.log(dbDiscount?.Absolute, dbDiscount?.Percentage);
-
     if(dbDiscount.Absolute) {
         return `a|${dbDiscount.Absolute ?? 0}`
     }else {
@@ -148,7 +146,7 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     const normal_price = (pdt.variant_information.retail_price * 1.15);
     const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
 
-    console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
+    // console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
  
     return normal_price - discounted_price;
 }
