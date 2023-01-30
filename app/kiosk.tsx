@@ -15,6 +15,7 @@ import PickupMenu from "./pickupMenu";
 import { customAlphabet } from "nanoid";
 import CartMenu from "./cartMenu";
 import KioskMenu from "./kioskMenu";
+import moment from "moment"
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -43,7 +44,9 @@ export default function Kiosk({ master_state }: { master_state: {
         },
         products: [],
         status: {
-            status: "Queued",
+            status: {
+                Queued: getDate()
+            },
             assigned_products: [],
             timestamp: getDate()
         },
@@ -376,7 +379,28 @@ export default function Kiosk({ master_state }: { master_state: {
                                             payment_method: "Card",
                                             processing_fee: {quantity: 0.1, currency: 'NZD'},
                                             processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
-                                            status: "Complete"
+                                            status: {
+                                                Complete: {
+                                                    card_brand: "VISA",
+                                                    last_4: "4025",
+                                                    exp_month: "03",
+                                                    exp_year: "2023",
+                                                    fingerprint: "a20@jA928ajsf9a9828",
+                                                    card_type: "DEBIT",
+                                                    prepaid_type: "NULL",
+                                                    bin: "",
+
+                                                    entry_method: "PIN",
+                                                    cvv_accepted: "TRUE",
+                                                    avs_accepted: "TRUE",
+                                                    auth_result_code: "YES",
+                                                    statement_description: "DEBIT ACCEPTED",
+                                                    card_payment_timeline: {
+                                                        authorized_at: "",
+                                                        captured_at: ""
+                                                    }
+                                                }
+                                            }
                                         }];
 
                                         // amount: {quantity: 115, currency: 'NZD'}
@@ -424,7 +448,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         },
                                                         products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status: {   
-                                                            status: "Fulfilled",
+                                                            status: {
+                                                                Fulfilled: date
+                                                            },
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
@@ -432,7 +458,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             ...e.status_history as StatusHistory[],
                                                             {
                                                                 item: {   
-                                                                    status: "Fulfilled",
+                                                                    status: {
+                                                                        Fulfilled: date
+                                                                    },
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
                                                                 } as OrderStatus,
@@ -446,7 +474,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         ...e,
                                                         discount: toDbDiscount(e.discount),
                                                         status: {   
-                                                            status: "Queued",
+                                                            status: {
+                                                                Queued: date
+                                                            },
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
@@ -455,7 +485,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             ...e.status_history as StatusHistory[],
                                                             {
                                                                 item: {   
-                                                                    status: "Queued",
+                                                                    status: {
+                                                                        Queued: date
+                                                                    },
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
                                                                 } as OrderStatus,
@@ -590,7 +622,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     },
                                                     products: [],
                                                     status: {
-                                                        status: "Queued",
+                                                        status: {
+                                                            Queued: getDate()
+                                                        },
                                                         assigned_products: [],
                                                         timestamp: getDate()
                                                     },
@@ -765,7 +799,28 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     payment_method: "Cash",
                                                     processing_fee: {quantity: 0.1, currency: 'NZD'},
                                                     processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
-                                                    status: "Complete"
+                                                    status: { 
+                                                        Complete: {
+                                                            card_brand: "VISA",
+                                                            last_4: "4025",
+                                                            exp_month: "03",
+                                                            exp_year: "2023",
+                                                            fingerprint: "a20@jA928ajsf9a9828",
+                                                            card_type: "DEBIT",
+                                                            prepaid_type: "NULL",
+                                                            bin: "",
+        
+                                                            entry_method: "PIN",
+                                                            cvv_accepted: "TRUE",
+                                                            avs_accepted: "TRUE",
+                                                            auth_result_code: "YES",
+                                                            statement_description: "DEBIT ACCEPTED",
+                                                            card_payment_timeline: {
+                                                                authorized_at: "",
+                                                                captured_at: ""
+                                                            }
+                                                        }
+                                                    }
                                                 }];
         
                                                 setKioskState({
@@ -916,6 +971,6 @@ export function sortDbOrders(orders: DbOrder[]) {
 }
 
 export function getDate(): string {
-    return new Date().toString()
-    // return moment(new Date()).format()
+    // return new Date().toString()
+    return moment(new Date(), 'DD/MM/YYYY', true).format()
 }

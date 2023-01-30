@@ -31,7 +31,30 @@ export type PaymentIntent = {
         software_version: 'k0.5.2', 
         token: string
     }
-    status: "Unfulfilled" | "Pending" | "Processing" | "Failed" | "Complete" 
+    status: { Unfulfilled: string } | { Pending: string } | { Processing: string } | { Failed: CardDetails } | { Complete: CardDetails } 
+}
+
+export type CardDetails = {
+    card_brand: string,
+    last_4: string,
+    exp_month: string,
+    exp_year: string,
+    fingerprint: string,
+    card_type: string,
+    prepaid_type: string,
+    bin: string,
+
+    entry_method: string,
+    cvv_accepted: string,
+    avs_accepted: string,
+    auth_result_code: string,
+    statement_description: string,
+    card_payment_timeline: PaymentTimeline
+}
+
+export type PaymentTimeline = {
+    authorized_at: string,
+    captured_at: string
 }
 
 export type Price = {
@@ -124,9 +147,16 @@ export type DiscountValue = {
 }
 
 export type OrderStatus = {
-    status: "Queued" | "Transit" | "Processing" | "InStore" | "Fulfilled" | "Failed",
+    status: { Queued: string } | { Transit: TransitInformation } | { Processing: string } | { InStore: string} | { Fulfilled: string} | { Failed: string },
     assigned_products: string[],
     timestamp: string
+}
+
+export type TransitInformation = {
+    shipping_company: ContactInformation,
+    query_url: string,
+    tracking_code: string,
+    assigned_products: string[]
 }
 
 export type Product = {
