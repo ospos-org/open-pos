@@ -1,11 +1,13 @@
 import { isEqual } from "lodash";
+import moment from "moment";
+import { customAlphabet } from "nanoid";
 import Image from "next/image";
-import { RefObject, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { isValidVariant } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
-import { ContactInformation, Customer, Employee, Order, Product, Promotion, StrictVariantCategory, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, Employee, KioskState, Order, Product, Promotion, StrictVariantCategory, Transaction, VariantInformation } from "./stock-types";
 
 export default function KioskMenu({
     setSearchFocused, searchFocused,
@@ -47,17 +49,37 @@ export default function KioskMenu({
     debouncedResults: Function
 }) {
     const [ activeProductPromotions, setActiveProductPromotions ] = useState<Promotion[]>();
+    const [ activeCustomer, setActiveCustomer ] = useState<Customer | null>(null);
+    const [ editCustomerState, setEditCustomerState ] = useState(false);
+    const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
+
+    useEffect(() => {
+        if(activeCustomer) {
+            fetch(`http://127.0.0.1:8000/customer/transactions/${activeCustomer.id}`, {
+                method: "GET",
+				credentials: "include",
+				redirect: "follow"
+            }).then(async k => {
+                if(k.ok) {
+                    const data: Transaction[] = await k.json();
+
+                    setActiveCustomerTransactions(data)
+                }
+            })
+        }
+    }, [activeCustomer])
 
     return (
         <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
             if(e.key == "Escape") setSearchFocused(false)
         }}>
-            <div className="flex flex-col p-4 gap-4">
-                <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
+            <div className="p-4 pb-0">
+                <div className={`flex flex-1 flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
                     {
-                        activeProduct || searchFocused ?
+                        activeProduct || activeCustomer || searchFocused ?
                         <Image onClick={() => {
                             setActiveProduct(null);
+                            setActiveCustomer(null);
                             setSearchFocused(false);
                         }} width="20" height="20" src="/icons/arrow-narrow-left.svg" className="select-none cursor-pointer" alt={''} draggable={false} />
                         :
@@ -116,7 +138,13 @@ export default function KioskMenu({
                         <Image width="20" height="20" src="/icons/scan.svg" draggable={false} alt={''}></Image>
                     }
                 </div>
+            </div>
+            
+
+            <div className="flex flex-col p-4 gap-4 h-full max-h-full overflow-auto">
                 
+                
+                <div className="w-full max-w-full h-full max-h-full">
                 {
                     searchFocused && (searchTermState !== "") ?
                         <div className="flex flex-1 flex-col flex-wrap gap-2 bg-gray-700 rounded-sm text-white overflow-hidden">
@@ -134,6 +162,8 @@ export default function KioskMenu({
                                                         return (
                                                             <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
                                                                 setActiveProduct(e);
+                                                                setActiveCustomer(null);
+
                                                                 setActiveProductPromotions(b.promotions);
                                                                 setSearchFocused(false);
 
@@ -264,14 +294,19 @@ export default function KioskMenu({
                                             )
                                         case "customer":
                                             return (
-                                                result.length == 0 ?
+                                                !result || result.length == 0 ?
                                                     <p className="self-center text-gray-400 py-6">No customers with this name</p>
                                                     :
-                                                    (result as Customer[]).map((e: Customer, indx) => {
+                                                    (result as Customer[])?.map((e: Customer, indx) => {
                                                         return (
                                                             <div 
                                                                 key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
-                                                                
+                                                                onClick={() => {
+                                                                    setSearchFocused(false);
+
+                                                                    setActiveCustomer(e);
+                                                                    setActiveProduct(null);
+                                                                }}
                                                                 >
                                                                 <div className="select-none grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
@@ -344,8 +379,154 @@ export default function KioskMenu({
                             }
                         </div>
                         :
+                        activeCustomer ? 
+                            <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
+                                <div className="flex flex-row items-start justify-between">
+                                    <div className="flex flex-col gap-2">
+                                        <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
+                                        <p className="text-gray-400">{activeCustomer.contact.address.street} {activeCustomer.contact.address.street2}, {activeCustomer.contact.address.city} {activeCustomer.contact.address.po_code}, {activeCustomer.contact.address.country}</p>
+                                        
+                                        <div className="flex flex-row items-center gap-4">
+                                            <div className="bg-gray-700 w-fit flex flex-row items-center gap-4 px-2 py-2 rounded-md">
+                                                <Image src="/icons/mail-01.svg" alt="" width="20" height="20" style={{ filter: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                                                
+                                                <p className="text-gray-200 font-semibold">{activeCustomer.contact.email.full}</p>
+                                            </div>
+
+                                            <div className="bg-gray-700 w-fit flex flex-row items-center gap-4 px-2 py-2 rounded-md">
+                                                <Image src="/icons/phone.svg" alt="" width="20" height="20" style={{ filter: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                                                
+                                                <p className="text-gray-200 font-semibold">({activeCustomer.contact.mobile.region_code}) {
+                                                    (() => {
+                                                        const k = activeCustomer.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                        if(!k) return ""
+                                                        return `${k[1]} ${k[2]} ${k[3]}`
+                                                    })()
+                                                }</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-row items-center gap-4">
+                                        <div>
+                                            {
+                                                editCustomerState ? 
+                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                    onClick={() => { 
+                                                        setEditCustomerState(false)
+                                                    }}
+                                                >
+                                                    <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                                    <p className="font-medium select-none">Save Changes</p>
+                                                </div>
+                                                :
+                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                    onClick={() => { 
+                                                        setEditCustomerState(true)
+                                                    }}
+                                                >
+                                                    <Image width="25" height="25" src="/icons/edit-03.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                                    <p className="font-medium select-none">Edit Customer</p>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            {
+                                                customerState ? 
+                                                <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer"
+                                                    onClick={() => { 
+                                                        setCustomerState(null)
+                                                    }}
+                                                >
+                                                    <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
+                                                    <p className="font-medium select-none">Remove Customer</p>
+                                                </div>
+                                                :
+                                                <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                    onClick={() => { 
+                                                        setCustomerState(activeCustomer);
+                                                        setSearchFocused(false);
+                                                        setSearchType("product");
+                                                        setResult([]);
+
+                                                        input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                    }}
+                                                >
+                                                    <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                                    <p className="font-medium select-none">Select Customer</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-2 max-h-full overflow-auto">
+                                    <p className="text-gray-400">ORDER HISTORY</p>
+
+                                    <div className="flex flex-col gap-2">
+                                    {
+                                        activeCustomerTransactions?.sort((a,b) => new Date(a.order_date).getTime() - new Date(b.order_date).getTime())?.map(b => {
+                                            return (
+                                                <div key={b.id} className="bg-gray-700 px-4 py-4 pt-2 rounded-md gap-2 flex flex-col">
+                                                    <div className="flex flex-row items-center gap-4">
+                                                        <p className="font-semibold">{moment(b.order_date).format("DD/MM/YY hh:ss")}</p>
+                                                        <p className="font-semibold">${b.order_total}</p>
+                                                    </div>
+                                                    
+                                                    {b.products.map(k => {
+                                                        return (
+                                                            <div key={k.id} className="bg-gray-900 px-4 py-2 rounded-md">
+                                                                <div className="flex flex-row items-center gap-4 ">
+                                                                    <p className="font-bold">{k.reference}</p>
+                                                                    <p className="bg-gray-800 text-white text-semibold px-2 rounded-full">{k.order_type}</p>
+
+                                                                    <p>
+                                                                        {(() => {
+                                                                            switch(k.order_type) {
+                                                                                case "Direct":
+                                                                                    return `Taken from ${k.origin.contact.name} (${k.origin.code})`
+                                                                                case "Pickup":
+                                                                                    return `Pickup for ${k.origin.contact.name} (${k.origin.code})`
+                                                                                case "Quote":
+                                                                                    return `Quote given by ${b.salesperson} at ${k.origin.contact.name} (${k.origin.code})`
+                                                                                case "Shipment":
+                                                                                    return `Shipped from ${k.origin.contact.name} (${k.origin.code}) to ${k.destination?.contact.address.street} ${k.destination?.contact.address.street2}`
+                                                                                default:
+                                                                                    return ""
+                                                                            }
+                                                                        })()}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div>
+                                                                    {
+                                                                        k.products.map(n => {
+                                                                            return (
+                                                                                <div key={n.id} className="flex flex-row items-center gap-2">
+                                                                                    <p className="text-gray-400">{n.quantity}x</p>
+                                                                                    <p>{n.product_name}</p>
+
+                                                                                    <p>${n.product_cost}</p>
+                                                                                </div>
+                                                                            )
+                                                                        })
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        :
                         activeProduct ? 
-                            <div className="p-4 text-white flex flex-col gap-8  bg-opacity-50 rounded-sm">
+                            <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
                                 <div className="flex flex-row items-start gap-4">
                                     <Image src={activeProductVariant?.images?.[0] ?? activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
 
@@ -424,7 +605,7 @@ export default function KioskMenu({
                                                                 status_history: [],
                                                                 order_history: [],
                                                                 order_notes: [],
-                                                                reference: "",
+                                                                reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                                 creation_date: getDate(),
                                                                 discount: "a|0",
                                                                 order_type: "Direct"
@@ -742,7 +923,8 @@ export default function KioskMenu({
                                     <p className="font-medium">Save Cart</p>
                                 </div>
                             </div>
-                }
+                    }
+                </div>
             </div>
             
             <div className="flex flex-row items-center border-t-2 border-gray-600">

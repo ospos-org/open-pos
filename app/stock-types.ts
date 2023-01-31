@@ -10,6 +10,22 @@ export type KioskState = {
     till: string | null
 };
 
+export type Transaction = {
+    id: string,
+
+    customer: string,
+    transaction_type: "in" | "out",
+    products: DbOrder[],
+    order_total: number,
+    payment: PaymentIntent[],
+
+    order_date: string,
+    order_notes: Note[],
+
+    salesperson: string,
+    till: string
+}
+
 export type PaymentIntent = {
     amount: Price
     delay_action: "Cancel" | "Complete" | "RequireFurtherAction"
@@ -133,6 +149,8 @@ export type DbProductPurchase = {
 
     product_cost: number,
     product_code: string,
+    product_name: string,
+    
     quantity: number,
 
     variant: string[],

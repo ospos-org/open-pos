@@ -1,9 +1,11 @@
 import { debounce } from "lodash";
+import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { Address, ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import { getDate } from "./kiosk";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -308,20 +310,26 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                             contact: data.contact 
                                                         },
                                                         products: k.items,
-                                                        status: [],
+                                                        status: {
+                                                            status: {
+                                                                Queued: getDate()
+                                                            },
+                                                            assigned_products: k.items.map(b => b.id),
+                                                            timestamp: getDate()
+                                                        },
                                                         previous_failed_fulfillment_attempts: [],
                                                         status_history: [],
                                                         order_history: [],
                                                         order_notes: [],
-                                                        reference: "",
-                                                        creation_date: "",
+                                                        reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                        creation_date: getDate(),
                                                         discount: "a|0",
                                                         order_type: k.type
                                                     };
                                                 })).then((k) => {
                                                     let job = orderJob[0];
                                                     job = job.filter(k => k.order_type != "Direct")
-                                                    k.map(b => job.push(b as unknown as Order));
+                                                    k.map(b => job.push(b as Order));
                                                     
                                                     orderJob[1](job);
                                                     setPadState("cart")

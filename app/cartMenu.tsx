@@ -1,4 +1,5 @@
 import { isEqual } from "lodash";
+import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
@@ -259,7 +260,7 @@ export default function CartMenu({
                                 order_history: [],
                                 previous_failed_fulfillment_attempts: [],
                                 order_notes: [],
-                                reference: "",
+                                reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                 creation_date: getDate(),
                                 discount: "a|0",
                                 order_type: "Direct"

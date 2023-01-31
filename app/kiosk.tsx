@@ -446,7 +446,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
-                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status: {   
                                                             status: {
                                                                 Fulfilled: date
@@ -480,7 +480,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
-                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status_history: [
                                                             ...e.status_history as StatusHistory[],
                                                             {
@@ -631,7 +631,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                     status_history: [],
                                                     order_history: [],
                                                     order_notes: [],
-                                                    reference: "",
+                                                    reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                     creation_date: getDate(),
                                                     discount: "a|0",
                                                     order_type: "Direct",

@@ -1,10 +1,11 @@
 import { debounce } from "lodash";
+import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 
 const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -274,7 +275,9 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             },
                                                             products: k.items,
                                                             status: {
-                                                                status: "Queued",
+                                                                status: {
+                                                                    Queued: getDate()
+                                                                },
                                                                 assigned_products: k.items.map(b => b.id),
                                                                 timestamp: getDate()
                                                             },
@@ -282,8 +285,8 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             status_history: [],
                                                             order_history: [],
                                                             order_notes: [],
-                                                            reference: "",
-                                                            creation_date: "",
+                                                            reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                            creation_date: getDate(),
                                                             discount: "a|0",
                                                             order_type: k.type
                                                         };
