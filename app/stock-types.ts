@@ -272,6 +272,7 @@ export type Customer = {
     id: string,
     name: string,
     contact: ContactInformation,
+    transactions: string,
     order_history: Order[],
     customer_notes: Note[],
     balance: number,

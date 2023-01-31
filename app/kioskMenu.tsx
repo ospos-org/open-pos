@@ -276,7 +276,7 @@ export default function KioskMenu({
                                                                 <div className="select-none grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                                         <p>{e.name}</p>
-                                                                        <p className="text-sm text-gray-400">{e.order_history.length} Past Orders</p>
+                                                                        <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length} Past Order{e?.transactions?.split(",")?.length > 1 ? "s" : ""}</p>
                                                                     </div>
 
                                                                     <div className="flex flex-row items-center gap-4">
@@ -414,7 +414,9 @@ export default function KioskMenu({
                                                                 },
                                                                 products: new_pdt_list,
                                                                 status: {
-                                                                    status: "Queued",
+                                                                    status: {
+                                                                        Queued: getDate()
+                                                                    },
                                                                     assigned_products: [],
                                                                     timestamp: getDate()
                                                                 },
