@@ -19,6 +19,7 @@ export default function KioskMenu({
     setSearchTermState, searchTermState,
     setActiveVariantPossibilities, activeVariantPossibilities,
     setActiveVariant, activeVariant,
+    setCurrentViewedTransaction, currentViewedTransaction,
     setPadState,
     setDiscount,
     setActiveProductVariant, activeProductVariant,
@@ -35,6 +36,7 @@ export default function KioskMenu({
     setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
     setOrderState: Function, orderState: Order[],
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
+    setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null,
     setPadState: Function,
     setDiscount: Function,
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
@@ -359,7 +361,7 @@ export default function KioskMenu({
                                                     :
                                                     (result as Transaction[]).map((e: Transaction, indx) => {
                                                         return (
-                                                            <SearchFieldTransaction key={`TRANSACTION-${e.id}`} transaction={e} searchTermState={searchTermState} notEnd={(indx == result.length-1)} />
+                                                            <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={!(indx == result.length-1)} />
                                                         )
                                                     })
                                             )

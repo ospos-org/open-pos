@@ -16,6 +16,7 @@ import { customAlphabet } from "nanoid";
 import CartMenu from "./cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
+import TransactionMenu from "./transactionMenu";
 
 export default function Kiosk({ master_state }: { master_state: {
     store_id: string,
@@ -63,7 +64,7 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -90,6 +91,7 @@ export default function Kiosk({ master_state }: { master_state: {
 
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
     const [ cashContinuable, setCashContinuable ] = useState(false);
+    const [ currentViewedTransaction, setCurrentViewedTransaction ] = useState<[Transaction, string] | null>(); 
 
     const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         const existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
@@ -310,6 +312,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 setSearchTermState={setSearchTermState} searchTermState={searchTermState}
                 setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
                 setActiveVariant={setActiveVariant} activeVariant={activeVariant}
+                setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
                 setPadState={setPadState}
                 setDiscount={setDiscount}
                 setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
@@ -345,6 +348,25 @@ export default function Kiosk({ master_state }: { master_state: {
                         case "select-payment-method":
                             return (
                                 <PaymentMethod customer={!(!customerState)} setPadState={setPadState} orderState={orderState} kioskState={kioskState} ctp={[ currentTransactionPrice, setCurrentTransactionPrice ]} />
+                            )
+                        case "inv-transaction":
+                            return (
+                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full gap-4">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
+                                        </div>
+                                        <p className="text-gray-400">Transaction</p>
+                                    </div>
+
+                                    <TransactionMenu transaction={currentViewedTransaction ?? null} />
+                                </div>
                             )
                         case "await-debit":
                             // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
