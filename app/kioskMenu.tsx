@@ -7,6 +7,7 @@ import { v4 } from "uuid";
 import { isValidVariant } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
+import { SearchFieldTransaction } from "./searchFieldTransaction";
 import { ContactInformation, Customer, Employee, KioskState, Order, Product, Promotion, StrictVariantCategory, Transaction, VariantInformation } from "./stock-types";
 
 export default function KioskMenu({
@@ -31,7 +32,7 @@ export default function KioskMenu({
     setSearchType: Function, searchType: "customer" | "product" | "transaction",
     setSearchTermState: Function, searchTermState: string,
     setCustomerState: Function, customerState: Customer | null,
-    setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Order[],
+    setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
     setOrderState: Function, orderState: Order[],
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
     setPadState: Function,
@@ -147,7 +148,7 @@ export default function KioskMenu({
                 <div className="w-full max-w-full h-full max-h-full">
                 {
                     searchFocused && (searchTermState !== "") ?
-                        <div className="flex flex-1 flex-col flex-wrap gap-2 bg-gray-700 rounded-sm text-white overflow-hidden">
+                        <div className="flex flex-1 flex-col flex-wrap bg-gray-700 rounded-sm text-white overflow-hidden">
                             {
                                 (() => {
                                     switch(searchType) {
@@ -286,7 +287,7 @@ export default function KioskMenu({
                                                                 </div>
 
                                                                 {
-                                                                    (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
+                                                                    (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
                                                                 }
                                                             </div>
                                                         )
@@ -301,11 +302,13 @@ export default function KioskMenu({
                                                         return (
                                                             <div 
                                                                 key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
-                                                                onClick={() => {
-                                                                    setSearchFocused(false);
+                                                                onClick={(v) => {
+                                                                    if((v.target as any).id !== "assign-to-cart") {
+                                                                        setSearchFocused(false);
 
-                                                                    setActiveCustomer(e);
-                                                                    setActiveProduct(null);
+                                                                        setActiveCustomer(e);
+                                                                        setActiveProduct(null);
+                                                                    }
                                                                 }}
                                                                 >
                                                                 <div className="select-none grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
@@ -328,7 +331,9 @@ export default function KioskMenu({
                                                                     <p className="text-gray-400">${e.balance} Credit</p>
 
                                                                     <p 
-                                                                        onClick={() => {
+                                                                        onClick={(v) => {
+                                                                            v.preventDefault();
+
                                                                             setCustomerState(e);
                                                                             setSearchFocused(false);
                                                                             setSearchType("product");
@@ -336,11 +341,12 @@ export default function KioskMenu({
     
                                                                             input_ref.current?.value ? input_ref.current.value = "" : {};
                                                                         }}
+                                                                        id="assign-to-cart"
                                                                         className="whitespace-nowrap justify-self-end pr-4">Assign to cart</p>
                                                                 </div>
 
                                                                 {
-                                                                    (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
+                                                                    (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
                                                                 }
                                                             </div>
                                                         )
@@ -351,20 +357,9 @@ export default function KioskMenu({
                                                 result.length == 0 ?
                                                     <p className="self-center text-gray-400 py-6">No transactions with this reference</p>
                                                     :
-                                                    (result as Order[]).map((e: Order, indx) => {
+                                                    (result as Transaction[]).map((e: Transaction, indx) => {
                                                         return (
-                                                            <div key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit">
-                                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "minmax(200px, 1fr) minmax(300px, 2fr) 225px 75px" }}>
-                                                                    <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
-                                                                        <p>{e.reference} {e.creation_date}</p>
-                                                                        {/* <p className="text-sm text-gray-400">{e.order_history.length} Past Orders</p> */}
-                                                                    </div>
-                                                                </div>
-
-                                                                {
-                                                                    (indx == result.length-1) ? <></> : <hr className="mt-2 border-gray-500" />
-                                                                }
-                                                            </div>
+                                                            <SearchFieldTransaction key={`TRANSACTION-${e.id}`} transaction={e} searchTermState={searchTermState} notEnd={(indx == result.length-1)} />
                                                         )
                                                     })
                                             )
@@ -381,7 +376,7 @@ export default function KioskMenu({
                         :
                         activeCustomer ? 
                             <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
-                                <div className="flex flex-row items-start justify-between">
+                                <div className="flex flex-1 flex-row items-start h-full justify-between">
                                     <div className="flex flex-col gap-2">
                                         <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
                                         <p className="text-gray-400">{activeCustomer.contact.address.street} {activeCustomer.contact.address.street2}, {activeCustomer.contact.address.city} {activeCustomer.contact.address.po_code}, {activeCustomer.contact.address.country}</p>
