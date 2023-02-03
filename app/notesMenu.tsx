@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { FC, createRef, useState, useEffect } from "react";
+import { NoteElement } from "./noteElement";
 import { Note, Order } from "./stock-types";
 
 const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback }) => {
@@ -45,13 +46,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                     :
                     activeOrder.order_notes.map(e => {
                         return (
-                            <div className="flex flex-row items-center w-full justify-between gap-6" key={`${e.timestamp}-${e.message}`}>
-                                <div className="flex flex-col">
-                                    <p className="text-gray-400 font-bold">{e.author.name.first} {e.author.name.last}</p>       
-                                    <p className="text-gray-600 text-sm">{new Date(e.timestamp).toLocaleDateString("en-US", { weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric' }).split(",").join(" ")}</p>                                
-                                </div>
-                                <p className="text-white w-full flex-1 font-semibold">{e.message}</p>
-                            </div>
+                            <NoteElement note={e} key={`${e.author} ${e.message} - ${e.timestamp}`}/>
                         )
                     })
                 }

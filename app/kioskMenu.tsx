@@ -4,7 +4,7 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { isValidVariant } from "./discount_helpers";
+import { applyDiscount, fromDbDiscount, isValidVariant } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
 import { SearchFieldTransaction } from "./searchFieldTransaction";
@@ -533,43 +533,55 @@ export default function KioskMenu({
                                             <p className="text-gray-400">{activeProduct.company}</p>
                                             <br />
 
-                                            <div className="flex flex-row items-center gap-4">
-                                                <p className="text-gray-400">SKU:</p>
-                                                <p>{activeProduct.sku}</p>
-                                            </div>
-                                            
-                                            <br />
-                                            <div>
-                                                <div className="flex flex-row items-center gap-2">
-                                                    {
-                                                        ((activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
-                                                        <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
-                                                        :
-                                                        <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">In stock</p>
-                                                    } 
+                                            <div className="flex flex-col justify-between gap-4 w-full flex-1">
+                                                <div className="flex flex-row items-center gap-4">
+                                                    <div className="flex flex-row items-center gap-4">
+                                                        <p className="text-gray-400">SKU:</p>
+                                                        <p>{activeProduct.sku}</p>
+                                                    </div>
+                                                    <div className="flex flex-row items-center gap-4">
+                                                        <p className="text-gray-400">BARCODE:</p>
+                                                        <p>{activeProductVariant?.barcode}</p>
+                                                    </div>
+                                                    <div className="flex flex-row items-center gap-4">
+                                                        <p className="text-gray-400">LOYALTY PRICE:</p>
+                                                        <p>${(activeProductVariant ? applyDiscount(activeProductVariant?.retail_price * 1.15 ?? 0, fromDbDiscount(activeProductVariant?.loyalty_discount)) : 0.00).toFixed(2)}</p>
+                                                    </div>
+                                                </div>
 
-                                                    {
-                                                        (activeProductVariant?.stock.reduce((p, c) => p += c.store.code !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
-                                                        <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Cannot ship</p>
-                                                        :
-                                                        <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Available to ship</p>
-                                                    }
+                                                <div>
+                                                    <div className="flex flex-row items-center gap-2">
+                                                        {
+                                                            ((activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
+                                                            <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
+                                                            :
+                                                            <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">In stock</p>
+                                                        } 
 
-                                                    {                                       
-                                                        activeProductVariant?.stock_information.discontinued ? 
-                                                        <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Discontinued</p>
-                                                        :
-                                                        <></>
-                                                    }
+                                                        {
+                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.code !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
+                                                            <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Cannot ship</p>
+                                                            :
+                                                            <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Available to ship</p>
+                                                        }
 
-                                                    {                                       
-                                                        activeProductVariant?.stock_information.back_order ? 
-                                                        <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Back Order</p>
-                                                        :
-                                                        <></>
-                                                    }
+                                                        {                                       
+                                                            activeProductVariant?.stock_information.discontinued ? 
+                                                            <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Discontinued</p>
+                                                            :
+                                                            <></>
+                                                        }
+
+                                                        {                                       
+                                                            activeProductVariant?.stock_information.back_order ? 
+                                                            <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Back Order</p>
+                                                            :
+                                                            <></>
+                                                        }
+                                                    </div>
                                                 </div>
                                             </div>
+                                            
                                             {/* <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p> */}
                                         </div>
 

@@ -119,7 +119,7 @@ export default function Kiosk({ master_state }: { master_state: {
             }else {
                 const po: ProductPurchase = {
                     id: v4(),
-                    product_code: product.sku,
+                    product_code: variant.barcode ?? product.sku ?? "",
                     variant: variant?.variant_code ?? [],
                     discount: [
                         {
@@ -142,7 +142,7 @@ export default function Kiosk({ master_state }: { master_state: {
             // Creating a new product in the order.
             const po: ProductPurchase = {
                 id: v4(),
-                product_code: product.sku,
+                product_code: variant.barcode ?? product.sku ?? "",
                 variant: variant?.variant_code ?? [],
                 discount: [
                     {
@@ -468,7 +468,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
-                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status: {   
                                                             status: {
                                                                 Fulfilled: date
@@ -481,12 +481,23 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             {
                                                                 item: {   
                                                                     status: {
+                                                                        Queued: date
+                                                                    },
+                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                                    timestamp: date
+                                                                } as OrderStatus,
+                                                                reason: "Payment Intent Created",
+                                                                timestamp: date
+                                                            } as StatusHistory,
+                                                            {
+                                                                item: {   
+                                                                    status: {
                                                                         Fulfilled: date
                                                                     },
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
                                                                 } as OrderStatus,
-                                                                reason: "",
+                                                                reason: "Instore Purchase",
                                                                 timestamp: date
                                                             } as StatusHistory
                                                         ]
@@ -502,7 +513,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
-                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
                                                         status_history: [
                                                             ...e.status_history as StatusHistory[],
                                                             {
@@ -513,7 +524,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                                     timestamp: date
                                                                 } as OrderStatus,
-                                                                reason: "",
+                                                                reason: "Queued indirect purchase",
                                                                 timestamp: date
                                                             } as StatusHistory
                                                         ]
@@ -889,7 +900,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                             const note_obj: Note = {
                                                 message: note,
                                                 timestamp: getDate(),
-                                                author: master_state?.employee
+                                                author: master_state?.employee.id
                                             }
 
                                             const new_order_state = orderState.map(e => e.id == active_order ? { ...e, order_notes: [...e.order_notes, note_obj] } : e)

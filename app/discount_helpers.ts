@@ -95,6 +95,22 @@ export function findMaxDiscount(discountValues: DiscountValue[], productValue: n
     return max_discount
 }
 
+export function findMaxDiscountDb(discountValues: { Absolute?: number, Percentage?: number }[], productValue: number, loyalty: boolean) {
+    let max_discount = {
+        Absolute: 0,
+    } as { Absolute?: number, Percentage?: number };
+
+    for(let i = 0; i < discountValues.length; i++) {
+        // if(discountValues[i].source == "loyalty" && !loyalty) { continue; }
+
+        if(isGreaterDiscount(fromDbDiscount(max_discount), fromDbDiscount(discountValues[i]), productValue)) {
+            max_discount = discountValues[i]
+        }
+    }
+
+    return max_discount
+}
+
 export function stringValueToObj(discount: string): { value: number, type: "absolute" | "percentage" } {
     let d = discount.split("|");
 

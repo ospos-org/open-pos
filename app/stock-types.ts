@@ -145,16 +145,15 @@ export type ProductPurchase = {
 }
 
 export type DbProductPurchase = {
-    discount: { Absolute?: number, Percentage?: number }[],
+    discount: { Absolute?: number, Percentage?: number },
 
     product_cost: number,
     product_code: string,
+
     product_name: string,
+    product_variant_name: string,
     
     quantity: number,
-
-    variant: string[],
-
     id: string,
 }
 
@@ -298,7 +297,7 @@ export type Customer = {
 
 export type Employee = {
     id: string,
-    name: Name,
+    name: string,
     auth: {
         hash: string
     },
@@ -356,5 +355,5 @@ export type Mobile = {
 export type Note = {
     message: string,
     timestamp: string,
-    author: Employee
+    author: string
 }
