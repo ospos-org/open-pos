@@ -94,8 +94,10 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ currentViewedTransaction, setCurrentViewedTransaction ] = useState<[Transaction, string] | null>(); 
 
     const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
-        const existing_product = orderProducts.find(k => k.product_code == product.sku && isEqual(k.variant, variant?.variant_code));
+        const existing_product = orderProducts.find(k => k.product_code == variant.barcode ); // && isEqual(k.variant, variant?.variant_code)
         let new_order_products_state = [];
+
+        console.log("VAR: ", variant);
 
         if(existing_product) {
             // Editing the quantity of an existing product in the order.
@@ -106,7 +108,7 @@ export default function Kiosk({ master_state }: { master_state: {
                     // }
                 // }
 
-            const matching_product = orderProducts.find(e => e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1));
+            const matching_product = orderProducts.find(e => e.product_code == variant.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
             
             if(matching_product) {
                 const total_stock = matching_product.variant_information.stock.reduce((p, c) => p += (c.quantity.quantity_sellable), 0);
@@ -114,21 +116,21 @@ export default function Kiosk({ master_state }: { master_state: {
                 new_order_products_state = orderProducts.map(e => {
                     if(total_stock <= e.quantity) return e;
 
-                    return e.product_code == product.sku && isEqual(e.variant, variant?.variant_code) && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1) ? { ...e, quantity: e.quantity+1 } : e
+                    console.log(e.product_code, variant.barcode, e.product_code == variant.barcode);
+
+                    return e.product_code == variant.barcode ? { ...e, quantity: e.quantity+1 } : e  //  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
                 });
             }else {
                 const po: ProductPurchase = {
                     id: v4(),
                     product_code: variant.barcode ?? product.sku ?? "",
-                    variant: variant?.variant_code ?? [],
-                    discount: [
-                        {
-                            source: "loyalty",
-                            value: fromDbDiscount(variant.loyalty_discount)
-                        }
-                    ],
-    
+                    discount: [{
+                        source: "loyalty",
+                        value: fromDbDiscount(variant.loyalty_discount)
+                    }],
                     product_cost: variant?.retail_price ?? 0,
+                    product_name: product.company + " " + product.name,
+                    product_variant_name: variant.name,
                     quantity: 1,
     
                     product: product,
@@ -143,15 +145,13 @@ export default function Kiosk({ master_state }: { master_state: {
             const po: ProductPurchase = {
                 id: v4(),
                 product_code: variant.barcode ?? product.sku ?? "",
-                variant: variant?.variant_code ?? [],
-                discount: [
-                    {
-                        source: "loyalty",
-                        value: fromDbDiscount(variant.loyalty_discount)
-                    }
-                ],
-
+                discount: [{
+                    source: "loyalty",
+                    value: fromDbDiscount(variant.loyalty_discount)
+                }],
                 product_cost: variant?.retail_price ?? 0,
+                product_name: product.company + " " + product.name,
+                product_variant_name: variant.name,
                 quantity: 1,
 
                 product: product,
@@ -218,7 +218,7 @@ export default function Kiosk({ master_state }: { master_state: {
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm}`, {
+            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
@@ -449,7 +449,6 @@ export default function Kiosk({ master_state }: { master_state: {
                                             setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
                                             setPadState("select-payment-method")
                                         }else {
-                                            setPadState("completed");
 
                                             const date = getDate();
 
@@ -468,7 +467,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
-                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, id: k.id}}) as DbProductPurchase[],
                                                         status: {   
                                                             status: {
                                                                 Fulfilled: date
@@ -513,7 +512,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
-                                                        products: e.products.map(k => { return { discount: [toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value)], product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, variant: k.variant, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, id: k.id}}) as DbProductPurchase[],
                                                         status_history: [
                                                             ...e.status_history as StatusHistory[],
                                                             {
@@ -552,7 +551,11 @@ export default function Kiosk({ master_state }: { master_state: {
                                                 credentials: "include",
                                                 redirect: "follow"
                                             }).then(async k => {
-                                                console.log(await k.json())
+                                                if(k.ok) {
+                                                    setPadState("completed");
+                                                }else {
+                                                    alert("Something went horribly wrong")
+                                                }
                                             })
                                         }
                                     }}>skip to completion</p>
@@ -574,7 +577,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                                         {
                                                             n.products?.map(e => {
                                                                 return (
-                                                                    <div key={`PRD${e.product_code}-${e.variant}`} className="flex flex-row items-center gap-8">
+                                                                    <div key={`PRD${e.product_code}-${e.id}`} className="flex flex-row items-center gap-8">
                                                                         <p className="text-white font-bold">{e.quantity}</p>
                 
                                                                         <div className="flex flex-col gap-0 flex-1">

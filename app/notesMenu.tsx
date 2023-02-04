@@ -15,12 +15,17 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
     return (
         <div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
             <div className="relative inline-block w-fit">
-                <div className={`bg-gray-800 select-none text-white flex flex-row w-fit gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
-                    setSelectorOpen(!selectorOpen)
-                }}>
-                    <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder.origin.code}</p>
-                    <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
-                </div>
+                {
+                    notes.length != 1 ?
+                    <div className={`bg-gray-800 select-none text-white flex flex-row w-fit gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
+                        setSelectorOpen(!selectorOpen)
+                    }}>
+                        <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder.origin.code}</p>
+                        <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
+                    </div>
+                    :
+                    <></>
+                }
 
                 <div className={`${selectorOpen ? "absolute flex flex-col items-center w-full text-white justify-center bg-gray-700 overflow-hidden z-50 rounded-t-none rounded-b-md" : "hidden absolute"}`}>
                     {
@@ -41,7 +46,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
             <div 
                 className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
                 {
-                    notes.length == 0 ? 
+                    activeOrder.order_notes.length == 0 ? 
                     <p className="text-gray-600">No notes yet</p>
                     :
                     activeOrder.order_notes.map(e => {

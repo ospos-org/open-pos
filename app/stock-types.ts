@@ -130,17 +130,18 @@ export type Move = {
 export type ProductPurchase = {
     id: string,
 
-    product_code: string,
-    variant: string[],
     discount: DiscountValue[],
 
+    product_code: string,
     product_cost: number,
+    product_name: string,
+    product_variant_name: string,
+
     quantity: number,
 
-    /// Extra information that should be removed before sending to server
+    /// Extra information for internal referencing (caching) that should be removed before sending to server
     product: Product,
     variant_information: VariantInformation,
-
     active_promotions: Promotion[]
 }
 
@@ -304,12 +305,6 @@ export type Employee = {
     contact: ContactInformation,
     clock_history: Attendance[],
     level: number
-}
-
-export type Name = {
-    first: string,
-    middle: string,
-    last: string
 }
 
 export type Attendance = {
