@@ -239,7 +239,7 @@ export default function CartMenu({
                     </div>
 
                     <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
-                        <p className="text-white" onClick={() => {
+                        <p className="text-white select-none" onClick={() => {
                             // const reduced = orderInfo.state.filter(e => e.order_type == "direct");
                             // const cleared = reduced.map(e => { return {...e, products: []} });
 
@@ -405,7 +405,7 @@ export default function CartMenu({
                                                     <div className="flex flex-col gap-2 items-center justify-center">
                                                         <Image
                                                             onClick={() => {
-                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
+                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
                                                                     const product_list_clone = n.products.map(k => {
                                                                         if(k.id == e.id) {
                                                                             return {
@@ -428,7 +428,7 @@ export default function CartMenu({
                                                                 }
                                                             }} 
                                                             onMouseOver={(v) => {
-                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0) ?? 1) >= total_stock))
+                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock))
                                                                     v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
                                                                 else 
                                                                     v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
