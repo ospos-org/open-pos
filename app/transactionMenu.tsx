@@ -17,14 +17,25 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
         // refChoices?.find(b => b.reference.includes(transaction?.[1]))
         setRefChoices(transaction?.[0].products)
 
-        fetch(`http://127.0.0.1:8000/customer/${transaction?.[0]?.customer}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async k => {
-            const n = await k.json();
-            setCustomer(n);
-        })
+        if(transaction?.[0]?.customer.customer_type != "Store") {
+            fetch(`http://127.0.0.1:8000/customer/${transaction?.[0]?.customer.customer_id}`, {
+                method: "GET",
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                const n = await k.json();
+                setCustomer(n);
+            })
+        }else {
+            fetch(`http://127.0.0.1:8000/store/code/${transaction?.[0]?.customer.customer_id}`, {
+                method: "GET",
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                const n = await k.json();
+                setCustomer(n);
+            })
+        }
     }, [transaction]);
 
     if(!transaction) return (<></>)

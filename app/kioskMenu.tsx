@@ -644,7 +644,7 @@ export default function KioskMenu({
 
                                 <div className="flex flex-row items-start gap-8">
                                     <div className="flex flex-col gap-8 max-w-[550px] w-full">
-                                        <PromotionList promotions={activeProductPromotions} />
+                                        <PromotionList promotions={activeProductPromotions} cart={orderState}/>
 
                                         <div className="flex flex-col gap-4">
                                             {
@@ -902,7 +902,7 @@ export default function KioskMenu({
         
                                 <div 
                                     onClick={() => {
-                                        if(customerState) setPadState("ship-to-customer")
+                                        setPadState("ship-to-customer")
                                     }}
                                     className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>

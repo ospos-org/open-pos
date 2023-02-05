@@ -5,7 +5,7 @@ export type KioskState = {
     order_total: number | null,
     payment: PaymentIntent[],
     order_date: string | null,
-    order_notes: string[] | null,
+    order_notes: Note[] | null,
     salesperson: string | null,
     till: string | null
 };
@@ -13,7 +13,7 @@ export type KioskState = {
 export type Transaction = {
     id: string,
 
-    customer: string,
+    customer: TransactionCustomer,
     transaction_type: "in" | "out",
     products: DbOrder[],
     order_total: number,
@@ -25,6 +25,27 @@ export type Transaction = {
     salesperson: string,
     till: string
 }
+
+export type TransactionInput = {
+    customer: TransactionCustomer,
+    transaction_type: "in" | "out",
+    products: DbOrder[],
+    order_total: number,
+    payment: PaymentIntent[],
+
+    order_date: string,
+    order_notes: Note[],
+
+    salesperson: string,
+    till: string
+}
+
+export type TransactionCustomer = {
+    customer_type: CustomerType,
+    customer_id: string
+}
+
+export type CustomerType = "Store" | "Individual" | "Commercial"
 
 export type PaymentIntent = {
     amount: Price
@@ -198,9 +219,15 @@ export type Promotion = {
     timestamp: string
 }
 
+export type Allocation = {
+    swap_for_any: boolean,
+    promotion: Promotion,
+}
+
 export type PromotionBuy = {
     Specific?: [string, number],
-    Any?: number
+    Any?: number,
+    Category?: [string, number]
 }
 
 export type PromotionGet = {

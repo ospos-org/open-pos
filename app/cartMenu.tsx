@@ -5,7 +5,7 @@ import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, stringValueToObj } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
-import { ContactInformation, Customer, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
+import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
 
 export default function CartMenu({ 
     customerState, 
@@ -52,14 +52,35 @@ export default function CartMenu({
         non_discounted_sub_total: number,
         promotions: {
             promotion_id: string,
-            affected_products: string[]
+            affected_products: string[],
+            name: string,
+            discount_value: { Absolute?: number, Percentage?: number }
         }[],
         state: Order[]
     }>();
 
     useEffect(() => {  
+        const applied_promos: {
+            promotion_id: string,
+            affected_products: string[],
+            name: string,
+            discount_value: { Absolute?: number, Percentage?: number }
+        }[] = [];
+
+        const deferred_promotions: {
+            promotion_id: string,
+            affected_products: string[],
+            name: string,
+            discount_value: { Absolute?: number, Percentage?: number }
+        }[] = [];
+
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
         const product_map = new Map<string, ProductPurchase>();
+        const product_assignment = new Map<string, {
+            quantity_total: number,
+            quantity_allocated: number,
+            allocations: Allocation[],
+        }>
 
         flat_products.map(k => {
             const pdt = product_map.get(k.product.sku);
@@ -74,6 +95,14 @@ export default function CartMenu({
             }
         })
 
+        product_map.forEach((val, key) => {
+            product_assignment.set(key, {
+                quantity_total: val.quantity,
+                quantity_allocated: 0,
+                allocations: []
+            })
+        })
+
         // Returns the order list with every products promotions sorted by effect (most effectual first, least last...)
         let sorted_promotions: Order[] = orderState.map(k => {
             return {
@@ -81,11 +110,13 @@ export default function CartMenu({
                 products: k.products.map(j => {
                     return {
                         ...j,
-                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map, orderState) - applyPromotion(a, j, product_map, orderState))
+                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map) - applyPromotion(a, j, product_map))
                     }
                 })
             }
         });
+
+        
 
         // Now we must apply the best promotion to each product, keeping in mind that if a promotion's has a BUY condition with another product, that product must not have an alternate promotion applied,
         // instead - the best promotion between the two must be applied, as the promotions are sorted by effectuality, this becomes the following index. If the following index proceeds to conflict with another product, further evaluation occurs. 
@@ -95,43 +126,108 @@ export default function CartMenu({
                 products: k.products.map(b => {
                     const promo = b.active_promotions[0];
                     const discount = discountFromPromotion(promo);
-    
-                    if(
-                        isGreaterDiscount(
-                            findMaxDiscount(
-                                b.discount, 
-                                b.variant_information.retail_price * 1.15, 
-                                !(!(customerState))
-                            ).value, 
-                            fromDbDiscount(discount), 
-                            b.variant_information.retail_price * 1.15
-                        )
-                    ) {
-                        // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
-    
-                        // Is the greatest discount
-                        // console.log(`Promotion provides greater discount for ${b.product.name}`)
-    
-                        // Do:
-                        // 1. Check Discount is valid - Does the quantity required equal-?
+                    
+                    for(let j = 0; j < b.quantity; j++) {
                         if(
-                            // If promotion requires purchase of any other item, and there are more than 1 item in the cart
-                            promo.buy.Any && product_map.size > 1
-                        ) {  
+                            isGreaterDiscount(
+                                findMaxDiscount(
+                                    b.discount, 
+                                    b.variant_information.retail_price * 1.15, 
+                                    !(!(customerState))
+                                ).value, 
+                                fromDbDiscount(discount), 
+                                b.variant_information.retail_price * 1.15
+                            )
+                        ) {
+                            // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
+        
+                            // Is the greatest discount
+                            // console.log(`Promotion provides greater discount for ${b.product.name}`)
+        
+                            // Do:
+                            // 1. Check Discount is valid - Does the quantity required equal-?
                             if(
-                                // if is specific and specific product is in cart, with correct quantity
-                                promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1])
-                            ) {
-                                // Apply discount
-                                b.discount.push({
-                                    source: "promotion",
-                                    value: fromDbDiscount(discount),
-                                    promotion: promo
-                                })
+                                // If promotion requires purchase of any other item, and there are more than 1 item in the cart
+                                (promo.buy.Any && product_map.size > 1)
+    
+                                ||
+    
+                                (promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1]))
+                            ) {  
+                                // Now we must verify all affected products, and check which promotions are applied to them, if there are none - apply it, otherwise compare the discount.
+    
+                                // Find all to-be-applied promotions
+                                const relevant_promotions = applied_promos.filter(k => k.affected_products.includes(b.id));
+    
+                                // If the promo includes the "any" clause, we may select a random unallocated product at first future promotions may reorder this as to optimize application.
+                                let specific = "";
+                                product_assignment.forEach((k, key) => {
+                                    if(key == b.product.sku && k.quantity_total-k.quantity_allocated <= 1) specific = ""
+                                    else if(k.quantity_total > k.quantity_allocated) specific = key;
+                                });
+
+                                console.log("Allocating for: ", b.product.name, ". Chosen specific: ", specific," from ", product_assignment)
+    
+                                if(specific == "") {
+                                    // No unallocated products, see if any should be reallocated?
+                                    // impl!
+
+                                    // Pretend to allocate it, see the change in price - if better, swap, if not, ignore.
+                                    // Do this by deferring it until a later evaluation.           
+                                    deferred_promotions.push({
+                                        discount_value: discount,
+                                        name: promo.name,
+                                        promotion_id: promo.id,
+                                        affected_products: [b.id]
+                                    });   
+                                }else {
+                                    // List of all the products this specific promotion affects. Includes any specific requirements and all which match blanket "Any" and "Category" clauses, although more than one match may likely exist which exceeds the required minimum, therefore a "met-required" property must be triggered once requirements are met to remove over-allocation
+                                    // However: If a product has a requirement, the required product must be assigned in such a way that the promotions are maximized between, and applied to the betterment of the seller and buyer.
+                                    const affected_products: string[] = [b.id, promo.buy.Specific?.[0] ?? specific];
+        
+                                    // for(let i = 0; i < relevant_promotions.length; i++) {
+                                    //     relevant_promotions[i].affected_products.map(k => {
+                                    //         // k represents the ID for the product.
+        
+                                    //     })
+                                    // }
+                                    
+                                    // Apply discount by pushing it into considered discounts, if a user-produced discount or loyalty exceeds it, this is beyond the bounds of checking and overridden.
+                                    b.discount.push({
+                                        source: "promotion",
+                                        value: fromDbDiscount(discount),
+                                        promotion: promo
+                                    })
+                                    
+                                    // Add promotion to the array of applied promotions to be shown in the checkout.
+                                    applied_promos.push({
+                                        discount_value: discount,
+                                        name: promo.name,
+                                        promotion_id: promo.id,
+                                        affected_products: affected_products
+                                    })
+        
+                                    // Collect assignment information for current product.
+                                    const prior = product_assignment.get(b.product.sku);
+                                    const old_arr = (prior?.allocations ? prior.allocations : [])
+        
+                                    // Add the new promotional data into the allocation pool
+                                    old_arr.push({ 
+                                        swap_for_any: promo.buy.Any ? true : false,
+                                        promotion: promo
+                                    });
+        
+                                    // Reset this data with an update to the quantity fields, singularly incremented by stepwise iteration through product space.
+                                    product_assignment.set(b.product.sku, {
+                                        quantity_total: prior?.quantity_total ?? 0,
+                                        quantity_allocated: (prior?.quantity_allocated ?? 0) + 1,
+                                        allocations: old_arr
+                                    });
+                                }
                             }
+                        }else {
+                            // console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
                         }
-                    }else {
-                        // console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
                     }
     
                     return b;
@@ -139,6 +235,11 @@ export default function CartMenu({
             } 
         });
 
+        deferred_promotions.map(k => {
+            // k.promotion_id
+            // See if any of the deferred promotions provide greater benefits than the others
+        })
+        
         // Order state has been changed. Regenerate values
         let non_discounted_sub_total = applied_promotions.reduce(
             (p,c) => 
@@ -153,7 +254,12 @@ export default function CartMenu({
             (p,c) => 
                 p + applyDiscount(
                     c.products.reduce(function (prev, curr) {
-                        return prev + (applyDiscount(curr.variant_information.retail_price, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                        return prev + (
+                            applyDiscount(
+                                curr.variant_information.retail_price, 
+                                findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
+                            ) * curr.quantity
+                        )
                     }, 0)
                 , c.discount)
             , 0)
@@ -162,7 +268,12 @@ export default function CartMenu({
             (p,c) => 
                 p += applyDiscount(
                     c.products.reduce(function (prev, curr) {
-                        return prev + (applyDiscount(curr.variant_information.retail_price * 1.15, findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value) * curr.quantity)
+                        return prev + (
+                            applyDiscount(
+                                curr.variant_information.retail_price * 1.15, 
+                                findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
+                            ) * curr.quantity
+                        )
                     }, 0) 
                 , c.discount) 
             , 0);
@@ -177,7 +288,7 @@ export default function CartMenu({
             total,
             tax,
             non_discounted_sub_total,
-            promotions: [],
+            promotions: applied_promos,
             state: applied_promotions
         })
     }, [orderState, customerState])
@@ -559,6 +670,21 @@ export default function CartMenu({
                         )
                     })
                 }
+                </div>
+
+                {/* <hr className="border-gray-400 opacity-25"/> */}
+                
+                <div className="flex flex-col gap-1 text-white justify-between px-2">
+                    {
+                        orderInfo?.promotions.map((k, indx) => {
+                            return (
+                                <div className="flex flex-row items-center gap-2" key={k.promotion_id}>
+                                    <div className="bg-blue-600 h-5 w-5 rounded-full flex items-center justify-center text-xs">{indx+1}</div>
+                                    <p className="text-gray-400">{k.name}</p>
+                                </div>
+                            )
+                        })
+                    }
                 </div>
 
                 <hr className="border-gray-400 opacity-25"/>

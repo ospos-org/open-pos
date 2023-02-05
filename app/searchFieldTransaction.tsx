@@ -12,14 +12,25 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
     const [ customer, setCustomer ] = useState<Customer | null>();
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/customer/${transaction.customer}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async k => {
-            const n = await k.json();
-            setCustomer(n);
-        })
+        if(transaction.customer.customer_type != "Store") {
+            fetch(`http://127.0.0.1:8000/customer/${transaction.customer.customer_id}`, {
+                method: "GET",
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                const n = await k.json();
+                setCustomer(n);
+            })
+        }else {
+            fetch(`http://127.0.0.1:8000/store/code/${transaction.customer.customer_id}`, {
+                method: "GET",
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                const n = await k.json();
+                setCustomer(n);
+            })
+        }
     }, [transaction]);
 
     if(!n) return (<></>);
@@ -59,6 +70,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                             </div>
 
                             <div>
+                                {/* {JSON.stringify(customer)} */}
                                 {customer?.name}
                             </div>
 

@@ -6,7 +6,7 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
@@ -97,8 +97,6 @@ export default function Kiosk({ master_state }: { master_state: {
         const existing_product = orderProducts.find(k => k.product_code == variant.barcode ); // && isEqual(k.variant, variant?.variant_code)
         let new_order_products_state = [];
 
-        console.log("VAR: ", variant);
-
         if(existing_product) {
             // Editing the quantity of an existing product in the order.
             // if(e.product_code == product.sku && isEqual(e.variant, variant?.variant_code)) {
@@ -115,8 +113,6 @@ export default function Kiosk({ master_state }: { master_state: {
                 // If a matching product exists; apply emendation
                 new_order_products_state = orderProducts.map(e => {
                     if(total_stock <= e.quantity) return e;
-
-                    console.log(e.product_code, variant.barcode, e.product_code == variant.barcode);
 
                     return e.product_code == variant.barcode ? { ...e, quantity: e.quantity+1 } : e  //  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
                 });
@@ -535,15 +531,19 @@ export default function Kiosk({ master_state }: { master_state: {
 
                                             const transaction = {
                                                 ...kioskState,
-                                                customer: customerState?.id,
+                                                customer: customerState ? {
+                                                    customer_id: customerState?.id,
+                                                    customer_type: "Individual"
+                                                } : {
+                                                    customer_id: master_state.store_id,
+                                                    customer_type: "Store"
+                                                },
                                                 payment: new_payment,
                                                 products: sortDbOrders(new_state),
                                                 order_date: date,
                                                 salesperson: master_state.employee?.id ?? "",
                                                 till: master_state.kiosk
-                                            };
-                                            
-                                            console.log(transaction)
+                                            } as TransactionInput;
 
                                             fetch('http://127.0.0.1:8000/transaction', {
                                                 method: "POST",
@@ -953,43 +953,42 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "ship-to-customer":
                             return (
-                                    customerState ? 
-                                    <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
-                                    :
-                                    <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
-                                        <div className="flex flex-row justify-between cursor-pointer">
-                                            <div 
-                                                onClick={() => {
-                                                    setPadState("cart")
-                                                }}
-                                                className="flex flex-row items-center gap-2"
-                                            >
-                                                <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                                <p className="text-gray-400">Back</p>
-                                            </div>
-                                            <p className="text-gray-400">Ship order to customer</p>
+                                customerState ? 
+                                <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                :
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                    <div className="flex flex-row justify-between cursor-pointer">
+                                        <div 
+                                            onClick={() => {
+                                                setPadState("cart")
+                                            }}
+                                            className="flex flex-row items-center gap-2"
+                                        >
+                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                                            <p className="text-gray-400">Back</p>
                                         </div>
-                                        
-                                        
-                                        <div className="flex items-center justify-center flex-1 gap-8 flex-col">
-                                            <p className="text-gray-400">Must have an assigned customer to send products.</p>
+                                        <p className="text-gray-400">Ship order to customer</p>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-center flex-1 gap-8 flex-col">
+                                        <p className="text-gray-400">Must have an assigned customer to send products.</p>
 
-                                            <div 
-                                                onClick={() => {
-                                                    setResult([]); 
-                                                    setSearchType("customer");    
+                                        <div 
+                                            onClick={() => {
+                                                setResult([]); 
+                                                setSearchType("customer");    
 
-                                                    input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                    input_ref.current?.focus()
-                                                }}
-                                                className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
-                                                <p>Select Customer</p>
-                                                <Image 
-                                                    className=""
-                                                    height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                                            </div>
+                                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                input_ref.current?.focus()
+                                            }}
+                                            className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
+                                            <p>Select Customer</p>
+                                            <Image 
+                                                className=""
+                                                height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
                                         </div>
                                     </div>
+                                </div>
                             )
                     }
                 })()

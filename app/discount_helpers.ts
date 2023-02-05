@@ -137,7 +137,7 @@ export function toAbsoluteDiscount(discount: string, price: number) {
     }
 }
 
-export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>, cart: Order[]): number {
+export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>): number {
     // console.log(`TRYING "${promo.name}" ON ${pdt.product.name}:: ${JSON.stringify(promo.get)} & ${JSON.stringify(promo.buy)}.. ${pdt.product.sku} ${promo.get.Specific?.[0] ?? ""}`)
 
     // If the product does not match the BUY criterion

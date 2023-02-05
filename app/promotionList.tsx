@@ -1,11 +1,12 @@
 import { useEffect } from "react"
-import { fromDbDiscount, parseDiscount } from "./discount_helpers";
-import { Promotion } from "./stock-types";
+import { applyPromotion, fromDbDiscount, parseDiscount } from "./discount_helpers";
+import { Order, ProductPurchase, Promotion } from "./stock-types";
 
 export default function PromotionList({
-    promotions
+    promotions, cart
 }: {
-    promotions: Promotion[] | undefined
+    promotions: Promotion[] | undefined,
+    cart: Order[]
 }) {
     return (
         <div className="flex flex-col gap-2 max-h-32 overflow-auto ">
@@ -46,6 +47,8 @@ function formatPromotion(promo: Promotion) {
         // val += ((promo.get.Specific?.[1] ?? "") + (promo.get.Specific?.[0] ?? ""))
     }else if(promo.get.Any) {
         val += " any other " + promo.get.Any[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Any[1])) + " off."
+    }else if(promo.get.Category) {
+        val += " any " + + promo.get.Category[1][0] +" other " + promo.get.Category[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Category[1][1])) + " off."
     }
 
     return val
