@@ -1,26 +1,62 @@
 import Image from "next/image";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { KioskState, Order, VariantInformation } from "./stock-types";
 
 const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function], customer: boolean }> = ({ customer, setPadState, orderState, kioskState, ctp }) => {
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
+    const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
+
+    useEffect(() => {
+        let has_negative_stocks = false;
+        orderState.map(b => {
+            // All products
+            b.products.map(p => {
+                // All variants
+                p.product.variants.map(n => {
+                    if(p.product_code == n.barcode) {
+                        const store_code = b.origin.code;
+                        const stock_level = n.stock.reduce((p, c) => p + (c.store.code == store_code ? c.quantity.quantity_sellable : 0), 0);
+
+                        console.log(store_code, stock_level, n.stock);
+                        if(stock_level <= 0) {
+                            has_negative_stocks = true;
+                        }
+                    }
+                })
+            }) 
+        })
+
+        setHasNegativeStock(has_negative_stocks);
+    }, [orderState])
 
     return (
         <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
             <div className="flex flex-col h-full gap-24">
-                <div className="flex flex-row justify-between cursor-pointer">
-                    <div 
-                        onClick={() => {
-                            setPadState("cart")
-                        }}
-                        className="flex flex-row items-center gap-2"
-                    >
-                        <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                        <p className="text-gray-400">Back</p>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-row justify-between cursor-pointer">
+                        <div 
+                            onClick={() => {
+                                setPadState("cart")
+                            }}
+                            className="flex flex-row items-center gap-2"
+                        >
+                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
+                            <p className="text-gray-400">Back</p>
+                        </div>
+                        <p className="text-gray-400">Select Preferred Payment Method</p>
                     </div>
-                    <p className="text-gray-400">Select Preferred Payment Method</p>
+
+                    {
+                        hasNegativeStock ?
+                        <div className="flex flex-row justify-between bg-red-900 px-2 pr-4 py-2 rounded-md">
+                            <p className="text-white bg-red-400 px-2 rounded-md">Warning:</p>
+                            <p className="text-white">Cart contains products with negative stock levels</p>
+                        </div>
+                        :
+                        <></>
+                    }
                 </div>
             
                 <div className="self-center flex flex-col items-center">

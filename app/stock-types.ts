@@ -1,6 +1,6 @@
 export type KioskState = {
     customer: string | null,
-    transaction_type: string | null,
+    transaction_type: TransactionType | null,
     products: DbOrder[] | null,
     order_total: number | null,
     payment: PaymentIntent[],
@@ -10,11 +10,13 @@ export type KioskState = {
     till: string | null
 };
 
+export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" 
+
 export type Transaction = {
     id: string,
 
     customer: TransactionCustomer,
-    transaction_type: "in" | "out",
+    transaction_type: TransactionType,
     products: DbOrder[],
     order_total: number,
     payment: PaymentIntent[],
@@ -28,7 +30,7 @@ export type Transaction = {
 
 export type TransactionInput = {
     customer: TransactionCustomer,
-    transaction_type: "in" | "out",
+    transaction_type: TransactionType,
     products: DbOrder[],
     order_total: number,
     payment: PaymentIntent[],
@@ -154,11 +156,14 @@ export type ProductPurchase = {
     discount: DiscountValue[],
 
     product_code: string,
+    product_sku: string,
+
     product_cost: number,
     product_name: string,
     product_variant_name: string,
 
     quantity: number,
+    transaction_type: TransactionType
 
     /// Extra information for internal referencing (caching) that should be removed before sending to server
     product: Product,
@@ -171,12 +176,15 @@ export type DbProductPurchase = {
 
     product_cost: number,
     product_code: string,
+    product_sku: string,
 
     product_name: string,
     product_variant_name: string,
     
     quantity: number,
     id: string,
+
+    transaction_type: TransactionType
 }
 
 export type DiscountValue = {

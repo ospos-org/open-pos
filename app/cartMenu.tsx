@@ -110,17 +110,16 @@ export default function CartMenu({
                 products: k.products.map(j => {
                     return {
                         ...j,
+                        discount: j.discount.filter(b => b.source != "promotion"),
                         active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map) - applyPromotion(a, j, product_map))
                     }
                 })
             }
         });
 
-        
-
         // Now we must apply the best promotion to each product, keeping in mind that if a promotion's has a BUY condition with another product, that product must not have an alternate promotion applied,
         // instead - the best promotion between the two must be applied, as the promotions are sorted by effectuality, this becomes the following index. If the following index proceeds to conflict with another product, further evaluation occurs. 
-        const applied_promotions = sorted_promotions.map(k => {
+        const applied_promotions: Order[] = sorted_promotions.map(k => {
             return {
                 ...k,
                 products: k.products.map(b => {
@@ -153,6 +152,10 @@ export default function CartMenu({
                                 ||
     
                                 (promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1]))
+
+                                ||
+
+                                (promo.buy.Category && product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "") && (product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "")?.quantity ?? 0 >= promo.buy.Category[1]))
                             ) {  
                                 // Now we must verify all affected products, and check which promotions are applied to them, if there are none - apply it, otherwise compare the discount.
     
@@ -166,8 +169,6 @@ export default function CartMenu({
                                     else if(k.quantity_total > k.quantity_allocated) specific = key;
                                 });
 
-                                console.log("Allocating for: ", b.product.name, ". Chosen specific: ", specific," from ", product_assignment)
-    
                                 if(specific == "") {
                                     // No unallocated products, see if any should be reallocated?
                                     // impl!
@@ -183,7 +184,7 @@ export default function CartMenu({
                                 }else {
                                     // List of all the products this specific promotion affects. Includes any specific requirements and all which match blanket "Any" and "Category" clauses, although more than one match may likely exist which exceeds the required minimum, therefore a "met-required" property must be triggered once requirements are met to remove over-allocation
                                     // However: If a product has a requirement, the required product must be assigned in such a way that the promotions are maximized between, and applied to the betterment of the seller and buyer.
-                                    const affected_products: string[] = [b.id, promo.buy.Specific?.[0] ?? specific];
+                                    const affected_products: string[] = [b.id, promo.buy.Specific?.[0] ? promo.buy.Specific?.[0] : promo.buy.Category?.[0] ? promo.buy.Category?.[0] : specific];
         
                                     // for(let i = 0; i < relevant_promotions.length; i++) {
                                     //     relevant_promotions[i].affected_products.map(k => {
@@ -656,7 +657,7 @@ export default function CartMenu({
                                                             <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
                                                             :
                                                             <>
-                                                                <p className="text-gray-500 line-through text-sm">${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
+                                                                <p className={`text-gray-500 line-through text-sm ${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-gray-500" : findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"}`}>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
                                                                 <p className={`${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-gray-300" : ""}`}>${((applyDiscount(e.variant_information.retail_price  * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
                                                             </>
                                                         }

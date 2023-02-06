@@ -4,11 +4,12 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, fromDbDiscount, isValidVariant } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
+import { SavedTransactionItem } from "./savedTransactionItem";
 import { SearchFieldTransaction } from "./searchFieldTransaction";
-import { ContactInformation, Customer, Employee, KioskState, Order, Product, Promotion, StrictVariantCategory, Transaction, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
 
 export default function KioskMenu({
     setSearchFocused, searchFocused,
@@ -19,6 +20,7 @@ export default function KioskMenu({
     setSearchTermState, searchTermState,
     setActiveVariantPossibilities, activeVariantPossibilities,
     setActiveVariant, activeVariant,
+    setKioskState, kioskState,
     setCurrentViewedTransaction, currentViewedTransaction,
     setPadState,
     setDiscount,
@@ -37,6 +39,7 @@ export default function KioskMenu({
     setOrderState: Function, orderState: Order[],
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
     setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null,
+    setKioskState: Function, kioskState: KioskState,
     setPadState: Function,
     setDiscount: Function,
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
@@ -55,6 +58,7 @@ export default function KioskMenu({
     const [ activeCustomer, setActiveCustomer ] = useState<Customer | null>(null);
     const [ editCustomerState, setEditCustomerState ] = useState(false);
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
+    const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
 
     useEffect(() => {
         if(activeCustomer) {
@@ -70,7 +74,21 @@ export default function KioskMenu({
                 }
             })
         }
-    }, [activeCustomer])
+    }, [activeCustomer]);
+
+    useEffect(() => {
+        fetch(`http://127.0.0.1:8000/transaction/saved`, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow"
+        }).then(async k => {
+            if(k.ok) {
+                const data: Transaction[] = await k.json();
+
+                setActiveTransactions(data)
+            }
+        })
+    })
 
     return (
         <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
@@ -927,8 +945,174 @@ export default function KioskMenu({
                                     <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
                                 </div>
         
-                                <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
-                                    <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                <div 
+                                    onClick={() => {
+                                        if((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
+                                            const date = getDate();
+
+                                            const new_state: DbOrder[] = orderState.map(e => {
+                                                if(e.order_type == "Direct") {
+                                                    return {
+                                                        ...e,
+                                                        discount: toDbDiscount(e.discount),
+                                                        origin: {
+                                                            code: master_state.store_id,
+                                                            contact: master_state.store_contact
+                                                        },
+                                                        destination: {
+                                                            code: "000",
+                                                            contact: customerState?.contact ?? master_state.store_contact
+                                                        },
+                                                        products: e.products.map(k => { 
+                                                            return { 
+                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                                                                product_cost: k.variant_information.retail_price * 1.15, 
+                                                                product_code: k.product_code, 
+                                                                product_name: k.product.company + " " + k.product.name, 
+                                                                product_variant_name: k.variant_information.name, 
+                                                                product_sku: k.product_sku,
+                                                                quantity: k.quantity, 
+                                                                id: k.id,
+                                                                transaction_type: k.transaction_type,
+                                                            }
+                                                        }) as DbProductPurchase[],
+                                                        status: {   
+                                                            status: {
+                                                                Queued: date
+                                                            },
+                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                            timestamp: date
+                                                        } as OrderStatus,
+                                                        status_history: [
+                                                            ...e.status_history as StatusHistory[],
+                                                            {
+                                                                item: {   
+                                                                    status: {
+                                                                        Queued: date
+                                                                    },
+                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                                    timestamp: date
+                                                                } as OrderStatus,
+                                                                reason: "Order saved",
+                                                                timestamp: date
+                                                            } as StatusHistory,
+                                                        ]
+                                                    }
+                                                }else {
+                                                    return {
+                                                        ...e,
+                                                        discount: toDbDiscount(e.discount),
+                                                        status: {   
+                                                            status: {
+                                                                Queued: date
+                                                            },
+                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                            timestamp: date
+                                                        } as OrderStatus,
+                                                        products: e.products.map(k => { 
+                                                            return { 
+                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                                                                product_cost: k.variant_information.retail_price * 1.15, 
+                                                                product_code: k.product_code, 
+                                                                product_name: k.product.company + " " + k.product.name, 
+                                                                product_variant_name: k.variant_information.name, 
+                                                                quantity: k.quantity, 
+                                                                product_sku: k.product_sku,
+                                                                id: k.id,
+                                                                transaction_type: k.transaction_type,
+                                                            }
+                                                        }) as DbProductPurchase[],
+                                                        status_history: [
+                                                            ...e.status_history as StatusHistory[],
+                                                            {
+                                                                item: {   
+                                                                    status: {
+                                                                        Queued: date
+                                                                    },
+                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                                                                    timestamp: date
+                                                                } as OrderStatus,
+                                                                reason: "Saved indirect purchase",
+                                                                timestamp: date
+                                                            } as StatusHistory
+                                                        ]
+                                                    }
+                                                }
+                                            });
+
+                                            const transaction = {
+                                                ...kioskState,
+                                                products: new_state,
+                                                customer: customerState ? {
+                                                    customer_id: customerState?.id,
+                                                    customer_type: "Individual"
+                                                } : {
+                                                    customer_id: master_state.store_id,
+                                                    customer_type: "Store"
+                                                },
+                                                order_total: 0.00,
+                                                transaction_type: "Saved",
+                                                payment: [],
+                                                order_date: getDate(),
+                                                salesperson: master_state.employee?.id ?? "",
+                                                till: master_state.kiosk
+                                            } as TransactionInput;
+    
+                                            fetch('http://127.0.0.1:8000/transaction', {
+                                                method: "POST",
+                                                body: JSON.stringify(transaction),
+                                                credentials: "include",
+                                                redirect: "follow"
+                                            }).then(async k => {
+                                                if(k.ok) {
+                                                    setKioskState({
+                                                        customer: null,
+                                                        transaction_type: "Out",
+                                                        products: [],
+                                                        order_total: null,
+                                                        payment: [],
+                                                        order_date: null,
+                                                        order_notes: [],
+                                                        salesperson: null,
+                                                        till: null
+                                                    })
+                                                    
+                                                    setOrderState([{
+                                                        id: v4(),
+                                                        destination: null,
+                                                        origin: {
+                                                            contact: master_state.store_contact,
+                                                            code: master_state.store_id
+                                                        },
+                                                        products: [],
+                                                        status: {
+                                                            status: {
+                                                                Queued: getDate()
+                                                            },
+                                                            assigned_products: [],
+                                                            timestamp: getDate()
+                                                        },
+                                                        status_history: [],
+                                                        order_history: [],
+                                                        order_notes: [],
+                                                        reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                        creation_date: getDate(),
+                                                        discount: "a|0",
+                                                        order_type: "Direct",
+                                                        previous_failed_fulfillment_attempts: []
+                                                    }])
+                                                    
+                                                    setCustomerState(null)
+                                                
+                                                    setPadState("cart")
+                                                }else {
+                                                    alert("Something went horribly wrong")
+                                                }
+                                            })
+                                        }
+                                    }}
+                                    className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 min-w-[250px] rounded-md  max-w-fit cursor-pointer`}>
+                                    <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
                                     <p className="font-medium">Save Cart</p>
                                 </div>
                             </div>
@@ -936,20 +1120,15 @@ export default function KioskMenu({
                 </div>
             </div>
             
-            <div className="flex flex-row items-center border-t-2 border-gray-600">
+            <div className="flex flex-row items-center border-t-2 border-gray-600 min-h-[76px]">
                 {/* Active Orders */}
-                <div className="flex flex-row items-center gap-4 p-4 text-white border-r-2 border-gray-600">
-                    <div className="bg-fuchsia-100 text-black p-2 px-[0.7rem] rounded-md font-bold">LK</div>
-                    <div className="flex flex-col">
-                        <h3>Leslie K.</h3>
-                        <div className="flex flex-row items-center gap-[0.2rem]">
-                            <p className="text-sm">5 items</p>
-                            <p className="text-gray-400 text-sm">&#8226; Kiosk 5</p>
-                        </div>
-                    </div>
-                    <br />
-                    <Image width="25" height="25" src="/icons/expand-04.svg" alt={''}></Image>
-                </div>
+                {
+                    activeTransactions?.map(k => {
+                        return (
+                            <SavedTransactionItem transaction={k} key={k.id} />
+                        )
+                    })
+                }
             </div>
         </div>
     )

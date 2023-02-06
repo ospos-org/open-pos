@@ -127,8 +127,10 @@ export default function Kiosk({ master_state }: { master_state: {
                     product_cost: variant?.retail_price ?? 0,
                     product_name: product.company + " " + product.name,
                     product_variant_name: variant.name,
+                    product_sku: product.sku,
                     quantity: 1,
-    
+                    transaction_type: "Out",
+
                     product: product,
                     variant_information: variant ?? product.variants[0],
                     active_promotions: promotions
@@ -148,7 +150,9 @@ export default function Kiosk({ master_state }: { master_state: {
                 product_cost: variant?.retail_price ?? 0,
                 product_name: product.company + " " + product.name,
                 product_variant_name: variant.name,
+                product_sku: product.sku,
                 quantity: 1,
+                transaction_type: "Out",
 
                 product: product,
                 variant_information: variant ?? product.variants[0],
@@ -309,6 +313,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
                 setActiveVariant={setActiveVariant} activeVariant={activeVariant}
                 setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
+                setKioskState={setKioskState} kioskState={kioskState}
                 setPadState={setPadState}
                 setDiscount={setDiscount}
                 setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
@@ -463,7 +468,19 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             code: "000",
                                                             contact: customerState?.contact ?? master_state.store_contact
                                                         },
-                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { 
+                                                            return { 
+                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                                                                product_cost: k.variant_information.retail_price * 1.15, 
+                                                                product_code: k.product_code, 
+                                                                product_name: k.product.company + " " + k.product.name, 
+                                                                product_variant_name: k.variant_information.name, 
+                                                                product_sku: k.product_sku,
+                                                                quantity: k.quantity, 
+                                                                id: k.id,
+                                                                transaction_type: k.transaction_type,
+                                                            }
+                                                        }) as DbProductPurchase[],
                                                         status: {   
                                                             status: {
                                                                 Fulfilled: date
@@ -508,7 +525,19 @@ export default function Kiosk({ master_state }: { master_state: {
                                                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                                                             timestamp: date
                                                         } as OrderStatus,
-                                                        products: e.products.map(k => { return { discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price, !(!customerState)).value), product_cost: k.product_cost, product_code: k.product_code, product_name: k.product.company + " " + k.product.name, product_variant_name: k.variant_information.name, quantity: k.quantity, id: k.id}}) as DbProductPurchase[],
+                                                        products: e.products.map(k => { 
+                                                            return { 
+                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                                                                product_cost: k.variant_information.retail_price * 1.15, 
+                                                                product_code: k.product_code, 
+                                                                product_name: k.product.company + " " + k.product.name, 
+                                                                product_variant_name: k.variant_information.name, 
+                                                                quantity: k.quantity, 
+                                                                product_sku: k.product_sku,
+                                                                id: k.id,
+                                                                transaction_type: k.transaction_type,
+                                                            }
+                                                        }) as DbProductPurchase[],
                                                         status_history: [
                                                             ...e.status_history as StatusHistory[],
                                                             {
