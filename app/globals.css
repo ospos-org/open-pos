@@ -12,6 +12,12 @@
     font-weight: 1 999;
 }
 
+@font-face {
+    font-family: "Jetbrains Mono";
+    src: url('../public/fonts/JetBrainsMono_Complete/Fonts/Variable/JetBrainsMono-Variable.ttf');
+    font-weight: 1 999;
+}
+
 .svg svg {
     color: white;
 }

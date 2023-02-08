@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
+import useKey from "use-key";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import { computeOrder, fileTransaction } from "./helpers";
 import { getDate } from "./kiosk";
@@ -9,6 +10,58 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
+
+    useKey({
+        'F1': () => {
+            setKioskState({
+                ...kioskState,
+                transaction_type: "Out"
+            });
+
+            setPadState("await-debit");
+        },
+        'F2': () => {
+            setPadState("await-cash");
+        },
+        'F6': () => {
+            const new_state = computeOrder("Quote", orderState, master_state, customerState);
+
+            const transaction = {
+                ...kioskState,
+                products: new_state,
+                customer: customerState ? {
+                    customer_id: customerState?.id,
+                    customer_type: "Individual"
+                } : {
+                    customer_id: master_state.store_id,
+                    customer_type: "Store"
+                },
+                order_total: 0.00,
+                transaction_type: "Quote",
+                payment: [],
+                order_date: getDate(),
+                salesperson: master_state.employee?.id ?? "",
+                till: master_state.kiosk
+            } as TransactionInput;
+
+            if(transaction) {
+                fetch('http://127.0.0.1:8000/transaction', {
+                    method: "POST",
+                    body: JSON.stringify(transaction),
+                    credentials: "include",
+                    redirect: "follow"
+                }).then(async k => {
+                    console.log(k);
+
+                    if(k.ok) {
+                        setPadState("completed");
+                    }else {
+                        alert("Something went horribly wrong")
+                    }
+                })
+            }
+        }
+    })
 
     useEffect(() => {
         let has_negative_stocks = false;

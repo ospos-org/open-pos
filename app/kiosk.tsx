@@ -280,6 +280,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     }, [orderState, discount]);
 
     const input_ref = createRef<HTMLInputElement>();
+    const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
 
     useEffect(() => {
         return () => {
@@ -289,6 +290,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
 
     return (
         <>
+            {/* <ReactKeyboardShortcuts></ReactKeyboardShortcuts> */}
             <ReactBarcodeReader
                 onScan={(e: any) => {
                     setSearchFocused(false);
@@ -306,6 +308,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                 setSearchType={setSearchType} searchType={searchType}
                 setCustomerState={setCustomerState} customerState={customerState}
                 setOrderState={setOrderState} orderState={orderState}
+                setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
                 setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
                 setSearchTermState={setSearchTermState} searchTermState={searchTermState}
                 setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
@@ -331,6 +334,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                     customerState={customerState}
                                     setCustomerState={setCustomerState} 
                                     orderState={orderState}
+                                    setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
                                     setOrderState={setOrderState}
                                     setResult={setResult} 
                                     setSearchType={setSearchType} 

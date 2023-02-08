@@ -231,7 +231,7 @@ export const resetOrder = (setKioskState: Function, setOrderState: Function, set
     setPadState("cart")
 }
 
-export const parkSale = (orderState: Order[], master_state: MasterState, customerState: Customer | null, setKioskState: Function, setOrderState: Function, setCustomerState: Function, setPadState: Function, kioskState: KioskState) => {
+export const parkSale = (orderState: Order[], setTriggerRefresh: Function, triggerRefresh: string[], master_state: MasterState, customerState: Customer | null, setKioskState: Function, setOrderState: Function, setCustomerState: Function, setPadState: Function, kioskState: KioskState) => {
     if((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
         const new_state = computeOrder("Saved", orderState, master_state, customerState);
 
@@ -260,6 +260,7 @@ export const parkSale = (orderState: Order[], master_state: MasterState, custome
             redirect: "follow"
         }).then(async k => {
             if(k.ok) {
+                setTriggerRefresh([...triggerRefresh]);
                 resetOrder(setKioskState, setOrderState, setCustomerState, setPadState, master_state);
             }else {
                 alert("Something went horribly wrong")

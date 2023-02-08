@@ -7,6 +7,9 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    fontFamily: {
+      'mono': ["Jetbrains Mono"]
+    },
     extend: {},
   },
   plugins: [],

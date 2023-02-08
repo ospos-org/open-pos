@@ -3,6 +3,7 @@ import moment from "moment";
 import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
+import useKey from "use-key";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
 import { computeOrder, parkSale, resetOrder } from "./helpers";
@@ -24,6 +25,7 @@ export default function KioskMenu({
     setActiveVariant, activeVariant,
     setKioskState, kioskState,
     setCurrentViewedTransaction, currentViewedTransaction,
+    setTriggerRefresh, triggerRefresh,
     setPadState,
     setDiscount,
     setActiveProductVariant, activeProductVariant,
@@ -45,6 +47,7 @@ export default function KioskMenu({
     setActiveProductPromotions: Function, activeProductPromotions: Promotion[],
     setPadState: Function,
     setDiscount: Function,
+    setTriggerRefresh: Function, triggerRefresh: string[],
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
     setActiveProductVariant: Function, activeProductVariant: VariantInformation | null
     input_ref: RefObject<HTMLInputElement>,
@@ -61,6 +64,17 @@ export default function KioskMenu({
     const [ editCustomerState, setEditCustomerState ] = useState(false);
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
+
+    useKey({
+        'Escape': () => { 
+            setActiveProduct(null)
+            setActiveProductVariant(null)
+            setActiveVariant(null)
+            // setCurrentViewedTransaction(null)
+            setActiveCustomer(null)
+            setSearchFocused(false)
+        }
+    })
 
     useEffect(() => {
         if(activeCustomer) {
@@ -81,6 +95,18 @@ export default function KioskMenu({
     const MINUTE_MS = 5_000;
 
     useEffect(() => {
+        fetch(`http://127.0.0.1:8000/transaction/saved`, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow"
+        }).then(async k => {
+            if(k.ok) {
+                const data: Transaction[] = await k.json();
+
+                setActiveTransactions(data)
+            }
+        })
+        
         const interval = setInterval(() => {
             fetch(`http://127.0.0.1:8000/transaction/saved`, {
                 method: "GET",
@@ -96,7 +122,7 @@ export default function KioskMenu({
         }, MINUTE_MS);
 
         return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-    }, [])
+    }, [triggerRefresh])
 
     return (
         <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
@@ -955,7 +981,7 @@ export default function KioskMenu({
         
                                 <div 
                                     onClick={() => {
-                                        parkSale(orderState, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
+                                        parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
                                     }}
                                     className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 min-w-[250px] rounded-md  max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
@@ -971,7 +997,7 @@ export default function KioskMenu({
                 {
                     activeTransactions?.map(k => {
                         return (
-                            <SavedTransactionItem transaction={k} key={k.id} setCustomerState={setCustomerState} kioskState={kioskState} setKioskState={setKioskState} setOrderState={setOrderState} />
+                            <SavedTransactionItem setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh} transaction={k} key={k.id} setCustomerState={setCustomerState} kioskState={kioskState} setKioskState={setKioskState} setOrderState={setOrderState} />
                         )
                     })
                 }

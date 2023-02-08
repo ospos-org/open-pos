@@ -19,6 +19,7 @@ export default function CartMenu({
     setActiveProduct, setActiveProductVariant,
     setActiveProductPromotions,
     setPadState,
+    setTriggerRefresh, triggerRefresh,
     setDiscount,
     setKioskState,
     kioskState,
@@ -40,6 +41,7 @@ export default function CartMenu({
         store_contact: ContactInformation,
         kiosk: string
     },
+    setTriggerRefresh: Function, triggerRefresh: string[],
     setPadState: Function,
     setDiscount: Function,
     setKioskState: Function,
@@ -720,7 +722,7 @@ export default function CartMenu({
                 <div className="flex flex-row items-center gap-4">
                     <div 
                         onClick={() => {
-                            parkSale(orderState, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
+                            parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
                         }}
                         className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
                         <p className="text-gray-800 font-semibold">Park Sale</p>

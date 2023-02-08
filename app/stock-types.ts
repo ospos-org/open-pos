@@ -333,7 +333,10 @@ export type Customer = {
 
 export type Employee = {
     id: string,
-    name: string,
+    name: {
+        first: string,
+        last: string
+    },
     auth: {
         hash: string
     },
