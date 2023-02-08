@@ -6,7 +6,7 @@ import BarcodeReader from 'react-barcode-reader'
 import CashSelect from "./cashSelect";
 import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, MasterState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
@@ -17,13 +17,9 @@ import CartMenu from "./cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
 import TransactionMenu from "./transactionMenu";
+import { fileTransaction, resetOrder } from "./helpers";
 
-export default function Kiosk({ master_state }: { master_state: {
-    store_id: string,
-    employee: Employee | null | undefined,
-    store_contact: ContactInformation,
-    kiosk: string
-} }) {
+export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
         transaction_type: "Out",
@@ -92,6 +88,7 @@ export default function Kiosk({ master_state }: { master_state: {
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
     const [ cashContinuable, setCashContinuable ] = useState(false);
     const [ currentViewedTransaction, setCurrentViewedTransaction ] = useState<[Transaction, string] | null>(); 
+    const [ activeProductPromotions, setActiveProductPromotions ] = useState<Promotion[]>();
 
     const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
         const existing_product = orderProducts.find(k => k.product_code == variant.barcode ); // && isEqual(k.variant, variant?.variant_code)
@@ -309,6 +306,7 @@ export default function Kiosk({ master_state }: { master_state: {
                 setSearchType={setSearchType} searchType={searchType}
                 setCustomerState={setCustomerState} customerState={customerState}
                 setOrderState={setOrderState} orderState={orderState}
+                setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
                 setSearchTermState={setSearchTermState} searchTermState={searchTermState}
                 setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
                 setActiveVariant={setActiveVariant} activeVariant={activeVariant}
@@ -329,6 +327,7 @@ export default function Kiosk({ master_state }: { master_state: {
                         case "cart":
                             return (
                                 <CartMenu
+                                    setActiveProductPromotions={setActiveProductPromotions}
                                     customerState={customerState}
                                     setCustomerState={setCustomerState} 
                                     orderState={orderState}
@@ -348,7 +347,14 @@ export default function Kiosk({ master_state }: { master_state: {
                             )
                         case "select-payment-method":
                             return (
-                                <PaymentMethod customer={!(!customerState)} setPadState={setPadState} orderState={orderState} kioskState={kioskState} ctp={[ currentTransactionPrice, setCurrentTransactionPrice ]} />
+                                <PaymentMethod 
+                                    customerState={customerState} 
+                                    setPadState={setPadState} 
+                                    orderState={orderState} 
+                                    master_state={master_state}
+                                    kioskState={kioskState} setKioskState={setKioskState}
+                                    ctp={[ currentTransactionPrice, setCurrentTransactionPrice ]} 
+                                    />
                             )
                         case "inv-transaction":
                             return (
@@ -437,143 +443,9 @@ export default function Kiosk({ master_state }: { master_state: {
                                         // processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'}
                                         // status: "Unfulfilled"
 
-                                        setKioskState({
-                                            ...kioskState,
-                                            payment: new_payment
-                                        });
+                                        const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
 
-                                        const qua = new_payment.reduce(function (prev, curr) {
-                                            return prev + (curr.amount.quantity ?? 0)
-                                        }, 0);
-
-                                        if(qua < (kioskState.order_total ?? 0)) {
-                                            setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
-                                            setPadState("select-payment-method")
-                                        }else {
-
-                                            const date = getDate();
-
-                                            // Following state change is for an in-store purchase, modifications to status and destination are required for shipments
-                                            // Fulfil the orders taken in-store and leave the others as open.
-                                            const new_state: DbOrder[] = orderState.map(e => {
-                                                if(e.order_type == "Direct") {
-                                                    return {
-                                                        ...e,
-                                                        discount: toDbDiscount(e.discount),
-                                                        origin: {
-                                                            code: master_state.store_id,
-                                                            contact: master_state.store_contact
-                                                        },
-                                                        destination: {
-                                                            code: "000",
-                                                            contact: customerState?.contact ?? master_state.store_contact
-                                                        },
-                                                        products: e.products.map(k => { 
-                                                            return { 
-                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
-                                                                product_cost: k.variant_information.retail_price * 1.15, 
-                                                                product_code: k.product_code, 
-                                                                product_name: k.product.company + " " + k.product.name, 
-                                                                product_variant_name: k.variant_information.name, 
-                                                                product_sku: k.product_sku,
-                                                                quantity: k.quantity, 
-                                                                id: k.id,
-                                                                transaction_type: k.transaction_type,
-                                                            }
-                                                        }) as DbProductPurchase[],
-                                                        status: {   
-                                                            status: {
-                                                                Fulfilled: date
-                                                            },
-                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                            timestamp: date
-                                                        } as OrderStatus,
-                                                        status_history: [
-                                                            ...e.status_history as StatusHistory[],
-                                                            {
-                                                                item: {   
-                                                                    status: {
-                                                                        Queued: date
-                                                                    },
-                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                                    timestamp: date
-                                                                } as OrderStatus,
-                                                                reason: "Payment Intent Created",
-                                                                timestamp: date
-                                                            } as StatusHistory,
-                                                            {
-                                                                item: {   
-                                                                    status: {
-                                                                        Fulfilled: date
-                                                                    },
-                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                                    timestamp: date
-                                                                } as OrderStatus,
-                                                                reason: "Instore Purchase",
-                                                                timestamp: date
-                                                            } as StatusHistory
-                                                        ]
-                                                    }
-                                                }else {
-                                                    return {
-                                                        ...e,
-                                                        discount: toDbDiscount(e.discount),
-                                                        status: {   
-                                                            status: {
-                                                                Queued: date
-                                                            },
-                                                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                            timestamp: date
-                                                        } as OrderStatus,
-                                                        products: e.products.map(k => { 
-                                                            return { 
-                                                                discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
-                                                                product_cost: k.variant_information.retail_price * 1.15, 
-                                                                product_code: k.product_code, 
-                                                                product_name: k.product.company + " " + k.product.name, 
-                                                                product_variant_name: k.variant_information.name, 
-                                                                quantity: k.quantity, 
-                                                                product_sku: k.product_sku,
-                                                                id: k.id,
-                                                                transaction_type: k.transaction_type,
-                                                            }
-                                                        }) as DbProductPurchase[],
-                                                        status_history: [
-                                                            ...e.status_history as StatusHistory[],
-                                                            {
-                                                                item: {   
-                                                                    status: {
-                                                                        Queued: date
-                                                                    },
-                                                                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                                                                    timestamp: date
-                                                                } as OrderStatus,
-                                                                reason: "Queued indirect purchase",
-                                                                timestamp: date
-                                                            } as StatusHistory
-                                                        ]
-                                                    }
-                                                }
-                                            });
-
-                                            // setOrderState(sortDbOrders(new_state));
-
-                                            const transaction = {
-                                                ...kioskState,
-                                                customer: customerState ? {
-                                                    customer_id: customerState?.id,
-                                                    customer_type: "Individual"
-                                                } : {
-                                                    customer_id: master_state.store_id,
-                                                    customer_type: "Store"
-                                                },
-                                                payment: new_payment,
-                                                products: sortDbOrders(new_state),
-                                                order_date: date,
-                                                salesperson: master_state.employee?.id ?? "",
-                                                till: master_state.kiosk
-                                            } as TransactionInput;
-
+                                        if(transaction) {
                                             fetch('http://127.0.0.1:8000/transaction', {
                                                 method: "POST",
                                                 body: JSON.stringify(transaction),
@@ -596,6 +468,8 @@ export default function Kiosk({ master_state }: { master_state: {
                                     <div>
                                         <p className="text-gray-600">{customerState?.name ?? "Guest"}</p>
                                         <p className="text-white font-bold text-2xl">${kioskState.order_total}</p>
+
+                                        {kioskState.transaction_type == "Quote" ? <p>Quote</p>: <></>}
                                     </div>
 
                                     <div className="flex flex-col flex-1 gap-2">
@@ -625,20 +499,27 @@ export default function Kiosk({ master_state }: { master_state: {
                                         }
                                     </div>
                                     
-                                    <p className="text-gray-600">PAYMENT(S)</p>
-                                    <div className="flex flex-col gap-2 w-full">
-                                        {
-                                            kioskState.payment.map(e => {
-                                                return (
-                                                    <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`} className="flex flex-row justify-between items-center text-white gap-4 w-full flex-1">
-                                                        <p className="text-gray-300 font-bold">{e.payment_method?.toUpperCase()}</p>
-                                                        <hr className="flex-1 border-gray-500 h-[3px] border-[2px] bg-gray-500 rounded-md" />
-                                                        <p>${e.amount?.quantity.toFixed(2)}</p>
-                                                    </div>
-                                                )
-                                            })
-                                        }
-                                    </div>
+                                    {
+                                        kioskState.transaction_type != "Quote" ?
+                                        <>
+                                            <p className="text-gray-600">PAYMENT(S)</p>
+                                            <div className="flex flex-col gap-2 w-full">
+                                                {
+                                                    kioskState.payment.map(e => {
+                                                        return (
+                                                            <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`} className="flex flex-row justify-between items-center text-white gap-4 w-full flex-1">
+                                                                <p className="text-gray-300 font-bold">{e.payment_method?.toUpperCase()}</p>
+                                                                <hr className="flex-1 border-gray-500 h-[3px] border-[2px] bg-gray-500 rounded-md" />
+                                                                <p>${e.amount?.quantity.toFixed(2)}</p>
+                                                            </div>
+                                                        )
+                                                    })
+                                                }
+                                            </div>
+                                        </>
+                                        :
+                                        <></>
+                                    }
 
                                     <br />
                                     
@@ -666,46 +547,7 @@ export default function Kiosk({ master_state }: { master_state: {
                                     <div className="flex flex-row items-center gap-4">
                                         <div
                                             onClick={() => {
-                                                setKioskState({
-                                                    customer: null,
-                                                    transaction_type: "Out",
-                                                    products: [],
-                                                    order_total: null,
-                                                    payment: [],
-                                                    order_date: null,
-                                                    order_notes: [],
-                                                    salesperson: null,
-                                                    till: null
-                                                })
-                                                
-                                                setOrderState([{
-                                                    id: v4(),
-                                                    destination: null,
-                                                    origin: {
-                                                        contact: master_state.store_contact,
-                                                        code: master_state.store_id
-                                                    },
-                                                    products: [],
-                                                    status: {
-                                                        status: {
-                                                            Queued: getDate()
-                                                        },
-                                                        assigned_products: [],
-                                                        timestamp: getDate()
-                                                    },
-                                                    status_history: [],
-                                                    order_history: [],
-                                                    order_notes: [],
-                                                    reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-                                                    creation_date: getDate(),
-                                                    discount: "a|0",
-                                                    order_type: "Direct",
-                                                    previous_failed_fulfillment_attempts: []
-                                                }])
-                                                
-                                                setCustomerState(null)
-                                            
-                                                setPadState("cart")
+                                                resetOrder(setKioskState, setOrderState, setCustomerState, setPadState, master_state);
                                             }} 
                                             className={`${orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                             <p className={`text-white font-semibold ${""}`}>Complete</p>

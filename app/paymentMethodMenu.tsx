@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
-import { KioskState, Order, VariantInformation } from "./stock-types";
+import { computeOrder, fileTransaction } from "./helpers";
+import { getDate } from "./kiosk";
+import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "./stock-types";
 
-const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, ctp: [number | null, Function], customer: boolean }> = ({ customer, setPadState, orderState, kioskState, ctp }) => {
+const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, setKioskState: Function, ctp: [number | null, Function], master_state: MasterState, customerState: Customer | null }> = ({ setPadState, orderState, kioskState, setKioskState, ctp, master_state, customerState }) => {
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
@@ -145,6 +147,11 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     <div 
                         className="flex flex-row items-end gap-2 cursor-pointer"
                         onClick={() => {
+                            setKioskState({
+                                ...kioskState,
+                                transaction_type: "Out"
+                            });
+
                             setPadState("await-debit");
                         }}>
                         <p className="text-white font-semibold text-2xl">Eftpos</p>
@@ -171,6 +178,50 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                             <p className="text-sm text-gray-400">Check Ballance</p>
                             <p className="text-xs text-gray-400">F5</p>
                         </div>
+                    </div>
+                    <div
+                        onClick={() => {
+                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "Quote" }, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
+                            const new_state = computeOrder("Quote", orderState, master_state, customerState);
+
+                            const transaction = {
+                                ...kioskState,
+                                products: new_state,
+                                customer: customerState ? {
+                                    customer_id: customerState?.id,
+                                    customer_type: "Individual"
+                                } : {
+                                    customer_id: master_state.store_id,
+                                    customer_type: "Store"
+                                },
+                                order_total: 0.00,
+                                transaction_type: "Quote",
+                                payment: [],
+                                order_date: getDate(),
+                                salesperson: master_state.employee?.id ?? "",
+                                till: master_state.kiosk
+                            } as TransactionInput;
+
+                            if(transaction) {
+                                fetch('http://127.0.0.1:8000/transaction', {
+                                    method: "POST",
+                                    body: JSON.stringify(transaction),
+                                    credentials: "include",
+                                    redirect: "follow"
+                                }).then(async k => {
+                                    console.log(k);
+
+                                    if(k.ok) {
+                                        setPadState("completed");
+                                    }else {
+                                        alert("Something went horribly wrong")
+                                    }
+                                })
+                            }
+                        }} 
+                        className="flex flex-row items-end gap-2 cursor-pointer">
+                        <p className="text-white font-semibold text-2xl">Save as Quote</p>
+                        <p className="text-sm text-gray-400">F6</p>
                     </div>
                 </div>
 

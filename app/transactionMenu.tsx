@@ -43,9 +43,13 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-row items-center justify-between">
-                <div className="flex flex-col">
-                    <p className="text-gray-300 font-semibold">{customer?.name}</p>
-                    <p className="text-lg font-semibold text-white">{activeTransaction?.reference} - {activeTransaction?.order_type}</p>
+                <div className="flex flex-row items-center justify-between w-full">
+                    <div className="flex flex-col">
+                        <p className="text-gray-300 font-semibold">{customer?.name}</p>
+                        <p className="text-lg font-semibold text-white">{activeTransaction?.reference} - {activeTransaction?.order_type}</p>
+                    </div>
+
+                    {transaction[0].transaction_type == "Quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
                 </div>
 
                 {

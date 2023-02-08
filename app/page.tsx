@@ -54,7 +54,7 @@ export default function App() {
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async () => {
-		fetch('http://127.0.0.1:8000/employee/auth/0e477c34-845a-4f5f-bff0-09c82cbb2d22', {
+		fetch('http://127.0.0.1:8000/employee/auth/66a8a50d-3c5c-462e-8a9b-68883dce8a40', {
 			method: "POST",
 			body: JSON.stringify({
 				pass: "1232"
@@ -65,7 +65,7 @@ export default function App() {
 			const cookie = await e.text();
 			setAuthCookie(cookie);
 
-			fetch('http://127.0.0.1:8000/employee/0e477c34-845a-4f5f-bff0-09c82cbb2d22', {
+			fetch('http://127.0.0.1:8000/employee/66a8a50d-3c5c-462e-8a9b-68883dce8a40', {
 				method: "GET",
 				credentials: "include",
 				redirect: "follow"

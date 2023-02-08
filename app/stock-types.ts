@@ -10,7 +10,7 @@ export type KioskState = {
     till: string | null
 };
 
-export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" 
+export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "Quote"
 
 export type Transaction = {
     id: string,
@@ -386,4 +386,11 @@ export type Note = {
     message: string,
     timestamp: string,
     author: string
+}
+
+export type MasterState = {
+    store_id: string,
+    employee: Employee | null | undefined,
+    store_contact: ContactInformation,
+    kiosk: string
 }

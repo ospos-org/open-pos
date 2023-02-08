@@ -4,6 +4,7 @@ import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, stringValueToObj } from "./discount_helpers";
+import { parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
 
@@ -15,8 +16,8 @@ export default function CartMenu({
     setResult, 
     setSearchType, 
     master_state, 
-    setActiveProduct, 
-    setActiveProductVariant,
+    setActiveProduct, setActiveProductVariant,
+    setActiveProductPromotions,
     setPadState,
     setDiscount,
     setKioskState,
@@ -31,6 +32,7 @@ export default function CartMenu({
     setOrderState: Function, 
     orderState: Order[], 
     setActiveProduct: Function, 
+    setActiveProductPromotions: Function,
     setActiveProductVariant: Function, 
     master_state: {
         store_id: string,
@@ -612,6 +614,7 @@ export default function CartMenu({
                                                         onClick={() => {
                                                             setActiveProduct(e.product)
                                                             setActiveProductVariant(e.variant_information)
+                                                            setActiveProductPromotions(e.active_promotions);
                                                         }} >
                                                         <p className="font-semibold">{e.product.company} {e.product.name}</p>
                                                         <p className="text-sm text-gray-400">{e.variant_information.name}</p>
@@ -715,7 +718,11 @@ export default function CartMenu({
                 </div>
                 
                 <div className="flex flex-row items-center gap-4">
-                    <div className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                    <div 
+                        onClick={() => {
+                            parkSale(orderState, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
+                        }}
+                        className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
                         <p className="text-gray-800 font-semibold">Park Sale</p>
                     </div>
 
