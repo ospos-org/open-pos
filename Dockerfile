@@ -23,6 +23,7 @@ FROM node:18-alpine AS BUILD_IMAGE
 
 # Set up our work directory again
 WORKDIR /app
+ENV PORT 3000
 
 # Bring over the deps we installed and now also
 # the rest of the source code to build the Next
@@ -41,6 +42,7 @@ RUN yarn install --production   --ignore-scripts --prefer-offline
 # This starts our application's run image - the final output of build.
 FROM node:18-alpine
 
+ENV PORT 3000
 ENV NODE_ENV production
 
 RUN addgroup -g 1001 -S nodejs
@@ -51,16 +53,13 @@ RUN adduser -S nextjs -u 1001
 # 2. the Next build output and static files
 # 3. the node_modules.
 WORKDIR /app
-COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/package.json /app/yarn.lock ./
-COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/public ./public
-COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=BUILD_IMAGE /app .
+# COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/node_modules ./node_modules
+# COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/public ./public
+# COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/.next ./.next
 
 # 4. OPTIONALLY the next.config.js, if your app has one
 # COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/next.config.js  ./
 
-USER nextjs
-
 EXPOSE 3000
-
 CMD [ "yarn", "start" ]
