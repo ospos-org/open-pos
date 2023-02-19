@@ -15,7 +15,7 @@ const ICON_SIZE = 30
 export default function App() {
 	const [ page, setPage ] = useState(0);
 	const [ user, setUser ] = useState<Employee | null>(null);
-	const [ codeInput, setCodeInput ] = useState<string[]>(["","","",""]);
+	const [ codeInput, setCodeInput ] = useState<string[]>(["","","","", "", "", "", ""]);
 	
 	const [ masterState, setMasterState ] = useState<{ store_id: string, store_contact: ContactInformation, employee: Employee | null, kiosk: string }>({
 		store_id: "001",
@@ -54,8 +54,8 @@ export default function App() {
 
 	const [ authCookie, setAuthCookie ] = useState("");
 
-	const fetch_cookie = async (pass: string, callback: Function) => {
-		fetch('http://127.0.0.1:8000/employee/auth/b59ef2cb-3743-41f9-a3bf-70862dde8dbd', {
+	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
+		fetch(`http://127.0.0.1:8000/employee/auth/rid/${rid}`, {
 			method: "POST",
 			body: JSON.stringify({
 				pass: pass
@@ -67,7 +67,7 @@ export default function App() {
 				const cookie = await e.text();
 				setAuthCookie(cookie);
 	
-				fetch('http://127.0.0.1:8000/employee/b59ef2cb-3743-41f9-a3bf-70862dde8dbd', {
+				fetch(`http://127.0.0.1:8000/employee/rid/${rid}`, {
 					method: "GET",
 					credentials: "include",
 					redirect: "follow"
@@ -87,10 +87,13 @@ export default function App() {
 	useEffect(() => {
 		if(codeInput[codeInput.length-1] != "") {
 			const copy = [ ...codeInput ];
-			const string = copy.join("");
+			const code_string = copy.join("");
 
-			fetch_cookie(string, (pass: string) => {
-				setInterval(() => fetch_cookie(pass, () => {}), 9 * 60 * 1000)
+            const rid = code_string.substring(0, 4);
+            const pass = code_string.substring(5, 8);
+
+            fetch_cookie(rid, pass, (pass: string) => {
+				setInterval(() => fetch_cookie(rid, pass, () => {}), 9 * 60 * 1000)
 			});
 		}
 	}, [codeInput])
