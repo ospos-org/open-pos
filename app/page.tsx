@@ -90,7 +90,7 @@ export default function App() {
 			const code_string = copy.join("");
 
             const rid = code_string.substring(0, 4);
-            const pass = code_string.substring(5, 8);
+            const pass = code_string.substring(4, 9);
 
             fetch_cookie(rid, pass, (pass: string) => {
 				setInterval(() => fetch_cookie(rid, pass, () => {}), 9 * 60 * 1000)
@@ -112,7 +112,7 @@ export default function App() {
 
 				<div className="flex flex-row gap-8 items-center">
 					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">{user?.name.first.toUpperCase()} {user?.name.last.toUpperCase()}</p>
+						<p className="text-xs text-white font-bold">{user?.name?.first?.toUpperCase()} {user?.name?.last?.toUpperCase()}</p>
 					</div>
 
 					<div className="flex w-fit flex-row gap-2 items-center"> 

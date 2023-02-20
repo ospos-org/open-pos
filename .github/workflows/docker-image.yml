@@ -7,8 +7,8 @@ on:
     types: [ published ]
 
 jobs:
-  docker:
-    runs-on: "ubuntu-20.04"
+  build-amd:
+    runs-on: "buildjet-4vcpu-ubuntu-2204"
 
     steps:
     - uses: actions/checkout@v3
@@ -17,3 +17,14 @@ jobs:
       with:
         image_name: ${{ github.repository }}  # it will be lowercased internally
         github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-arm:
+    runs-on: "buildjet-4vcpu-ubuntu-2204-arm"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build and publish a Docker image for ${{ github.repository }}
+      uses: macbre/push-to-ghcr@master
+      with:
+          image_name: ${{ github.repository }}  # it will be lowercased internally
+          github_token: ${{ secrets.GITHUB_TOKEN }}
