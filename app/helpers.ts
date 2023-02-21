@@ -6,7 +6,7 @@ import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, O
 import {useEffect, useState} from "react";
 
 // Change to ENV
-export const OPEN_STOCK_URL = "http://178.128.97.146:8000";
+export const OPEN_STOCK_URL = "https://open-retail.bennjii.dev/api";
 
 export const fileTransaction = (
     payment_intents: PaymentIntent[], 
