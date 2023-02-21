@@ -5,7 +5,8 @@ import { getDate, sortDbOrders } from "./kiosk";
 import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, OrderStatus, PaymentIntent, StatusHistory, TransactionInput, TransactionType } from "./stock-types";
 import {useEffect, useState} from "react";
 
-export const OPEN_STOCK_URL = "178.128.97.146:8000";
+// Change to ENV
+export const OPEN_STOCK_URL = "http://178.128.97.146:8000";
 
 export const fileTransaction = (
     payment_intents: PaymentIntent[], 
