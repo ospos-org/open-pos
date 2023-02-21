@@ -17,7 +17,7 @@ import CartMenu from "./cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
 import TransactionMenu from "./transactionMenu";
-import { fileTransaction, resetOrder } from "./helpers";
+import {fileTransaction, resetOrder, useWindowSize} from "./helpers";
 
 export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -215,7 +215,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`http://127.0.0.1:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
+            const fetchResult = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
@@ -282,6 +282,9 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const input_ref = createRef<HTMLInputElement>();
     const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
 
+    const window_size = useWindowSize();
+    const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
+
     useEffect(() => {
         return () => {
             debouncedResults.cancel();
@@ -302,29 +305,36 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                 onError={() => {}}
             />
 
-            <KioskMenu 
-                setSearchFocused={setSearchFocused} searchFocused={searchFocused}
-                setActiveProduct={setActiveProduct} activeProduct={activeProduct}
-                setSearchType={setSearchType} searchType={searchType}
-                setCustomerState={setCustomerState} customerState={customerState}
-                setOrderState={setOrderState} orderState={orderState}
-                setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
-                setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
-                setSearchTermState={setSearchTermState} searchTermState={searchTermState}
-                setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
-                setActiveVariant={setActiveVariant} activeVariant={activeVariant}
-                setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
-                setKioskState={setKioskState} kioskState={kioskState}
-                setPadState={setPadState}
-                setDiscount={setDiscount}
-                setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
-                setResult={setResult} result={result}
-                input_ref={input_ref} master_state={master_state}
-                addToCart={addToCart}
-                debouncedResults={debouncedResults}
-            />
+            {
+                ((window_size.width ?? 0) < 640 && lowModeCartOn) || (padState !== "cart") ?
+                    <></>
+                    :
+                    <KioskMenu
+                        setSearchFocused={setSearchFocused} searchFocused={searchFocused}
+                        setActiveProduct={setActiveProduct} activeProduct={activeProduct}
+                        setSearchType={setSearchType} searchType={searchType}
+                        setCustomerState={setCustomerState} customerState={customerState}
+                        setOrderState={setOrderState} orderState={orderState}
+                        setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
+                        setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
+                        setSearchTermState={setSearchTermState} searchTermState={searchTermState}
+                        setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
+                        setActiveVariant={setActiveVariant} activeVariant={activeVariant}
+                        setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
+                        setKioskState={setKioskState} kioskState={kioskState}
+                        setPadState={setPadState}
+                        setDiscount={setDiscount}
+                        setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
+                        lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn}
+                        setResult={setResult} result={result}
+                        input_ref={input_ref} master_state={master_state}
+                        addToCart={addToCart}
+                        debouncedResults={debouncedResults}
+                    />
+            }
 
             {
+                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) >= 640) || (padState !== "cart") ?
                 (() => {
                     switch(padState) {
                         case "cart":
@@ -450,7 +460,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                         const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
 
                                         if(transaction) {
-                                            fetch('http://127.0.0.1:8000/transaction', {
+                                            fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
                                                 method: "POST",
                                                 body: JSON.stringify(transaction),
                                                 credentials: "include",
@@ -778,7 +788,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                             const note_obj: Note = {
                                                 message: note,
                                                 timestamp: getDate(),
-                                                author: master_state?.employee.id
+                                                author: master_state?.employee.id ?? ""
                                             }
 
                                             const new_order_state = orderState.map(e => e.id == active_order ? { ...e, order_notes: [...e.order_notes, note_obj] } : e)
@@ -867,6 +877,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                             )
                     }
                 })()
+                :
+                <></>
             }
         </>
     )

@@ -58,7 +58,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     });
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/store/`, {
+        fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -70,7 +70,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     }, [currentStore])
 
     const fetchDistanceData = async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`http://127.0.0.1:8000/helpers/distance/store/${currentStore}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/helpers/distance/store/${currentStore}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -254,7 +254,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                     })
 
                                                     Promise.all(inverse_order.map(async k => {
-                                                        const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
+                                                        const data: Store = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${k.store}`, {
                                                             method: "GET",
                                                             credentials: "include",
                                                             redirect: "follow"

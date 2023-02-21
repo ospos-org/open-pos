@@ -45,7 +45,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             } as TransactionInput;
 
             if(transaction) {
-                fetch('http://127.0.0.1:8000/transaction', {
+                fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
                     method: "POST",
                     body: JSON.stringify(transaction),
                     credentials: "include",
@@ -256,7 +256,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                             } as TransactionInput;
 
                             if(transaction) {
-                                fetch('http://127.0.0.1:8000/transaction', {
+                                fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
                                     method: "POST",
                                     body: JSON.stringify(transaction),
                                     credentials: "include",

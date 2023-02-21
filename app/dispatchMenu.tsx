@@ -41,7 +41,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await fetch(`http://127.0.0.1:8000/helpers/suggest/`, {
+            const data = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/helpers/suggest/`, {
                 method: "POST",
                 credentials: "include",
                 redirect: "follow",
@@ -64,7 +64,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     });
 
     const fetchDistanceData = async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`http://127.0.0.1:8000/helpers/distance/${customerState?.id}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/helpers/distance/${customerState?.id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -293,7 +293,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 })
 
                                                 Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`http://127.0.0.1:8000/store/code/${k.store}`, {
+                                                    const data: Store = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${k.store}`, {
                                                         method: "GET",
                                                         credentials: "include",
                                                         redirect: "follow"
@@ -499,7 +499,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 if(!loading) {
                                                     setLoading(true);
 
-                                                    fetch(`http://127.0.0.1:8000/customer/contact/${customerState?.id}`, {
+                                                    fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/contact/${customerState?.id}`, {
                                                         method: "POST",
                                                         body: JSON.stringify(customerState?.contact),
                                                         credentials: "include",

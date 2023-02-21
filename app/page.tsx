@@ -9,6 +9,7 @@ import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
 import { ContactInformation, Employee } from './stock-types';
+import {useWindowSize} from "./helpers";
 
 const ICON_SIZE = 30
 
@@ -20,7 +21,7 @@ export default function App() {
 	const [ masterState, setMasterState ] = useState<{ store_id: string, store_contact: ContactInformation, employee: Employee | null, kiosk: string }>({
 		store_id: "001",
 		store_contact: {
-			name: "Torpedo7",
+			name: "Torpedo4",
 			mobile: {
 				region_code: "21212120",
 				root: "+64"
@@ -55,7 +56,7 @@ export default function App() {
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
-		fetch(`http://127.0.0.1:8000/employee/auth/rid/${rid}`, {
+		fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/auth/rid/${rid}`, {
 			method: "POST",
 			body: JSON.stringify({
 				pass: pass
@@ -67,14 +68,14 @@ export default function App() {
 				const cookie = await e.text();
 				setAuthCookie(cookie);
 	
-				fetch(`http://127.0.0.1:8000/employee/rid/${rid}`, {
+				fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/rid/${rid}`, {
 					method: "GET",
 					credentials: "include",
 					redirect: "follow"
 				}).then(async k => {
 					if(k.ok) {
-						const employee: Employee = await k.json();
-						setUser(employee);
+						const employee: Employee[] = await k.json();
+						setUser(employee[0]);
 		
 						callback(pass)
 					}
@@ -99,57 +100,105 @@ export default function App() {
 	}, [codeInput])
 
 	const input_ref = createRef<HTMLInputElement>();
+    const windowSize = useWindowSize();
 
-	return (
-		<div className="flex flex-col max-h-screen overflow-hidden">
-			<div className="bg-black h-[18px] flex flex-row justify-between items-center px-2 gap-8">
-				<div className="flex flex-row gap-2 items-center" onClick={() => {
-					setUser(null);
-					setCodeInput(["","","",""])
-				}}>
-					<p className="text-xs text-white font-bold">OPENPOS</p>
-				</div>
+    return (
+            <div className="flex flex-col max-h-screen overflow-hidden">
+                <div className="bg-black h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0">
+                    <div className="flex flex-row gap-2 items-center" onClick={() => {
+                        setUser(null);
+                        setCodeInput(["","","","","","","",""])
+                    }}>
+                        {
+                            (windowSize.width ?? 0) < 6406 ?
+                                <div className="flex w-fit flex-row gap-2 items-center">
+                                    <p className="text-xs text-white font-bold">{user?.name?.first?.toUpperCase()} {user?.name?.last?.toUpperCase()}</p>
+                                </div>
+                            :
+                                <p className="text-xs text-white font-bold hidden sm:flex">OPENPOS</p>
+                        }
+                    </div>
 
-				<div className="flex flex-row gap-8 items-center">
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">{user?.name?.first?.toUpperCase()} {user?.name?.last?.toUpperCase()}</p>
-					</div>
+                    <div className="flex flex-row sm:gap-8 gap-2 items-center">
+                        {
+                            (windowSize.width ?? 0) < 640 ?
+                                <></>
+                            :
+                                <div className="flex w-fit flex-row gap-2 items-center">
+                                    <p className="text-xs text-white font-bold">{user?.name?.first?.toUpperCase()} {user?.name?.last?.toUpperCase()}</p>
+                                </div>
+                        }
 
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">ONLINE</p>
-						<div className="h-2 w-2 bg-green-500 rounded-full"></div>
-					</div>
+                        <div className="flex w-fit flex-row gap-2 items-center">
+                            {
+                                (windowSize.width ?? 0) < 640 ?
+                                <>
+                                <p className="text-xs text-white text-green-500 font-bold">ONL</p>
+                                </>
+                                :
+                                <>
+                                <p className="text-xs text-white font-bold">ONLINE</p>
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                </>
+                            }
+    					</div>
 					
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">PRINTER</p>
-						<div className="h-2 w-2 bg-green-500 rounded-full"></div>
-					</div>
+    					<div className="flex w-fit flex-row gap-2 items-center">
+                            {
+                                (windowSize.width ?? 0) < 640 ?
+                                <>
+                                <p className="text-xs text-white text-green-500 font-bold">PRIN</p>
+                                </>
+                                :
+                                <>
+                                <p className="text-xs text-white font-bold">PRINTER</p>
+                                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                </>
+                            }
+    					</div>
 
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">TERMINAL</p>
-						<div className="h-2 w-2 bg-green-500 rounded-full"></div>
-					</div>
+    					<div className="flex w-fit flex-row gap-2 items-center">
+                            {
+                                (windowSize.width ?? 0) < 640 ?
+                                <>
+                                    <p className="text-xs text-white text-green-500 font-bold">TERM</p>
+                                </>
+                                :
+                                <>
+                                    <p className="text-xs text-white font-bold">TERMINAL</p>
+                                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                                </>
+                            }
+    					</div>
 
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">KIOSK</p>
-						<div className="text-xs text-green-500 font-bold">A</div>
-					</div>
+    					<div className="flex w-fit flex-row gap-2 items-center">
+                            {
+                                (windowSize.width ?? 0) < 640 ?
+                                <></>
+                                :
+                                <p className="text-xs text-white font-bold">KIOSK</p>
+                            }
+    						<div className="text-xs text-green-500 font-bold">A</div>
+    					</div>
 
-					<div className="flex w-fit flex-row gap-2 items-center"> 
-						<p className="text-xs text-white font-bold">STORE</p>
-						<div className="text-xs text-green-500 font-bold">001</div>
-					</div>
-				</div>				
-			</div>
+    					<div className="flex w-fit flex-row gap-2 items-center">
+                            {
+                                (windowSize.width ?? 0) < 640 ?
+                                <></>
+                                :
+                                <p className="text-xs text-white font-bold">STORE</p>
+                            }
+    						<div className="text-xs text-green-500 font-bold">001</div>
+    					</div>
+				    </div>
+			 </div>
 
 			{
 				!user ? 
 					<div className="fixed h-screen mt-[18px] min-h-screen max-h-screen w-screen min-w-full max-w-full bg-gray-800 z-50 flex flex-col items-center justify-center gap-14">
 						<p className="font-mono text-gray-400 font-semibold">LOGIN</p>
 						
-						<div className="flex flex-row items-center gap-4">
-							
-
+						<div className="flex flex-row items-center gap-4 flex-wrap">
 							{
 								codeInput.map((k,indx) => {
 									return (((indx == codeInput.length-1 && k == "") || (k == "" && codeInput[indx+1] == "")) && (codeInput[indx-1] !== "" || indx == 0 || indx == codeInput.length)) ? 
@@ -225,7 +274,7 @@ export default function App() {
 							}
 						</div>
 
-						<input type="text" className="bg-transparent outline-none text-gray-800" autoFocus ref={input_ref} onBlur={(e) => {e.currentTarget.focus()}} onKeyDown={(e) => { 
+						<input type="text" readOnly={true} className="bg-transparent outline-none text-gray-800" autoFocus ref={input_ref} onBlur={(e) => {e.currentTarget.focus()}} onKeyDown={(e) => {
 							if(e.key == "Backspace") {
 								const indx = codeInput.findIndex(b => b == "");
 
@@ -255,7 +304,7 @@ export default function App() {
 
 			<div className="flex flex-row h-[calc(100vh-18px)] flex-shrink-0">
 				{/* Menu Selector */}
-				<div className="bg-gray-900 flex flex-col p-4 h-full justify-between items-center">
+				<div className="bg-gray-900 flex flex-col p-4 h-full justify-between items-center flex-shrink-0">
 					<div className="flex flex-col h-full gap-12 items-center">
 						{/* Kiosk */}
 						{

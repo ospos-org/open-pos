@@ -5,7 +5,7 @@ export function NoteElement({ note }: { note: Note }) {
     const [ author, setAuthor] = useState<Employee | null>(null);
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/employee/${note.author}`, {
+        fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/${note.author}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"

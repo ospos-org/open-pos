@@ -6,12 +6,14 @@ import { RefObject, useEffect, useState } from "react";
 import useKey from "use-key";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
-import { computeOrder, parkSale, resetOrder } from "./helpers";
+import {computeOrder, parkSale, resetOrder, useWindowSize} from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
 import { SavedTransactionItem } from "./savedTransactionItem";
 import { SearchFieldTransaction } from "./searchFieldTransaction";
 import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
+
+const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
 
 export default function KioskMenu({
     setSearchFocused, searchFocused,
@@ -23,6 +25,7 @@ export default function KioskMenu({
     setActiveProductPromotions, activeProductPromotions,
     setActiveVariantPossibilities, activeVariantPossibilities,
     setActiveVariant, activeVariant,
+    setLowModeCartOn, lowModeCartOn,
     setKioskState, kioskState,
     setCurrentViewedTransaction, currentViewedTransaction,
     setTriggerRefresh, triggerRefresh,
@@ -38,6 +41,7 @@ export default function KioskMenu({
     setActiveProduct: Function, activeProduct: Product | null,
     setSearchType: Function, searchType: "customer" | "product" | "transaction",
     setSearchTermState: Function, searchTermState: string,
+    setLowModeCartOn: Function, lowModeCartOn: boolean,
     setCustomerState: Function, customerState: Customer | null,
     setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
     setOrderState: Function, orderState: Order[],
@@ -78,7 +82,7 @@ export default function KioskMenu({
 
     useEffect(() => {
         if(activeCustomer) {
-            fetch(`http://127.0.0.1:8000/customer/transactions/${activeCustomer.id}`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/transactions/${activeCustomer.id}`, {
                 method: "GET",
 				credentials: "include",
 				redirect: "follow"
@@ -93,9 +97,10 @@ export default function KioskMenu({
     }, [activeCustomer]);
 
     const MINUTE_MS = 5_000;
+    const windowSize = useWindowSize();
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/transaction/saved`, {
+        fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/saved`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -108,7 +113,7 @@ export default function KioskMenu({
         })
         
         const interval = setInterval(() => {
-            fetch(`http://127.0.0.1:8000/transaction/saved`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/saved`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -141,9 +146,10 @@ export default function KioskMenu({
                         <Image width="20" height="20" src="/icons/search-sm.svg" className="select-none" alt={''} draggable={false}></Image>
                     }
 
-                    <input 
+                    <input
                         ref={input_ref}
-                        placeholder={`Search for ${searchType}`} className="bg-transparent focus:outline-none text-white flex-1" 
+                        placeholder={`Search for ${searchType}`} className="bg-transparent focus:outline-none text-white max-w-[100%] min-w-[0px]"
+                        style={{ flex: "1 0" }}
                         onChange={(e) => {
                             debouncedResults(e.target.value, searchType);
                         }}
@@ -162,28 +168,28 @@ export default function KioskMenu({
                         }}
                         />
 
-                    <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md">
-                        <Image draggable={false} onClick={() => { 
-                            setResult([]); 
-                            setSearchType("product");  
+                    <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0">
+                        <Image draggable={false} onClick={() => {
+                            setResult([]);
+                            setSearchType("product");
 
                             input_ref.current?.value ? input_ref.current.value = "" : {};
                             input_ref.current?.focus()
-                        }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "product" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>   
-                        <Image draggable={false} onClick={() => { 
-                            setResult([]); 
-                            setSearchType("customer");    
+                        }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "product" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                        <Image draggable={false} onClick={() => {
+                            setResult([]);
+                            setSearchType("customer");
 
                             input_ref.current?.value ? input_ref.current.value = "" : {};
                             input_ref.current?.focus()
-                        }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customer" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>    
-                        <Image draggable={false} onClick={() => { 
-                            setResult([]); 
-                            setSearchType("transaction"); 
+                        }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customer" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                        <Image draggable={false} onClick={() => {
+                            setResult([]);
+                            setSearchType("transaction");
                             
                             input_ref.current?.value ? input_ref.current.value = "" : {};
                             input_ref.current?.focus()
-                        }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transaction" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>    
+                        }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transaction" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                     </div>
                     
                     {
@@ -197,8 +203,6 @@ export default function KioskMenu({
             
 
             <div className="flex flex-col p-4 gap-4 h-full max-h-full overflow-auto">
-                
-                
                 <div className="w-full max-w-full h-full max-h-full">
                 {
                     searchFocused && (searchTermState !== "") ?
@@ -234,7 +238,7 @@ export default function KioskMenu({
                                                                         });
                                                                     }).flat();
                     
-                                                                    // Flat map of the first variant pair. 
+                                                                    // Flat map of the first variant pair.
                                                                     let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
                                                                     vmap_list.push(vlist);
                                                                 }
@@ -354,9 +358,9 @@ export default function KioskMenu({
                                                     :
                                                     (result as Customer[])?.map((e: Customer, indx) => {
                                                         return (
-                                                            <div 
-                                                                key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
-                                                                onClick={(v) => {
+                                                                <div
+                                                                    key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
+                                                                    onClick={(v) => {
                                                                     if((v.target as any).id !== "assign-to-cart") {
                                                                         setSearchFocused(false);
 
@@ -364,27 +368,32 @@ export default function KioskMenu({
                                                                         setActiveProduct(null);
                                                                     }
                                                                 }}
-                                                                >
-                                                                <div className="select-none grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "200px 1fr 100px 150px" }}>
+                                                                    >
+                                                                    <div className="select-none grid items-center sm:gap-4 gap-1 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) < 640 ? "150px 1fr 100px 150px" : "150px 1fr 150px" }}>
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                                         <p>{e.name}</p>
                                                                         <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length} Past Order{e?.transactions?.split(",")?.length > 1 ? "s" : ""}</p>
                                                                     </div>
 
-                                                                    <div className="flex flex-row items-center gap-4">
-                                                                        <p>({e.contact.mobile.region_code}) {
-                                                                            (() => {
-                                                                                const k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
-                                                                                if(!k) return ""
-                                                                                return `${k[1]} ${k[2]} ${k[3]}`
-                                                                            })()
-                                                                        }</p>
-                                                                        <p>{e.contact.email.full}</p>
-                                                                    </div>
+                                                                    {
+                                                                        (windowSize.width ?? 0) < 640 ?
+                                                                        <></>
+                                                                        :
+                                                                        <div className="flex flex-row items-center gap-4 flex-1">
+                                                                            <p>({e.contact.mobile.region_code}) {
+                                                                                (() => {
+                                                                                    const k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                                                    if(!k) return ""
+                                                                                    return `${k[1]} ${k[2]} ${k[3]}`
+                                                                                })()
+                                                                            }</p>
+                                                                            <p>{e.contact.email.full}</p>
+                                                                        </div>
+                                                                    }
 
-                                                                    <p className="text-gray-400">${e.balance} Credit</p>
+                                                                    <p className="text-gray-400 flex flex-1">${e.balance} Credit</p>
 
-                                                                    <p 
+                                                                    <p
                                                                         onClick={(v) => {
                                                                             v.preventDefault();
 
@@ -460,7 +469,7 @@ export default function KioskMenu({
                                         <div>
                                             {
                                                 editCustomerState ? 
-                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                <div className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
                                                         setEditCustomerState(false)
                                                     }}
@@ -469,7 +478,7 @@ export default function KioskMenu({
                                                     <p className="font-medium select-none">Save Changes</p>
                                                 </div>
                                                 :
-                                                <div className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                <div className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
                                                         setEditCustomerState(true)
                                                     }}
@@ -483,7 +492,7 @@ export default function KioskMenu({
                                         <div>
                                             {
                                                 customerState ? 
-                                                <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer"
+                                                <div className={`flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
                                                         setCustomerState(null)
                                                     }}
@@ -492,7 +501,7 @@ export default function KioskMenu({
                                                     <p className="font-medium select-none">Remove Customer</p>
                                                 </div>
                                                 :
-                                                <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                                <div className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
                                                         setCustomerState(activeCustomer);
                                                         setSearchFocused(false);
@@ -639,7 +648,7 @@ export default function KioskMenu({
 
                                         <div className="self-center flex flex-row items-center gap-4">
                                             <div 
-                                                className="select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit"
+                                                className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
                                                 onClick={() => {
                                                     if(activeProductVariant) {
                                                         let cOs = orderState.find(e => e.order_type == "Direct");
@@ -686,7 +695,7 @@ export default function KioskMenu({
                                                 <p className="font-medium">Add to cart</p>
                                             </div>
 
-                                            <div className="select-none flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit">
+                                            <div className={`select-none flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                 <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                                 <p className="font-medium">Show Related Orders</p>
                                             </div>
@@ -728,8 +737,8 @@ export default function KioskMenu({
 
                                                                         if(!variant) {
                                                                             return (
-                                                                                <p 
-                                                                                    className="bg-gray-700 whitespace-nowrap cursor-pointer text-gray-600 py-1 px-4 w-fit rounded-md" 
+                                                                                <p
+                                                                                    className="bg-gray-700 whitespace-nowrap cursor-pointer text-gray-600 py-1 px-4 w-fit rounded-md"
                                                                                     key={k.variant_code}
                                                                                     onClick={() => {
                                                                                         let valid_variant: null | StrictVariantCategory[] = null;
@@ -850,7 +859,7 @@ export default function KioskMenu({
 
                                                     return (
                                                         <div key={e.variant_code.toString()} >
-                                                            <div 
+                                                            <div
                                                                 onClick={() => {
                                                                     let variant = activeVariantPossibilities?.find(b => isEqual(b?.map(k => k.variant.variant_code), e.variant_code)) as StrictVariantCategory[];
 
@@ -881,11 +890,11 @@ export default function KioskMenu({
                                 </div>
                             </div>
                         :
-                            <div className="flex flex-1 flex-row flex-wrap gap-4 ">
+                            <div className="flex flex-1 flex-row flex-wrap sm:gap-4 gap-1">
                                 {/* Tiles */}
                                 {
                                     customerState ? 
-                                    <div className="flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer"
+                                    <div className={`flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                         onClick={() => { 
                                             setCustomerState(null)
                                         }}
@@ -894,10 +903,10 @@ export default function KioskMenu({
                                         <p className="font-medium select-none">Remove Customer</p>
                                     </div>
                                     :
-                                    <div className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer" 
+                                    <div className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                         onClick={() => { 
-                                            setResult([]); 
-                                            setSearchType("customer");    
+                                            setResult([]);
+                                            setSearchType("customer");
 
                                             input_ref.current?.value ? input_ref.current.value = "" : {};
                                             input_ref.current?.focus()
@@ -946,8 +955,8 @@ export default function KioskMenu({
                                             value: 0,
                                             exclusive: false
                                         })
-                                    }} 
-                                    className="flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    }}
+                                    className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                     <p className="font-medium">Add Cart Discount</p>
                                 </div>
@@ -956,16 +965,16 @@ export default function KioskMenu({
                                     onClick={() => {
                                         setPadState("ship-to-customer")
                                     }}
-                                    className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
+                                    className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship Order to Customer</p>
+                                    <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
                                 </div>
         
                                 <div 
                                     onClick={() => {
                                         setPadState("note")
                                     }}
-                                    className="flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer">
+                                    className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                     <p className="font-medium">Add Note</p>
                                 </div>
@@ -974,7 +983,7 @@ export default function KioskMenu({
                                     onClick={() => {
                                         setPadState("pickup-from-store")
                                     }}
-                                    className={`flex flex-col justify-between gap-8 ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 min-w-[250px] rounded-md text-white max-w-fit cursor-pointer`}>
+                                    className={`flex flex-col justify-between gap-8 ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
                                     <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
                                 </div>
@@ -983,7 +992,7 @@ export default function KioskMenu({
                                     onClick={() => {
                                         parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
                                     }}
-                                    className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 min-w-[250px] rounded-md  max-w-fit cursor-pointer`}>
+                                    className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md  max-w-fit cursor-pointer`}>
                                     <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
                                     <p className="font-medium">Save Cart</p>
                                 </div>
@@ -1000,6 +1009,15 @@ export default function KioskMenu({
                             <SavedTransactionItem setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh} transaction={k} key={k.id} setCustomerState={setCustomerState} kioskState={kioskState} setKioskState={setKioskState} setOrderState={setOrderState} />
                         )
                     })
+                }
+
+                {
+                    (useWindowSize().width ?? 0) < 640 ?
+                            <div onClick={() => setLowModeCartOn(true)}>
+                                Open Cart
+                            </div>
+                        :
+                            <></>
                 }
             </div>
         </div>

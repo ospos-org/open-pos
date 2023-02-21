@@ -12,7 +12,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
 
     useEffect(() => {
         if(transactionState.customer.customer_type != "Store") {
-            fetch(`http://127.0.0.1:8000/customer/${transactionState.customer.customer_id}`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/${transactionState.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -21,7 +21,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                 setCustomer(n);
             })
         }else {
-            fetch(`http://127.0.0.1:8000/store/code/${transactionState.customer.customer_id}`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${transactionState.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -67,7 +67,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     <Image
                         className="cursor-pointer" 
                         onClick={async () => {
-                            fetch(`http://127.0.0.1:8000/transaction/delete/${transactionState.id}`, {
+                            fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/delete/${transactionState.id}`, {
                                 method: "POST",
                                 credentials: "include",
                                 redirect: "follow",
@@ -79,7 +79,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     <Image
                         className="cursor-pointer"
                         onClick={async () => {
-                            // fetch(`http://127.0.0.1:8000/transaction/delete/${transactionState.id}`, {
+                            // fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/delete/${transactionState.id}`, {
                             //     method: "POST",
                             //     credentials: "include",
                             //     redirect: "follow",
@@ -96,7 +96,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                             // active_promotions: Promotion[]
                             const updated_orders: Order[] = await Promise.all(transactionState.products.map(async k => {
                                 const new_products = k.products.map(async b => {
-                                    const data: { product: Product, promotions: Promotion[] } = await (await fetch(`http://127.0.0.1:8000/product/with_promotions/${b.product_sku}`, {
+                                    const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/product/with_promotions/${b.product_sku}`, {
                                         method: "GET",
                                         credentials: "include",
                                         redirect: "follow"
@@ -147,7 +147,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     // active_promotions: Promotion[]
                     const updated_orders: Order[] = await Promise.all(transaction.products.map(async k => {
                         const new_products = k.products.map(async b => {
-                            const data: { product: Product, promotions: Promotion[] } = await (await fetch(`http://127.0.0.1:8000/product/with_promotions/${b.product_sku}`, {
+                            const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/product/with_promotions/${b.product_sku}`, {
                                 method: "GET",
                                 credentials: "include",
                                 redirect: "follow"

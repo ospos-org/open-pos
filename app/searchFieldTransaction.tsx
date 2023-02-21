@@ -13,7 +13,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
-            fetch(`http://127.0.0.1:8000/customer/${transaction.customer.customer_id}`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -22,7 +22,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                 setCustomer(n);
             })
         }else {
-            fetch(`http://127.0.0.1:8000/store/code/${transaction.customer.customer_id}`, {
+            fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
