@@ -23,7 +23,7 @@ FROM node:18-alpine AS BUILD_IMAGE
 
 # Set up our work directory again
 WORKDIR /app
-ENV PORT 443
+ENV PORT 3000
 
 # Bring over the deps we installed and now also
 # the rest of the source code to build the Next
@@ -42,7 +42,7 @@ RUN yarn install --production   --ignore-scripts --prefer-offline
 # This starts our application's run image - the final output of build.
 FROM node:18-alpine
 
-ENV PORT 443
+ENV PORT 3000
 ENV NODE_ENV production
 
 RUN addgroup -g 1001 -S nodejs
@@ -61,5 +61,5 @@ COPY --from=BUILD_IMAGE /app .
 # 4. OPTIONALLY the next.config.js, if your app has one
 # COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/next.config.js  ./
 
-EXPOSE 443
+EXPOSE 3000
 CMD [ "yarn", "start"]
