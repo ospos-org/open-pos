@@ -4,3 +4,5 @@
 </div>
 
 OpenPos is an open source Point of Sale system built on [`open-stock`](https://github.com/bennjii/open-stock)
+
+[This](https://medium.com/today-i-solved/how-to-deploy-next-js-on-aws-ec2-with-ssl-https-7980ec6fe8d3) guide may be of assistance when deploying a dockerized version of open-stock.

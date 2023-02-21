@@ -10,6 +10,7 @@
 
 # SSL Keys
 /keys
+/nginx
 
 # next.js
 /.next/
