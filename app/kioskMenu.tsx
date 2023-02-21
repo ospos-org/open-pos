@@ -247,7 +247,7 @@ export default function KioskMenu({
                                                                 setActiveVariant(vmap_list[0]);
                                                                 setActiveProductVariant(e.variants[0]);
                                                             }}>
-                                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
+                                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: windowSize.width < 768 ? "50px minmax(300px, 2fr) 250px 125px" : "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
                                                                     <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
                                                                     
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
@@ -255,7 +255,7 @@ export default function KioskMenu({
                                                                         <p className="text-sm text-gray-400">{e.company}</p>
                                                                     </div>
 
-                                                                    <div className="flex flex-row items-center gap-2 flex-1 flex-wrap">
+                                                                    <div className="hidden md:flex flex-row items-center gap-2 flex-1 flex-wrap ">
                                                                         {
                                                                             e.variant_groups.map(e => {
                                                                                 return (
@@ -369,7 +369,7 @@ export default function KioskMenu({
                                                                     }
                                                                 }}
                                                                     >
-                                                                    <div className="select-none grid items-center sm:gap-4 gap-1 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) < 640 ? "150px 1fr 100px 150px" : "150px 1fr 150px" }}>
+                                                                    <div className="select-none grid items-center sm:gap-4 gap-1 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 100px 150px" : "150px 1fr 150px" }}>
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                                         <p>{e.name}</p>
                                                                         <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length} Past Order{e?.transactions?.split(",")?.length > 1 ? "s" : ""}</p>
@@ -444,7 +444,7 @@ export default function KioskMenu({
                                         <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
                                         <p className="text-gray-400">{activeCustomer.contact.address.street} {activeCustomer.contact.address.street2}, {activeCustomer.contact.address.city} {activeCustomer.contact.address.po_code}, {activeCustomer.contact.address.country}</p>
                                         
-                                        <div className="flex flex-row items-center gap-4">
+                                        <div className="flex sm:flex-row flex-col items-center gap-4">
                                             <div className="bg-gray-700 w-fit flex flex-row items-center gap-4 px-2 py-2 rounded-md">
                                                 <Image src="/icons/mail-01.svg" alt="" width="20" height="20" style={{ filter: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                                                 

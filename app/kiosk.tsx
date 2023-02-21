@@ -306,7 +306,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
             />
 
             {
-                ((window_size.width ?? 0) < 640 && lowModeCartOn) || (padState !== "cart") ?
+                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) < 640 && padState !== "cart") ?
                     <></>
                     :
                     <KioskMenu
