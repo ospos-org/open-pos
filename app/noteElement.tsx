@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Employee, Note } from "./stock-types";
+import {OPEN_STOCK_URL} from "./helpers";
 
 export function NoteElement({ note }: { note: Note }) {
     const [ author, setAuthor] = useState<Employee | null>(null);
 
     useEffect(() => {
-        fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/${note.author}`, {
+        fetch(`${OPEN_STOCK_URL}/employee/${note.author}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"

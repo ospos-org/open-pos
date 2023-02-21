@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { applyDiscount, findMaxDiscount, fromDbDiscount } from "./discount_helpers";
 import { NoteElement } from "./noteElement";
 import { Customer, DbOrder, Order, Transaction } from "./stock-types";
+import {OPEN_STOCK_URL} from "./helpers";
 
 export default function TransactionMenu({ transaction }: { transaction: [Transaction, string] | null }) {
     const [ customer, setCustomer ] = useState<Customer | null>();
@@ -18,7 +19,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
         setRefChoices(transaction?.[0].products)
 
         if(transaction?.[0]?.customer.customer_type != "Store") {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/${transaction?.[0]?.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/customer/${transaction?.[0]?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -27,7 +28,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                 setCustomer(n);
             })
         }else {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${transaction?.[0]?.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/store/code/${transaction?.[0]?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

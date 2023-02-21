@@ -2,7 +2,7 @@ import Image from "next/image";
 import { FC, useEffect, useState } from "react";
 import useKey from "use-key";
 import { applyDiscount, findMaxDiscount } from "./discount_helpers";
-import { computeOrder, fileTransaction } from "./helpers";
+import {computeOrder, fileTransaction, OPEN_STOCK_URL} from "./helpers";
 import { getDate } from "./kiosk";
 import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "./stock-types";
 
@@ -45,7 +45,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             } as TransactionInput;
 
             if(transaction) {
-                fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
+                fetch(`${OPEN_STOCK_URL}/transaction`, {
                     method: "POST",
                     body: JSON.stringify(transaction),
                     credentials: "include",
@@ -256,7 +256,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                             } as TransactionInput;
 
                             if(transaction) {
-                                fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
+                                fetch('${OPEN_STOCK_URL}/transaction', {
                                     method: "POST",
                                     body: JSON.stringify(transaction),
                                     credentials: "include",

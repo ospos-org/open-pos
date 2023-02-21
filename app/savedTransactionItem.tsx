@@ -5,6 +5,7 @@ import BarcodeReader from 'react-barcode-reader'
 import { fromDbDiscount } from './discount_helpers';
 import { getDate } from './kiosk';
 import { Customer, KioskState, Order, Product, ProductPurchase, Promotion, Transaction } from './stock-types'
+import {OPEN_STOCK_URL} from "./helpers";
 
 export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, setOrderState, setCustomerState, setTriggerRefresh, triggerRefresh }: { transaction: Transaction, setTriggerRefresh: Function, triggerRefresh: string[], kioskState: KioskState, setKioskState: Function, setOrderState: Function, setCustomerState: Function }) => {
     const [ customer, setCustomer ] = useState<Customer | null>();
@@ -12,7 +13,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
 
     useEffect(() => {
         if(transactionState.customer.customer_type != "Store") {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/${transactionState.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/customer/${transactionState.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -21,7 +22,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                 setCustomer(n);
             })
         }else {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${transactionState.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/store/code/${transactionState.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -67,7 +68,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     <Image
                         className="cursor-pointer" 
                         onClick={async () => {
-                            fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/delete/${transactionState.id}`, {
+                            fetch(`${OPEN_STOCK_URL}/transaction/delete/${transactionState.id}`, {
                                 method: "POST",
                                 credentials: "include",
                                 redirect: "follow",
@@ -79,7 +80,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     <Image
                         className="cursor-pointer"
                         onClick={async () => {
-                            // fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/delete/${transactionState.id}`, {
+                            // fetch(`${OPEN_STOCK_URL}/transaction/delete/${transactionState.id}`, {
                             //     method: "POST",
                             //     credentials: "include",
                             //     redirect: "follow",
@@ -96,7 +97,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                             // active_promotions: Promotion[]
                             const updated_orders: Order[] = await Promise.all(transactionState.products.map(async k => {
                                 const new_products = k.products.map(async b => {
-                                    const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/product/with_promotions/${b.product_sku}`, {
+                                    const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${OPEN_STOCK_URL}/product/with_promotions/${b.product_sku}`, {
                                         method: "GET",
                                         credentials: "include",
                                         redirect: "follow"
@@ -147,7 +148,7 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     // active_promotions: Promotion[]
                     const updated_orders: Order[] = await Promise.all(transaction.products.map(async k => {
                         const new_products = k.products.map(async b => {
-                            const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/product/with_promotions/${b.product_sku}`, {
+                            const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${OPEN_STOCK_URL}/product/with_promotions/${b.product_sku}`, {
                                 method: "GET",
                                 credentials: "include",
                                 redirect: "follow"

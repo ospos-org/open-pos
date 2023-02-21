@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { KeyboardEvent, useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 import { Customer, Transaction } from './stock-types'
+import {OPEN_STOCK_URL} from "./helpers";
 
 export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, setPadState, setCurrentViewedTransaction }: { transaction: Transaction, setCurrentViewedTransaction: Function, searchTermState: string, notEnd: boolean, setPadState: Function }) => {
     const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));
@@ -13,7 +14,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/${transaction.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/customer/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -22,7 +23,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                 setCustomer(n);
             })
         }else {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${transaction.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/store/code/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

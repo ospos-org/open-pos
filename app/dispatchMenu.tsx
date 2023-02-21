@@ -6,6 +6,7 @@ import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
 import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import {OPEN_STOCK_URL} from "./helpers";
 
 const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
     const [ orderState, setOrderState ] = orderJob;
@@ -41,7 +42,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/helpers/suggest/`, {
+            const data = await fetch(`${OPEN_STOCK_URL}/helpers/suggest/`, {
                 method: "POST",
                 credentials: "include",
                 redirect: "follow",
@@ -64,7 +65,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     });
 
     const fetchDistanceData = async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/helpers/distance/${customerState?.id}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -293,7 +294,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 })
 
                                                 Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`${window.location.protocol}//${window.location.hostname}:8000/store/code/${k.store}`, {
+                                                    const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/code/${k.store}`, {
                                                         method: "GET",
                                                         credentials: "include",
                                                         redirect: "follow"
@@ -499,7 +500,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 if(!loading) {
                                                     setLoading(true);
 
-                                                    fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/contact/${customerState?.id}`, {
+                                                    fetch(`${OPEN_STOCK_URL}/customer/contact/${customerState?.id}`, {
                                                         method: "POST",
                                                         body: JSON.stringify(customerState?.contact),
                                                         credentials: "include",

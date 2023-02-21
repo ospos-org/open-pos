@@ -6,7 +6,7 @@ import { RefObject, useEffect, useState } from "react";
 import useKey from "use-key";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
-import {computeOrder, parkSale, resetOrder, useWindowSize} from "./helpers";
+import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
 import { SavedTransactionItem } from "./savedTransactionItem";
@@ -82,7 +82,7 @@ export default function KioskMenu({
 
     useEffect(() => {
         if(activeCustomer) {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/customer/transactions/${activeCustomer.id}`, {
+            fetch(`${OPEN_STOCK_URL}/customer/transactions/${activeCustomer.id}`, {
                 method: "GET",
 				credentials: "include",
 				redirect: "follow"
@@ -100,7 +100,7 @@ export default function KioskMenu({
     const windowSize = useWindowSize();
 
     useEffect(() => {
-        fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/saved`, {
+        fetch(`${OPEN_STOCK_URL}/transaction/saved`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -113,7 +113,7 @@ export default function KioskMenu({
         })
         
         const interval = setInterval(() => {
-            fetch(`${window.location.protocol}//${window.location.hostname}:8000/transaction/saved`, {
+            fetch(`${OPEN_STOCK_URL}/transaction/saved`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

@@ -9,7 +9,7 @@ import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
 import { ContactInformation, Employee } from './stock-types';
-import {useWindowSize} from "./helpers";
+import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
 
 const ICON_SIZE = 30
 
@@ -56,7 +56,7 @@ export default function App() {
 	const [ authCookie, setAuthCookie ] = useState("");
 
 	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
-		fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/auth/rid/${rid}`, {
+		fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
 			method: "POST",
 			body: JSON.stringify({
 				pass: pass
@@ -68,7 +68,7 @@ export default function App() {
 				const cookie = await e.text();
 				setAuthCookie(cookie);
 	
-				fetch(`${window.location.protocol}//${window.location.hostname}:8000/employee/rid/${rid}`, {
+				fetch(`${OPEN_STOCK_URL}/employee/rid/${rid}`, {
 					method: "GET",
 					credentials: "include",
 					redirect: "follow"

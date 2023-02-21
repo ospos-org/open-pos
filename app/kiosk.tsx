@@ -17,7 +17,7 @@ import CartMenu from "./cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
 import TransactionMenu from "./transactionMenu";
-import {fileTransaction, resetOrder, useWindowSize} from "./helpers";
+import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./helpers";
 
 export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -215,7 +215,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`${window.location.protocol}//${window.location.hostname}:8000/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
+            const fetchResult = await fetch(`${OPEN_STOCK_URL}/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
@@ -460,7 +460,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                         const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
 
                                         if(transaction) {
-                                            fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
+                                            fetch('${OPEN_STOCK_URL}/transaction', {
                                                 method: "POST",
                                                 body: JSON.stringify(transaction),
                                                 credentials: "include",

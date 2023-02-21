@@ -5,6 +5,8 @@ import { getDate, sortDbOrders } from "./kiosk";
 import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, OrderStatus, PaymentIntent, StatusHistory, TransactionInput, TransactionType } from "./stock-types";
 import {useEffect, useState} from "react";
 
+export const OPEN_STOCK_URL = "178.128.97.146:8000";
+
 export const fileTransaction = (
     payment_intents: PaymentIntent[], 
     setKioskState: Function, kioskState: KioskState,
@@ -254,7 +256,7 @@ export const parkSale = (orderState: Order[], setTriggerRefresh: Function, trigg
             till: master_state.kiosk
         } as TransactionInput;
 
-        fetch('${window.location.protocol}//${window.location.hostname}:8000/transaction', {
+        fetch('${OPEN_STOCK_URL}/transaction', {
             method: "POST",
             body: JSON.stringify(transaction),
             credentials: "include",
