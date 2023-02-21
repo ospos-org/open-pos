@@ -219,35 +219,35 @@ export default function KioskMenu({
                                                         const e = b.product;
 
                                                         return (
-                                                            <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
-                                                                setActiveProduct(e);
-                                                                setActiveCustomer(null);
+                                                                <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
+                                                                    setActiveProduct(e);
+                                                                    setActiveCustomer(null);
 
-                                                                setActiveProductPromotions(b.promotions);
-                                                                setSearchFocused(false);
+                                                                    setActiveProductPromotions(b.promotions);
+                                                                    setSearchFocused(false);
 
-                                                                let vmap_list = [];
+                                                                    let vmap_list = [];
 
-                                                                for(let i = 0; i < e.variants.length; i++) {
-                                                                    const var_map = e.variants[i].variant_code.map(k => {
-                                                                        // Replace the variant code with the variant itself.
-                                                                        return e.variant_groups.map(c => {
-                                                                            let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
-                    
-                                                                            return nc.filter(l => l)
-                                                                        });
-                                                                    }).flat();
-                    
-                                                                    // Flat map of the first variant pair.
-                                                                    let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
-                                                                    vmap_list.push(vlist);
-                                                                }
+                                                                    for(let i = 0; i < e.variants.length; i++) {
+                                                                        const var_map = e.variants[i].variant_code.map(k => {
+                                                                            // Replace the variant code with the variant itself.
+                                                                            return e.variant_groups.map(c => {
+                                                                                let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
 
-                                                                setActiveVariantPossibilities(vmap_list);
-                                                                setActiveVariant(vmap_list[0]);
-                                                                setActiveProductVariant(e.variants[0]);
-                                                            }}>
-                                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: windowSize.width < 768 ? "50px minmax(300px, 2fr) 250px 125px" : "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
+                                                                                return nc.filter(l => l)
+                                                                            });
+                                                                        }).flat();
+
+                                                                        // Flat map of the first variant pair.
+                                                                        let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
+                                                                        vmap_list.push(vlist);
+                                                                    }
+
+                                                                    setActiveVariantPossibilities(vmap_list);
+                                                                    setActiveVariant(vmap_list[0]);
+                                                                    setActiveProductVariant(e.variants[0]);
+                                                                }}>
+                                                                <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 768 ? "50px minmax(300px, 2fr) 250px 125px" : "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
                                                                     <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
                                                                     
                                                                     <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
