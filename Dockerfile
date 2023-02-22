@@ -30,7 +30,7 @@ ENV PORT 3000
 # server for production
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN yarn build
+RUN NEXT_PUBLIC_API_URL=APP_NEXT_PUBLIC_API_URL yarn build
 
 # Remove all the development dependencies since we don't
 # need them to run the actual server.
@@ -62,4 +62,6 @@ COPY --from=BUILD_IMAGE /app .
 # COPY --from=BUILD_IMAGE --chown=nextjs:nodejs /app/next.config.js  ./
 
 EXPOSE 3000
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 CMD [ "yarn", "start"]
