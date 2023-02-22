@@ -8,6 +8,9 @@
 # testing
 /coverage
 
+# Environment Variables
+.env
+
 # SSL Keys
 /keys
 /nginx

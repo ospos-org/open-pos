@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { KeyboardEvent, useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 import { Customer, Transaction } from './stock-types'
-import {OPEN_STOCK_URL} from "./helpers";
+import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
 
 export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, setPadState, setCurrentViewedTransaction }: { transaction: Transaction, setCurrentViewedTransaction: Function, searchTermState: string, notEnd: boolean, setPadState: Function }) => {
     const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));
@@ -11,6 +11,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
 
     // (indx == result.length-1)
     const [ customer, setCustomer ] = useState<Customer | null>();
+    const windowSize = useWindowSize();
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
@@ -42,11 +43,11 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                     <div
                         key={b.id}
                         onClick={() => {
-                            setPadState("inv-transaction")
+                        setPadState("inv-transaction")
                             setCurrentViewedTransaction([transaction, b.id]);
-                        }} 
+                    }}
                         className="flex flex-col overflow-hidden h-fit">
-                        <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: "25px minmax(150px, 175px) 150px minmax(300px, 2fr) 75px" }}>
+                        <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: `25px minmax(150px, 175px) 150px ${(windowSize.width ?? 0) >= 1578 ? "minmax(300px, 2fr)" : ""}  75px` }}>
                             <div>
                                 {
                                     b.order_type == "Pickup" ?
@@ -75,7 +76,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                                 {customer?.name}
                             </div>
 
-                            <div>
+                            <div className="text-sm text-gray-400 2xl:flex hidden">
                                 {b.products.map(k => k.product_name).join(", ")}
                             </div>
 
