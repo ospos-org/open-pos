@@ -6,7 +6,7 @@ import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, O
 import {useEffect, useState} from "react";
 
 // Change to ENV
-export const OPEN_STOCK_URL = "https://open-retail.bennjii.dev/api";
+export const OPEN_STOCK_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const fileTransaction = (
     payment_intents: PaymentIntent[], 
