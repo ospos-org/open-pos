@@ -257,7 +257,7 @@ export const parkSale = (orderState: Order[], setTriggerRefresh: Function, trigg
             till: master_state.kiosk
         } as TransactionInput;
 
-        fetch('${OPEN_STOCK_URL}/transaction', {
+        fetch(`${OPEN_STOCK_URL}/transaction`, {
             method: "POST",
             body: JSON.stringify(transaction),
             credentials: "include",

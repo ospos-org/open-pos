@@ -460,7 +460,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                         const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
 
                                         if(transaction) {
-                                            fetch('${OPEN_STOCK_URL}/transaction', {
+                                            fetch(`${OPEN_STOCK_URL}/transaction`, {
                                                 method: "POST",
                                                 body: JSON.stringify(transaction),
                                                 credentials: "include",

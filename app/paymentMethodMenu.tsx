@@ -256,7 +256,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                             } as TransactionInput;
 
                             if(transaction) {
-                                fetch('${OPEN_STOCK_URL}/transaction', {
+                                fetch(`${OPEN_STOCK_URL}/transaction`, {
                                     method: "POST",
                                     body: JSON.stringify(transaction),
                                     credentials: "include",
