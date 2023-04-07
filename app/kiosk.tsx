@@ -8,7 +8,7 @@ import { v4 } from "uuid"
 import DiscountMenu from "./discountMenu";
 import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, MasterState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
 import NotesMenu from "./notesMenu";
-import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isEquivalentDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
 import PaymentMethod from "./paymentMethodMenu";
 import DispatchMenu from "./dispatchMenu";
 import PickupMenu from "./pickupMenu";
@@ -76,13 +76,15 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
         product: VariantInformation | null,
         value: number,
         for: "cart" | "product",
-        exclusive: boolean
+        exclusive: boolean,
+        orderId: string
     }>({
         type: "absolute",
         for: "product",
         product: null,
         value: 0.00,
-        exclusive: false
+        exclusive: false,
+        orderId: ""
     })
 
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
@@ -196,7 +198,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                     retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
                 },
                 value: 0,
-                exclusive: false
+                exclusive: false,
+                orderId: ""
             })
         }
 
@@ -590,7 +593,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                         product: VariantInformation | null,
                                         value: number,
                                         for: "cart" | "product",
-                                        exclusive: boolean
+                                        exclusive: boolean,
+                                        order_id: string
                                     }) => {
                                         setPadState("cart")
 
@@ -624,43 +628,115 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                                             };
                                                         } else return e;
                                                     });
-    
+
+                                                    // Merge any new duplicate products with the same discount.
+                                                    const merged = new_products.map((p, i) => {
+                                                        console.log(`${p.product_name}: Product Match? `);
+
+                                                        const indx = new_products.findIndex(a => 
+                                                            a.variant_information.barcode == p.variant_information.barcode
+                                                            && isEquivalentDiscount(
+                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null), 
+                                                                findMaxDiscount(p.discount, p.product_cost, customerState != null),
+                                                                p.product_cost
+                                                            )
+                                                        );
+
+                                                        if(
+                                                            indx != -1 && indx != i
+                                                        ) {
+                                                            //... Merge the values!
+                                                            return {
+                                                                ...p,
+                                                                quantity: p.quantity + new_products[indx].quantity
+                                                            };
+                                                        }else {
+                                                            return p;
+                                                        }
+                                                    });
+
                                                     if(overflow_product !== null) {
-                                                        new_products.push({
-                                                            ...overflow_product as ProductPurchase,
-                                                            quantity: overflow_quantity,
-                                                            id: v4()
-                                                        })
+                                                        // !impl check and compare discount values so quantity does not increase for non-similar product 
+                                                        const indx = new_products.findIndex(a => 
+                                                            a.variant_information.barcode == overflow_product?.variant_information.barcode
+                                                            && isEquivalentDiscount(
+                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null), 
+                                                                findMaxDiscount(overflow_product.discount, overflow_product.product_cost, customerState != null),
+                                                                overflow_product.product_cost
+                                                            )
+                                                        );
+
+                                                        console.log("Dealing with overflow value, ", indx);
+                                                        
+                                                        // If overflow product already exists (in exact kind), increase quantity - otherwise ...
+                                                        if(indx != -1) {
+                                                            merged[indx].quantity += overflow_quantity;
+                                                        }else {
+                                                            merged.push({
+                                                                ...overflow_product as ProductPurchase,
+                                                                quantity: overflow_quantity,
+                                                                id: v4()
+                                                            })
+                                                        }
                                                     }
 
                                                     return {
                                                         ...n,
-                                                        products: new_products
+                                                        products: merged.filter(b => b !== null) as ProductPurchase[]
                                                     }
                                                 })
 
                                                 setOrderState(sortOrders(new_state))
                                             }else {
                                                 const new_state = orderState.map(n => {
+                                                    let clone = [...n.products] as ProductPurchase[];
+
+                                                    for(let i = 0; i < clone.length; i++) {
+                                                        let e = clone[i];
+                                                        if(e == null) continue;
+
+                                                        const indx = clone.findIndex((a, ind) => 
+                                                            a != null && i != ind &&
+                                                            a.variant_information.barcode == e?.variant_information.barcode
+                                                            && isEquivalentDiscount(
+                                                                findMaxDiscount([{
+                                                                    source: "user",
+                                                                    value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                                } as DiscountValue], a.product_cost, customerState != null), 
+                                                                findMaxDiscount(e.discount, e.product_cost, customerState != null),
+                                                                e.product_cost
+                                                            )
+                                                        );
+
+                                                        console.log(`Value at ${i}, has index ${indx}, name ${e.product_name}`);
+                                                        
+                                                        if(indx != -1) {
+                                                            clone[indx].quantity += e.quantity;
+                                                            //@ts-ignore
+                                                            clone[i] = null;
+                                                            continue;
+                                                        }
+
+                                                        if(e.variant_information.barcode == dcnt.product?.barcode) {
+                                                            clone[i] = {
+                                                                ...e,
+                                                                discount: [
+                                                                    // Will replace any currently imposed discounts
+                                                                    ...e.discount.filter(e => {
+                                                                        return e.source !== "user"
+                                                                    }),
+                                                                    {
+                                                                        source: "user",
+                                                                        value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                                    } as DiscountValue
+                                                                ]
+                                                            };
+                                                        }
+                                                    }
+
                                                     return {
                                                         ...n,
-                                                        products: n.products.map(e => {
-                                                            if(e.variant_information.barcode == dcnt.product?.barcode) {
-                                                                return {
-                                                                    ...e,
-                                                                    discount: [
-                                                                        // Will replace any currently imposed discounts
-                                                                        ...e.discount.filter(e => {
-                                                                            return e.source !== "user"
-                                                                        }),
-                                                                        {
-                                                                            source: "user",
-                                                                            value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                                        } as DiscountValue
-                                                                    ]
-                                                                };
-                                                            } else return e;
-                                                        })
+                                                        products: clone.filter(b => b != null) as ProductPurchase[]
                                                     }
                                                 });
 
@@ -895,4 +971,12 @@ export function sortDbOrders(orders: DbOrder[]) {
 export function getDate(): string {
     // return new Date().toString()
     return moment(new Date(), 'DD/MM/YYYY', true).format()
+}
+
+function unite(...data: any[]) {
+    return [].concat.apply([], data).reduce((result, current) => {
+      return ~result.indexOf(current)
+      ? result
+      : result.concat(current)
+    }, []);
 }

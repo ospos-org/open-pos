@@ -226,7 +226,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                     <p className="text-gray-400"></p>
                     <p className="text-white font-semibold">Total</p>
                     {/* {JSON.stringify(k.discount)} */}
-                    <p className="text-white font-semibold">${activeTransaction?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost, fromDbDiscount(k.discount)), 0).toFixed(2)}</p>
+                    <p className="text-white font-semibold">${activeTransaction?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, fromDbDiscount(k.discount)), 0).toFixed(2)}</p>
                 </div>
             </div>
 

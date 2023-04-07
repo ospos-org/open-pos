@@ -9,6 +9,7 @@ const DiscountMenu: FC<{ discountGroup: [{
         value: number;
         for: "cart" | "product";
         exclusive: boolean
+        orderId: string
     }, Function], callback: Function, multiple: boolean }> = ({ discountGroup, callback, multiple }) => {
     
     const [ discount, setDiscount ] = discountGroup;

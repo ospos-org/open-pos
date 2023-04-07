@@ -601,11 +601,11 @@ export default function KioskMenu({
                                                         <p>{activeProduct.sku}</p>
                                                     </div>
                                                     <div className="flex flex-row items-center gap-4">
-                                                        <p className="text-gray-400">BARCODE:</p>
+                                                        <p className="text-gray-400">BAR:</p>
                                                         <p>{activeProductVariant?.barcode}</p>
                                                     </div>
                                                     <div className="flex flex-row items-center gap-4">
-                                                        <p className="text-gray-400">LOYALTY PRICE:</p>
+                                                        <p className="text-gray-400">LOP:</p>
                                                         <p>${(activeProductVariant ? applyDiscount(activeProductVariant?.retail_price * 1.15 ?? 0, fromDbDiscount(activeProductVariant?.loyalty_discount)) : 0.00).toFixed(2)}</p>
                                                     </div>
                                                 </div>
@@ -646,7 +646,7 @@ export default function KioskMenu({
                                             {/* <p className="text-sm text-gray-300 truncate max-w-4">{activeProduct.description.substring(0, 150)+"..."}</p> */}
                                         </div>
 
-                                        <div className="hidden 2xls:flex self-center flex flex-row items-center gap-4">
+                                        <div className="hidden 2xl:flex self-center flex-row items-center gap-4">
                                             <div 
                                                 className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
                                                 onClick={() => {

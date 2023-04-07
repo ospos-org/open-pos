@@ -183,3 +183,11 @@ export function discountFromPromotion(promo: Promotion): { Absolute?: number | u
 
     return discount;
 }
+
+export const isEquivalentDiscount = (a: DiscountValue, b: DiscountValue, product_cost: number) => {
+    if(a.value == b.value && applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value)) {
+        return true;
+    }
+    
+    return false;
+}
