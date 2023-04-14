@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { FC } from "react";
+import { FC, createRef } from "react";
 import { applyDiscount } from "./discount_helpers";
 import { VariantInformation } from "./stock-types";
+import useKey from "use-key";
 
 const DiscountMenu: FC<{ discountGroup: [{
         type: "absolute" | "percentage";
@@ -13,6 +14,11 @@ const DiscountMenu: FC<{ discountGroup: [{
     }, Function], callback: Function, multiple: boolean }> = ({ discountGroup, callback, multiple }) => {
     
     const [ discount, setDiscount ] = discountGroup;
+    const click_ref = createRef<HTMLDivElement>();
+
+    useKey({
+        'Enter': () => click_ref.current?.click()
+    })
     
     return (
         <>
@@ -22,7 +28,8 @@ const DiscountMenu: FC<{ discountGroup: [{
 
                     <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
                         <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
-                        <input style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discountGroup[0].value !== 0) ? (discountGroup[0].value).toFixed(2) : ""} placeholder={discountGroup[0].value.toFixed(2)}
+                        <input 
+                        style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discountGroup[0].value !== 0) ? (discountGroup[0].value).toFixed(2) : ""} placeholder={discountGroup[0].value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
 
@@ -45,6 +52,32 @@ const DiscountMenu: FC<{ discountGroup: [{
                             }else {
                                 e.currentTarget.value = possible.toFixed(2)
                                 e.target.style.width = (((possible.toFixed(2).length) - 0.5 ?? 1) + 'ch');
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if(e.key == "Enter") {
+                                click_ref.current?.click()
+                            }
+                            else if(e.key == "p" || e.key == "P") {
+                                setDiscount({
+                                    ...discount,
+                                    type: "percentage"
+                                })
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }
+                            else if(e.key == "a" || e.key == "A") {
+                                setDiscount({
+                                    ...discount,
+                                    type: "absolute"
+                                })
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }
+                            else if(e.key == "Backspace" || e.key == "ArrowRight" || e.key == "ArrowLeft") {}
+                            else if(!Number.isInteger(parseInt(e.key))) {
+                                e.preventDefault();
+                                e.stopPropagation();
                             }
                         }}
                         ></input>
@@ -163,6 +196,7 @@ const DiscountMenu: FC<{ discountGroup: [{
                 </div>
 
                 <div
+                    ref={click_ref}
                     onClick={() => {
                         callback(discount)
                     }} 

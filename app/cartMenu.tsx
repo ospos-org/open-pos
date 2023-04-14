@@ -3,7 +3,7 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, stringValueToObj } from "./discount_helpers";
+import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
 import { parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
@@ -482,7 +482,19 @@ export default function CartMenu({
                                         :
                                         <></>
                                 }
-                                
+
+                                {
+                                    n.discount == "a|0" ? 
+                                    <></> 
+                                    : 
+                                    <div className="flex flex-row items-center gap-1">
+                                        <div className="bg-blue-600 h-5 w-5 rounded-full flex items-center justify-center text-xs text-white">$</div>
+                                        <div></div>
+                                        <p className="text-white font-bold">{parseDiscount(n.discount)}</p>
+                                        <p className="text-white">off this cart</p>
+                                    </div>
+                                }
+
                                 {
                                     n.products.map(e => {
                                         // Find the variant of the product for name and other information...
@@ -686,7 +698,7 @@ export default function CartMenu({
                             return (
                                 <div className="flex flex-row items-center gap-2" key={k.promotion_id}>
                                     <div className="bg-blue-600 h-5 w-5 rounded-full flex items-center justify-center text-xs">{indx+1}</div>
-                                    <p className="text-gray-400">{k.name}</p>
+                                    <p className="text-white">{k.name}</p>
                                 </div>
                             )
                         })
