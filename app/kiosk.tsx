@@ -18,6 +18,7 @@ import KioskMenu from "./kioskMenu";
 import moment from "moment"
 import TransactionMenu from "./transactionMenu";
 import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./helpers";
+import CustomerMenu from "./customerMenu";
 
 export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -60,12 +61,13 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "customer" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
     const [ activeProductVariant, setActiveProductVariant ] = useState<VariantInformation | null>(null);
     const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
+    const [ activeCustomer, setActiveCustomer ] = useState<Customer | null>(null);
 
     const [ searchTermState, setSearchTermState ] = useState("");
     const [ result, setResult ] = useState<{ product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[]>([]);
@@ -315,6 +317,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                     <KioskMenu
                         setSearchFocused={setSearchFocused} searchFocused={searchFocused}
                         setActiveProduct={setActiveProduct} activeProduct={activeProduct}
+                        setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
                         setSearchType={setSearchType} searchType={searchType}
                         setCustomerState={setCustomerState} customerState={customerState}
                         setOrderState={setOrderState} orderState={orderState}
@@ -325,7 +328,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         setActiveVariant={setActiveVariant} activeVariant={activeVariant}
                         setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
                         setKioskState={setKioskState} kioskState={kioskState}
-                        setPadState={setPadState}
+                        setPadState={setPadState} padState={padState}
                         setDiscount={setDiscount}
                         setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
                         lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn}
@@ -361,6 +364,24 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                     setCurrentTransactionPrice={setCurrentTransactionPrice}
                                     input_ref={input_ref}
                                 />
+                            )
+                        case "customer":
+                            return (
+                                <CustomerMenu 
+                                    defaultValue={customerState} setCustomerState={setCustomerState}
+                                    setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
+                                    setPadState={setPadState} 
+                                    create={false}
+                                    />
+                            )
+                        case "customer-create":
+                            return (
+                                <CustomerMenu 
+                                    defaultValue={null} setCustomerState={setCustomerState}
+                                    setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
+                                    setPadState={setPadState} 
+                                    create={true}
+                                    />
                             )
                         case "select-payment-method":
                             return (

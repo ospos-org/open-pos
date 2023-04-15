@@ -328,6 +328,8 @@ export type Customer = {
     transactions: string,
     order_history: Order[],
     customer_notes: Note[],
+    special_pricing: string,
+    accepts_marketing: boolean,
     balance: number,
 }
 

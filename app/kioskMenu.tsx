@@ -29,9 +29,10 @@ export default function KioskMenu({
     setKioskState, kioskState,
     setCurrentViewedTransaction, currentViewedTransaction,
     setTriggerRefresh, triggerRefresh,
-    setPadState,
+    setPadState, padState,
     setDiscount,
     setActiveProductVariant, activeProductVariant,
+    setActiveCustomer, activeCustomer,
     setResult, result,
     input_ref, master_state,
     addToCart,
@@ -45,11 +46,12 @@ export default function KioskMenu({
     setCustomerState: Function, customerState: Customer | null,
     setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
     setOrderState: Function, orderState: Order[],
+    setActiveCustomer: Function, activeCustomer: Customer | null,
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
     setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null,
     setKioskState: Function, kioskState: KioskState,
     setActiveProductPromotions: Function, activeProductPromotions: Promotion[],
-    setPadState: Function,
+    setPadState: Function, padState: string,
     setDiscount: Function,
     setTriggerRefresh: Function, triggerRefresh: string[],
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
@@ -64,8 +66,7 @@ export default function KioskMenu({
     addToCart: Function,
     debouncedResults: Function
 }) {
-    const [ activeCustomer, setActiveCustomer ] = useState<Customer | null>(null);
-    const [ editCustomerState, setEditCustomerState ] = useState(false);
+   
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
 
@@ -350,11 +351,18 @@ export default function KioskMenu({
                                                                 </div>
                                                                 )
                                                     })
-                                                    )
+                                            )
                                         case "customer":
                                             return (
                                                     !result || result.length == 0 ?
-                                                    <p className="self-center text-gray-400 py-6">No customers with this name</p>
+                                                    <>
+                                                        <p className="self-center text-gray-400 pt-6">No customers with this name</p>
+                                                        <p 
+                                                            onClick={() => {
+                                                                setPadState("customer-create")
+                                                            }}
+                                                            className="self-center text-white pb-6 cursor-pointer">Create customer</p>
+                                                    </>
                                                     :
                                                     (result as Customer[])?.map((e: Customer, indx) => {
                                                         return (
@@ -414,7 +422,7 @@ export default function KioskMenu({
                                                                 </div>
                                                                 )
                                                     })
-                                                    )
+                                            )
                                         case "transaction":
                                             return (
                                                     result.length == 0 ?
@@ -425,13 +433,13 @@ export default function KioskMenu({
                                                                 <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={!(indx == result.length-1)} />
                                                                 )
                                                     })
-                                                    )
+                                            )
                                         default:
                                             return (
-                                                    <div>
-                                                        A problem has occurred.
-                                                    </div>
-                                                    )
+                                                <div>
+                                                    A problem has occurred.
+                                                </div>
+                                            )
                                     }
                                 })()
                             }
@@ -441,7 +449,15 @@ export default function KioskMenu({
                             <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
                                 <div className="flex flex-1 flex-row items-start h-full justify-between">
                                     <div className="flex flex-col gap-2">
-                                        <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
+                                        <div className="flex flex-row items-center gap-2">
+                                            <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
+                                            <div 
+                                                onClick={() => { 
+                                                    setCustomerState(activeCustomer)
+                                                    setPadState("customer")
+                                                }}
+                                                className="px-2 bg-gray-100 bg-opacity-10 cursor-pointer rounded-md">Edit</div>
+                                        </div>
                                         <p className="text-gray-400">{activeCustomer.contact.address.street} {activeCustomer.contact.address.street2}, {activeCustomer.contact.address.city} {activeCustomer.contact.address.po_code}, {activeCustomer.contact.address.country}</p>
 
                                         <div className="flex 2xl:flex-row flex-col 2xl:items-center 2xl:gap-4 gap-2">
@@ -466,29 +482,6 @@ export default function KioskMenu({
                                     </div>
 
                                     <div className={`flex 2xl:flex-row flex-col flex-row items-center 2xl:gap-4 gap-2`}>
-                                        <div>
-                                            {
-                                                editCustomerState ? 
-                                                <div className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
-                                                    onClick={() => { 
-                                                        setEditCustomerState(false)
-                                                    }}
-                                                >
-                                                    <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                                    <p className="font-medium select-none">Save Changes</p>
-                                                </div>
-                                                :
-                                                <div className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
-                                                    onClick={() => { 
-                                                        setEditCustomerState(true)
-                                                    }}
-                                                >
-                                                    <Image width="25" height="25" src="/icons/edit-03.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                                    <p className="font-medium select-none">Edit Customer</p>
-                                                </div>
-                                            }
-                                        </div>
-
                                         <div>
                                             {
                                                 customerState ? 
