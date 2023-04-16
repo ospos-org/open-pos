@@ -380,7 +380,7 @@ export default function KioskMenu({
                                                                     <div className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 100px 150px" : `0.25fr 1fr 150px` }}>
                                                                         <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                                             <p>{e.name}</p>
-                                                                            <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length} Past Order{e?.transactions?.split(",")?.length > 1 ? "s" : ""}</p>
+                                                                            <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length > 0 ? e?.transactions?.split(",")?.length : "No"} Past Order{e?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
                                                                         </div>
 
                                                                         {
