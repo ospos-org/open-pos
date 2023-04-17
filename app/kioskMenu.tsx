@@ -688,7 +688,9 @@ export default function KioskMenu({
                                                 <p className="font-medium">Add to cart</p>
                                             </div>
 
-                                            <div className={`select-none flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
+                                            <div 
+                                            
+                                                className={`select-none flex flex-col cursor-pointer justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                 <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                                 <p className="font-medium">Show Related Orders</p>
                                             </div>
@@ -887,7 +889,11 @@ export default function KioskMenu({
                                                     <p className="font-medium">Add to cart</p>
                                                 </div>
 
-                                                <div className={`select-none flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
+                                                <div 
+                                                    onClick={() => {
+                                                        setPadState("related-orders")
+                                                    }}
+                                                    className={`select-none flex flex-col cursor-pointer justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                     <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
                                                     <p className="font-medium">Show Related Orders</p>
                                                 </div>

@@ -19,6 +19,7 @@ import moment from "moment"
 import TransactionMenu from "./transactionMenu";
 import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./helpers";
 import CustomerMenu from "./customerMenu";
+import RelatedOrders from "./relatedMenu";
 
 export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -61,7 +62,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "customer" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
+    const [ padState, setPadState ] = useState<"cart" | "customer" | "related-orders" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -381,6 +382,13 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                     setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
                                     setPadState={setPadState} 
                                     create={true}
+                                    />
+                            )
+                        case "related-orders":
+                            return (
+                                <RelatedOrders
+                                    setPadState={setPadState} 
+                                    activeProductVariant={activeProductVariant}
                                     />
                             )
                         case "select-payment-method":
