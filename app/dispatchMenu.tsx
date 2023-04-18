@@ -180,14 +180,14 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                                 return (
                                                                                     <div 
                                                                                         onClick={() => {
-                                                                                            const new_order = generatedOrder.map(b => (b.item?.id == k?.item?.id && b.store == k.store) ? { ...b, store: n.store.code } : b)
+                                                                                            const new_order = generatedOrder.map(b => (b.item?.id == k?.item?.id && b.store == k.store) ? { ...b, store: n.store.store_id } : b)
                                                                                             setGeneratedOrder(new_order)
 
-                                                                                            const sel = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, store_id: n.store.code, selected: false } : b);
+                                                                                            const sel = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, store_id: n.store.store_id, selected: false } : b);
                                                                                             setSelectedItems(sel)
                                                                                         }}
-                                                                                        key={`${k.item?.id}is-also-available-@${n.store.code}`} className={` ${k.store == n.store.code ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
-                                                                                        {n.store.code}
+                                                                                        key={`${k.item?.id}is-also-available-@${n.store.store_id}`} className={` ${k.store == n.store.store_id ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
+                                                                                        {n.store.store_code}
                                                                                     </div>
                                                                                 )
                                                                             })
@@ -277,7 +277,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" }[] = [];
+                                                let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "Direct" | "Shipment" }[] = [];
 
                                                 generatedOrder.map(k => {
                                                     const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Shipment" : "Direct"));
@@ -287,6 +287,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     } else if(k.item) {
                                                         inverse_order.push({
                                                             store: k.store,
+                                                            store_code: k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
                                                             type: k.ship ? "Shipment" : "Direct"
                                                         })
@@ -303,11 +304,13 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     return await {
                                                         id: v4(),
                                                         destination: {
-                                                            code: "000",
+                                                            store_code: "000",
+                                                            store_id: "CUSTOMER",
                                                             contact: customerState?.contact!
                                                         },
                                                         origin: {
-                                                            code: k.store,
+                                                            store_code: k.store,
+                                                            store_id: k.store,
                                                             contact: data.contact 
                                                         },
                                                         products: k.items,
@@ -579,7 +582,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
     product_map.map(e => {
         e.variant_information.stock.map(k => {
             const has = k.quantity.quantity_sellable;
-            const store = k.store.code;
+            const store = k.store.store_id;
             let curr = map.get(store);
 
             if(curr) {
@@ -670,7 +673,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
             return {
                 item: product_map.find(k => k.id == e[0]),
                 store: e[1],
-                alt_stores: [product_map.find(k => k.id == e[0])?.variant_information.stock.find(b => b.store.code == e[1])!, ...product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.store.code !== e[1] && (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.code ? p + c[2] : p, 0)) >= e[2]) ?? [] ],
+                alt_stores: [product_map.find(k => k.id == e[0])?.variant_information.stock.find(b => b.store.store_id == e[1])!, ...product_map.find(k => k.id == e[0])?.variant_information.stock.filter(n => n.store.store_id !== e[1] && (n.quantity.quantity_sellable - product_assignment.reduce((p, c) => c[1] == n.store.store_id ? p + c[2] : p, 0)) >= e[2]) ?? [] ],
                 ship: !(e[1] == currentStore),
                 quantity: e[2]
             }

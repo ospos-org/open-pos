@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { filter, isEqual } from "lodash";
 import moment from "moment";
 import { customAlphabet } from "nanoid";
 import Image from "next/image";
@@ -11,13 +11,14 @@ import { getDate, sortOrders } from "./kiosk";
 import PromotionList from "./promotionList";
 import { SavedTransactionItem } from "./savedTransactionItem";
 import { SearchFieldTransaction } from "./searchFieldTransaction";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, MasterState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
 
 const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
 
 export default function KioskMenu({
     setSearchFocused, searchFocused,
     setActiveProduct, activeProduct,
+    setPreviousPadState,
     setSearchType, searchType,
     setCustomerState, customerState,
     setOrderState, orderState,
@@ -53,16 +54,12 @@ export default function KioskMenu({
     setActiveProductPromotions: Function, activeProductPromotions: Promotion[],
     setPadState: Function, padState: string,
     setDiscount: Function,
+    setPreviousPadState: Function,
     setTriggerRefresh: Function, triggerRefresh: string[],
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
     setActiveProductVariant: Function, activeProductVariant: VariantInformation | null
     input_ref: RefObject<HTMLInputElement>,
-    master_state: {
-        store_id: string,
-        employee: Employee | null | undefined,
-        store_contact: ContactInformation,
-        kiosk: string
-    },
+    master_state: MasterState,
     addToCart: Function,
     debouncedResults: Function
 }) {
@@ -293,7 +290,7 @@ export default function KioskMenu({
                                                                                     return k.stock.map(b => {
                                                                                         let total = 0;
 
-                                                                                        if(b.store.code == master_state.store_id) {
+                                                                                        if(b.store.store_id == master_state.store_id) {
                                                                                             total += (b.quantity.quantity_sellable);
                                                                                         }
 
@@ -431,7 +428,7 @@ export default function KioskMenu({
                                                     (result as Transaction[]).map((e: Transaction, indx) => {
                                                         return (
                                                                 <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={!(indx == result.length-1)} />
-                                                                )
+                                                        )
                                                     })
                                             )
                                         default:
@@ -523,6 +520,11 @@ export default function KioskMenu({
                                                     <div className="flex flex-row items-center gap-4">
                                                         <p className="font-semibold">{moment(b.order_date).format("DD/MM/YY hh:ss")}</p>
                                                         <p className="font-semibold">${b.order_total}</p>
+                                                        <p onClick={() => {
+                                                            setPreviousPadState("related-orders")
+                                                            setPadState("inv-transaction")
+                                                            setCurrentViewedTransaction([b, b.products[0].id]);
+                                                        }} className="bg-gray-600 px-2 rounded-md cursor-pointer">View Details</p>
                                                     </div>
                                                     
                                                     {b.products.map(k => {
@@ -536,13 +538,13 @@ export default function KioskMenu({
                                                                         {(() => {
                                                                             switch(k.order_type) {
                                                                                 case "Direct":
-                                                                                    return `Taken from ${k.origin.contact.name} (${k.origin.code})`
+                                                                                    return `${k.origin.contact.name} (${k.origin.store_code})`
                                                                                 case "Pickup":
-                                                                                    return `Pickup for ${k.origin.contact.name} (${k.origin.code})`
+                                                                                    return `${k.origin.contact.name} (${k.origin.store_code})`
                                                                                 case "Quote":
-                                                                                    return `Quote given by ${b.salesperson} at ${k.origin.contact.name} (${k.origin.code})`
+                                                                                    return `By ${b.salesperson} at ${k.origin.contact.name} (${k.origin.store_code})`
                                                                                 case "Shipment":
-                                                                                    return `Shipped from ${k.origin.contact.name} (${k.origin.code}) to ${k.destination?.contact.address.street} ${k.destination?.contact.address.street2}`
+                                                                                    return `${k.origin.contact.name} (${k.origin.store_code}) -> ${k.destination?.store_code !== "000" ? k.destination?.store_code : k.destination?.contact.address.street} ${k.destination?.store_code !== "000" ? k.destination?.contact.name : k.destination?.contact.address.street2}`
                                                                                 default:
                                                                                     return ""
                                                                             }
@@ -606,14 +608,14 @@ export default function KioskMenu({
                                                 <div>
                                                     <div className="flex flex-col items-end 2xl:flex-row 2xl:items-center gap-2">
                                                         {
-                                                            ((activeProductVariant?.stock.find(e => e.store.code == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
+                                                            ((activeProductVariant?.stock.find(e => e.store.store_id == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">In stock</p>
                                                         } 
 
                                                         {
-                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.code !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
+                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.store_id !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Cannot ship</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Available to ship</p>
@@ -653,7 +655,8 @@ export default function KioskMenu({
                                                                 id: v4(),
                                                                 destination: null,
                                                                 origin: {
-                                                                    code: master_state.store_id,
+                                                                    store_code: master_state.store_code,
+                                                                    store_id: master_state.store_id,
                                                                     contact: master_state.store_contact
                                                                 },
                                                                 products: new_pdt_list,
@@ -822,8 +825,8 @@ export default function KioskMenu({
                                                 {
                                                     activeProductVariant?.stock.map(e => {
                                                         return (
-                                                            <div key={`STOCK-FOR-${e.store.code}`} className="flex flex-row items-center justify-between gap-2">
-                                                                <p>{e.store.code}</p>
+                                                            <div key={`STOCK-FOR-${e.store.store_id}`} className="flex flex-row items-center justify-between gap-2">
+                                                                <p>{e.store.store_code}</p>
                                                                 <div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full"></div>
                                                                 <p>{e.quantity.quantity_sellable}</p>
                                                                 <p className="text-gray-400">({e.quantity.quantity_unsellable} Unsellable)</p>
@@ -854,7 +857,8 @@ export default function KioskMenu({
                                                                 id: v4(),
                                                                 destination: null,
                                                                 origin: {
-                                                                    code: master_state.store_id,
+                                                                    store_code: master_state.store_code,
+                                                                    store_id: master_state.store_id,
                                                                     contact: master_state.store_contact
                                                                 },
                                                                 products: new_pdt_list,
@@ -906,17 +910,11 @@ export default function KioskMenu({
                                             <div className="p-[0.7rem] w-full bg-gray-700 rounded-md gap-2 flex flex-col">
                                                 {
                                                     activeProduct.variants.map((e, indx) => {
-                                                        const comparative_map = e.variant_code.map(b => {
-                                                            return activeVariant?.find(c => c.variant.variant_code == b)
-                                                        });
-
-                                                        const filtered = comparative_map.filter(s => !s);
-                                                        const active = filtered.length <= 0;
-
-                                                        const qua = e.stock.find(e => e.store.code == master_state.store_id);
+                                                        const active = activeProductVariant?.barcode == e.barcode;
+                                                        const qua = e.stock.find(e => e.store.store_id == master_state.store_id);
 
                                                         return (
-                                                            <div key={e.variant_code.toString()} >
+                                                            <div key={`PRODUCT_VARIANT_BARCODE:${e.barcode.toString()}`} >
                                                                 <div
                                                                     onClick={() => {
                                                                         let variant = activeVariantPossibilities?.find(b => isEqual(b?.map(k => k.variant.variant_code), e.variant_code)) as StrictVariantCategory[];
@@ -930,7 +928,7 @@ export default function KioskMenu({
                                                                     <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>
                                                                     <p className="text-gray-300">
                                                                         {
-                                                                            e.stock.map(e => (e.store.code == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                            e.stock.map(e => (e.store.store_id == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
                                                                         } In other stores
                                                                     </p>
                                                                     <p >${(e.retail_price * 1.15).toFixed(2)}</p>

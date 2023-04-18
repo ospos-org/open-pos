@@ -9,7 +9,7 @@ import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Empl
 import {OPEN_STOCK_URL} from "./helpers";
 import moment from "moment";
 
-const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantInformation | null }> = ({ setPadState, activeProductVariant }) => {
+const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantInformation | null, setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null | undefined, setPreviousPadState: Function }> = ({ setPadState, activeProductVariant, setCurrentViewedTransaction, currentViewedTransaction, setPreviousPadState }) => {
     const [ suggestions, setSuggestions ] = useState<Transaction[]>([]);
     const [ loading, setLoading ] = useState(true);
 
@@ -58,6 +58,11 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
                                         <div className="flex flex-row items-center gap-4">
                                             <p className="font-semibold">{moment(b.order_date).format("DD/MM/YY hh:ss")}</p>
                                             <p className="font-semibold">${b.order_total}</p>
+                                            <p onClick={() => {
+                                                setPreviousPadState("related-orders")
+                                                setPadState("inv-transaction")
+                                                setCurrentViewedTransaction([b, b.products[0].id]);
+                                            }} className="bg-gray-600 px-2 rounded-md cursor-pointer">View Details</p>
                                         </div>
                                         
                                         {b.products.map(k => {
@@ -71,13 +76,13 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
                                                             {(() => {
                                                                 switch(k.order_type) {
                                                                     case "Direct":
-                                                                        return `${k.origin.contact.name} (${k.origin.code})`
+                                                                        return `${k.origin.contact.name} (${k.origin.store_code})`
                                                                     case "Pickup":
-                                                                        return `${k.origin.contact.name} (${k.origin.code})`
+                                                                        return `${k.origin.contact.name} (${k.origin.store_code})`
                                                                     case "Quote":
-                                                                        return `By ${b.salesperson} at ${k.origin.contact.name} (${k.origin.code})`
+                                                                        return `By ${b.salesperson} at ${k.origin.contact.name} (${k.origin.store_code})`
                                                                     case "Shipment":
-                                                                        return `${k.origin.contact.name} (${k.origin.code}) -> ${k.destination?.code !== "000" ? k.destination?.code : k.destination?.contact.address.street} ${k.destination?.code !== "000" ? k.destination?.contact.name : k.destination?.contact.address.street2}`
+                                                                        return `${k.origin.contact.name} (${k.origin.store_code}) -> ${k.destination?.store_code !== "000" ? k.destination?.store_code : k.destination?.contact.address.street} ${k.destination?.store_code !== "000" ? k.destination?.contact.name : k.destination?.contact.address.street2}`
                                                                     default:
                                                                         return ""
                                                                 }

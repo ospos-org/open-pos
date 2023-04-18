@@ -146,7 +146,8 @@ export type StatusHistory = {
 }
 
 export type Move = {
-    code: string,
+    store_code: string,
+    store_id: string,
     contact: ContactInformation
 }
 
@@ -315,7 +316,8 @@ export type Quantity = {
 }
 
 export type Store = {
-    code: string,
+    store_code: string,
+    store_id: string,
     contact: ContactInformation,
     id: string,
     name: string
@@ -395,6 +397,7 @@ export type Note = {
 
 export type MasterState = {
     store_id: string,
+    store_code: string,
     employee: Employee | null | undefined,
     store_contact: ContactInformation,
     kiosk: string

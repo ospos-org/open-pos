@@ -8,7 +8,7 @@ import Inventory from './inventory';
 import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
-import { ContactInformation, Employee } from './stock-types';
+import { ContactInformation, Employee, MasterState } from './stock-types';
 import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
 
 const ICON_SIZE = 30
@@ -18,8 +18,9 @@ export default function App() {
 	const [ user, setUser ] = useState<Employee | null>(null);
 	const [ codeInput, setCodeInput ] = useState<string[]>(["","","","", "", "", "", ""]);
 	
-	const [ masterState, setMasterState ] = useState<{ store_id: string, store_contact: ContactInformation, employee: Employee | null, kiosk: string }>({
-		store_id: "001",
+	const [ masterState, setMasterState ] = useState<MasterState>({
+		store_id: "628f74d7-de00-4956-a5b6-2031e0c72128",
+		store_code: "001",
 		store_contact: {
 			name: "Torpedo4",
 			mobile: {
@@ -245,7 +246,6 @@ export default function App() {
 													new_input[indx-1] = "";
 													setCodeInput([ ...new_input ]);
 												}else {
-													console.log("ELSA")
 													let new_input = codeInput;
 													new_input[new_input.length-1] = "";
 													setCodeInput([ ...new_input ]);
@@ -373,11 +373,11 @@ export default function App() {
 								case 2:
 									return <Job />
 								case 3:
-									return <Deliverables />
+									return <Deliverables master_state={masterState} />
 								case 4:
 									return <Incomings />
 								case 5:
-									return <Kiosk master_state={masterState} />
+									return <></>
 								default:
 									return <Kiosk master_state={masterState} />
 							}

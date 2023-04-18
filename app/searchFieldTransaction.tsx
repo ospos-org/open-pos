@@ -44,7 +44,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                         key={b.id}
                         onClick={() => {
                         setPadState("inv-transaction")
-                            setCurrentViewedTransaction([transaction, b.id]);
+                        setCurrentViewedTransaction([transaction, b.id]);
                     }}
                         className="flex flex-col overflow-hidden h-fit">
                         <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: `25px minmax(150px, 175px) 150px ${(windowSize.width ?? 0) >= 1578 ? "minmax(300px, 2fr)" : ""}  75px` }}>

@@ -68,11 +68,13 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 ...e,
                 discount: toDbDiscount(e.discount),
                 origin: {
-                    code: master_state.store_id,
+                    store_code: master_state.store_code,
+                    store_id: master_state.store_id,
                     contact: master_state.store_contact
                 },
                 destination: {
-                    code: "000",
+                    store_code: "000",
+                    store_id: "CUSTOMER",
                     contact: customerState?.contact ?? master_state.store_contact
                 },
                 products: e.products.map(k => { 

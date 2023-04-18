@@ -71,10 +71,10 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                 // All variants
                 p.product.variants.map(n => {
                     if(p.product_code == n.barcode) {
-                        const store_code = b.origin.code;
-                        const stock_level = n.stock.reduce((p, c) => p + (c.store.code == store_code ? c.quantity.quantity_sellable : 0), 0);
+                        const store_id = b.origin.store_id;
+                        const stock_level = n.stock.reduce((p, c) => p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0), 0);
 
-                        console.log(store_code, stock_level, n.stock);
+                        console.log(store_id, stock_level, n.stock);
                         if(stock_level <= 0) {
                             has_negative_stocks = true;
                         }

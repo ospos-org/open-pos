@@ -60,7 +60,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                         <div className={`bg-gray-800 w-full select-none text-white flex flex-row justify-between gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
                             setSelectorOpen(!selectorOpen)
                         }}>
-                            <p className="font-semibold">{activeTransaction?.order_type.toUpperCase()} - {activeTransaction?.origin.code}</p>
+                            <p className="font-semibold">{activeTransaction?.order_type.toUpperCase()} - {activeTransaction?.origin.store_code}</p>
                             <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
                         </div>
 
@@ -72,7 +72,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                                             setActiveTransaction(k)
                                             setSelectorOpen(false)
                                         }}>
-                                            {k.order_type.toUpperCase()} - {k.origin.code}
+                                            {k.order_type.toUpperCase()} - {k.origin.store_code}
                                         </div>
                                     )
                                 })

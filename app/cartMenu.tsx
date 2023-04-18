@@ -6,7 +6,7 @@ import { v4 } from "uuid";
 import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
 import { parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
-import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, Order, ProductPurchase, Promotion } from "./stock-types";
+import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "./stock-types";
 
 export default function CartMenu({ 
     customerState, 
@@ -35,12 +35,7 @@ export default function CartMenu({
     setActiveProduct: Function, 
     setActiveProductPromotions: Function,
     setActiveProductVariant: Function, 
-    master_state: {
-        store_id: string,
-        employee: Employee | null | undefined,
-        store_contact: ContactInformation,
-        kiosk: string
-    },
+    master_state: MasterState,
     setTriggerRefresh: Function, triggerRefresh: string[],
     setPadState: Function,
     setDiscount: Function,
@@ -419,7 +414,7 @@ export default function CartMenu({
 
                                                     <div className="text-white font-semibold flex flex-row items-center gap-2">
                                                         { n.order_type == "Pickup" ? n.destination?.contact.name : n.order_type == "Direct" ? "Here" : n.origin.contact.name} 
-                                                        <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.code : n.origin?.code})</p> 
+                                                        <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p> 
 
                                                         {
                                                             n.order_type !== "Pickup" && n.order_type !== "Direct" && n.order_type !== "Quote" ?
@@ -460,7 +455,7 @@ export default function CartMenu({
                                                         }
                                                         <div className="text-white font-semibold flex flex-row items-center gap-2">
                                                             { n.order_type == "Pickup" ? n.destination?.contact.name : n.origin.contact.name} 
-                                                            <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.code : n.origin?.code})</p> 
+                                                            <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p> 
                                                             
                                                             {
                                                                 n.order_type !== "Pickup" ?
@@ -502,7 +497,7 @@ export default function CartMenu({
                                             return prev += (curr.quantity.quantity_sellable) 
                                         }, 0)
 
-                                        const q_here = e.variant_information.stock.find(e => e.store.code == master_state.store_id);
+                                        const q_here = e.variant_information.stock.find(e => e.store.store_id == master_state.store_id);
 
                                         return (
                                             <div

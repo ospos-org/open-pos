@@ -20,7 +20,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                     <div className={`bg-gray-800 select-none text-white flex flex-row w-fit gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
                         setSelectorOpen(!selectorOpen)
                     }}>
-                        <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder.origin.code}</p>
+                        <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder.origin.store_code}</p>
                         <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
                     </div>
                     :
@@ -35,7 +35,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                                     setActiveOrder(k)
                                     setSelectorOpen(false)
                                 }}>
-                                    {k.order_type.toUpperCase()} - {k.origin.code}
+                                    {k.order_type.toUpperCase()} - {k.origin.store_code}
                                 </div>
                             )
                         })
@@ -47,7 +47,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                 className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
                 {
                     activeOrder.order_notes.length == 0 ? 
-                    <p className="text-gray-600">No notes yet</p>
+                    <p className="text-gray-400">No notes yet</p>
                     :
                     activeOrder.order_notes.map(e => {
                         return (

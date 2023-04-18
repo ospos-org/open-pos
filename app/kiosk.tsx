@@ -38,7 +38,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
         id: v4(),
         destination: null,
         origin: {
-            code: master_state.store_id,
+            store_code: master_state.store_id,
+            store_id: master_state.store_id,
             contact: master_state.store_contact
         },
         products: [],
@@ -63,6 +64,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
     const [ padState, setPadState ] = useState<"cart" | "customer" | "related-orders" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
+    const [ previousPadState, setPreviousPadState ] = useState<"cart" | "customer" | "related-orders" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -330,6 +332,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
                         setKioskState={setKioskState} kioskState={kioskState}
                         setPadState={setPadState} padState={padState}
+                        setPreviousPadState={setPreviousPadState}
                         setDiscount={setDiscount}
                         setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
                         lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn}
@@ -387,8 +390,9 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         case "related-orders":
                             return (
                                 <RelatedOrders
-                                    setPadState={setPadState} 
+                                    setPadState={setPadState} setPreviousPadState={setPreviousPadState} 
                                     activeProductVariant={activeProductVariant}
+                                    setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction}
                                     />
                             )
                         case "select-payment-method":
@@ -408,7 +412,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
-                                                setPadState("cart")
+                                                if(previousPadState == "related-orders") setPadState("related-orders")
+                                                else setPadState("cart")
                                             }}
                                             className="flex flex-row items-center gap-2"
                                         >
@@ -607,7 +612,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
-                                                setPadState("cart")
+                                                 setPadState("cart")
                                             }}
                                             className="flex flex-row items-center gap-2"
                                         >
