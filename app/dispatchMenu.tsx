@@ -295,7 +295,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 })
 
                                                 Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/code/${k.store}`, {
+                                                    const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
                                                         method: "GET",
                                                         credentials: "include",
                                                         redirect: "follow"

@@ -9,7 +9,7 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
     useEffect(() => {
         setIsLoading(true);
 
-        fetch(`${OPEN_STOCK_URL}/transactions/deliverables/${master_state.store_id}`, {
+        fetch(`${OPEN_STOCK_URL}/transaction/deliverables/${master_state.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -27,10 +27,23 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                 <h2 className="text-white font-semibold text-xl">Deliverables</h2>
 
                 <div>
-                    {/* Tiles */}
-                </div>
-                <div>
-                    {/* Active Orders */}
+                    {
+                        deliverables.length <= 0 ?
+                        <p>No Deliverables</p>
+                        :
+                        <div>
+                            {
+                                JSON.stringify(deliverables)
+                                // deliverables.map(b => {
+                                //     return (
+                                //         <div>
+                                //             {b.id}
+                                //         </div>
+                                //     )
+                                // })
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 

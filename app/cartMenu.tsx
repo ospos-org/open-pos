@@ -413,8 +413,8 @@ export default function CartMenu({
                                                     }
 
                                                     <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                        { n.order_type == "Pickup" ? n.destination?.contact.name : n.order_type == "Direct" ? "Here" : n.origin.contact.name} 
-                                                        <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p> 
+                                                        { n.order_type == "Pickup" ? n.destination?.contact?.name : n.order_type == "Direct" ? "Here" : n.origin.contact?.name} 
+                                                        {/* <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
 
                                                         {
                                                             n.order_type !== "Pickup" && n.order_type !== "Direct" && n.order_type !== "Quote" ?
@@ -454,8 +454,8 @@ export default function CartMenu({
                                                             <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         }
                                                         <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                            { n.order_type == "Pickup" ? n.destination?.contact.name : n.origin.contact.name} 
-                                                            <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p> 
+                                                            { n.order_type == "Pickup" ? n.destination?.contact?.name : n.origin.contact?.name} 
+                                                            {/* <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
                                                             
                                                             {
                                                                 n.order_type !== "Pickup" ?

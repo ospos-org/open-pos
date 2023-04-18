@@ -255,13 +255,15 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                     })
 
                                                     Promise.all(inverse_order.map(async k => {
-                                                        const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/code/${k.store}`, {
+                                                        const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
                                                             method: "GET",
                                                             credentials: "include",
                                                             redirect: "follow"
                                                         })).json();
 
-                                                        return await {
+                                                        console.log("For store", pickupStore);
+
+                                                        return {
                                                             id: v4(),
                                                             destination: k.type == "Pickup" ? {
                                                                 store_code: pickupStore?.store_code,
