@@ -19,6 +19,7 @@ export default function App() {
 	const [ codeInput, setCodeInput ] = useState<string[]>(["","","","", "", "", "", ""]);
 	
 	const [ masterState, setMasterState ] = useState<MasterState>({
+		store_lut: [],
 		store_id: "628f74d7-de00-4956-a5b6-2031e0c72128",
 		store_code: "001",
 		store_contact: {
@@ -46,6 +47,20 @@ export default function App() {
 		employee: user,
 		kiosk: "A"
 	});
+
+	useEffect(() => {
+		fetch(`${OPEN_STOCK_URL}/store/`, {
+			method: "GET",
+			redirect: "follow",
+			credentials: "include"
+		}).then(async b => {
+			const data = await b.json();
+			setMasterState({
+				...masterState,
+				store_lut: data
+			})
+		})
+	}, []);
 
 	useEffect(() => {
 		setMasterState({

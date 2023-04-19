@@ -29,7 +29,7 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                 <div>
                     {
                         deliverables.length <= 0 ?
-                        <p>No Deliverables</p>
+                        <p className="text-gray-400">No Deliverables</p>
                         :
                         <div>
                             {

@@ -413,7 +413,7 @@ export default function CartMenu({
                                                     }
 
                                                     <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                        { n.order_type == "Pickup" ? n.destination?.contact?.name : n.order_type == "Direct" ? "Here" : n.origin.contact?.name} 
+                                                        { n.order_type == "Pickup" ? n.destination?.contact?.name : n.order_type == "Direct" ? "Instore Purchase" : n.origin.contact?.name} 
                                                         {/* <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
 
                                                         {
@@ -596,9 +596,15 @@ export default function CartMenu({
                                                                     products: product_list_clone.filter(k => k) as ProductPurchase[]
                                                                 }
 
-                                                                const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                // If no products exist anymore.
 
-                                                                setOrderState(sortOrders(new_order ?? []))
+                                                                if(new_state.products.length <= 0) {
+                                                                    const new_order: Order[] = orderInfo?.state.map(e => e.id == n.id ? null : e)?.filter(b => b) as any as Order[];
+                                                                    setOrderState(sortOrders(new_order ?? []))
+                                                                }else {
+                                                                    const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                    setOrderState(sortOrders(new_order ?? []))
+                                                                }
                                                             }} 
                                                             draggable="false"
                                                             className="select-none"

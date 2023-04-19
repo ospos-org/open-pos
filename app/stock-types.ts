@@ -320,6 +320,7 @@ export type Store = {
     store_id: string,
     contact: ContactInformation,
     id: string,
+    code: string,
     name: string
 }
 
@@ -400,5 +401,6 @@ export type MasterState = {
     store_code: string,
     employee: Employee | null | undefined,
     store_contact: ContactInformation,
+    store_lut: Store[],
     kiosk: string
 }

@@ -74,7 +74,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 },
                 destination: {
                     store_code: "000",
-                    store_id: "CUSTOMER",
+                    store_id: customerState?.id ?? "",
                     contact: customerState?.contact ?? master_state.store_contact
                 },
                 products: e.products.map(k => { 

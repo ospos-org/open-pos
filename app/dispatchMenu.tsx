@@ -5,10 +5,10 @@ import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 import {OPEN_STOCK_URL} from "./helpers";
 
-const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
+const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
 
@@ -173,7 +173,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                         const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
                                                                         setSelectedItems(sel_items)
                                                                     }}
-                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
+                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
                                                                     <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                         {
                                                                             k.alt_stores.map(n => {
@@ -287,7 +287,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     } else if(k.item) {
                                                         inverse_order.push({
                                                             store: k.store,
-                                                            store_code: k.store,
+                                                            store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
                                                             type: k.ship ? "Shipment" : "Direct"
                                                         })
@@ -305,11 +305,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         id: v4(),
                                                         destination: {
                                                             store_code: "000",
-                                                            store_id: "CUSTOMER",
+                                                            store_id: customerState?.id,
                                                             contact: customerState?.contact!
                                                         },
                                                         origin: {
-                                                            store_code: k.store,
+                                                            store_code: k.store_code,
                                                             store_id: k.store,
                                                             contact: data.contact 
                                                         },

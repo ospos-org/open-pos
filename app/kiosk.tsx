@@ -949,7 +949,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         case "ship-to-customer":
                             return (
                                 customerState ? 
-                                <DispatchMenu orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                <DispatchMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
                                 :
                                 <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
                                     <div className="flex flex-row justify-between cursor-pointer">
