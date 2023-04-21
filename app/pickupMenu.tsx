@@ -5,10 +5,10 @@ import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
 import {OPEN_STOCK_URL} from "./helpers";
 
-const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string }> = ({ orderJob, customerJob, setPadState, currentStore }) => {
+const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
 
@@ -59,15 +59,20 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     });
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/store/`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async e => {
-            const stores: Store[] = await e.json();
-            setPickupStores(stores)
-            setPickupStore(stores.find(k => k.store_id == currentStore))
-        })
+        setPickupStores(master_state.store_lut)
+        setPickupStore(master_state.store_lut.find(k => k.id == master_state.store_id))
+
+        console.log(master_state.store_lut, master_state.store_id)
+
+        // fetch(`${OPEN_STOCK_URL}/store/`, {
+        //     method: "GET",
+        //     credentials: "include",
+        //     redirect: "follow"
+        // }).then(async e => {
+        //     const stores: Store[] = await e.json();
+        //     setPickupStores(stores)
+        //     setPickupStore(stores.find(k => k.store_id == currentStore))
+        // })
     }, [currentStore])
 
     const fetchDistanceData = async () => {
@@ -179,7 +184,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                         const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
                                                                         setSelectedItems(sel_items)
                                                                     }}
-                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{k.store}</p>
+                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
                                                                     <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                         {
                                                                             k.alt_stores.map(n => {
@@ -226,7 +231,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                     <p className="">{customerState?.contact.mobile.region_code} {customerState?.contact.mobile.root}</p>
                                                     <br />
                                                     <p className="text-gray-400">Pickup from:</p>
-                                                    <p className="font-semibold">{pickupStore?.name}</p>
+                                                    <p className="font-semibold">{pickupStore?.name} ({pickupStore?.code})</p>
                                                     <p className="font-semibold">{pickupStore?.contact.address.street}</p>
                                                     <p>{pickupStore?.contact.address.street2}</p>
                                                     <p className="text-gray-400">{pickupStore?.contact.address.city} {pickupStore?.contact.address.po_code}</p>
