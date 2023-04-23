@@ -46,7 +46,7 @@ function formatPromotion(promo: Promotion) {
         val = promo.name;
         // val += ((promo.get.Specific?.[1] ?? "") + (promo.get.Specific?.[0] ?? ""))
     }else if(promo.get.Any) {
-        val += " any other " + promo.get.Any[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Any[1])) + " off."
+        val += " any " + promo.get.Any[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Any[1])) + " off."
     }else if(promo.get.Category) {
         val += " any " + + promo.get.Category[1][0] +" other " + promo.get.Category[0] + ", " + parseDiscount(fromDbDiscount(promo.get.Category[1][1])) + " off."
     }

@@ -138,7 +138,8 @@ export function toAbsoluteDiscount(discount: string, price: number) {
 }
 
 export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>): number {
-    // console.log(`TRYING "${promo.name}" ON ${pdt.product.name}:: ${JSON.stringify(promo.get)} & ${JSON.stringify(promo.buy)}.. ${pdt.product.sku} ${promo.get.Specific?.[0] ?? ""}`)
+    let total_quantity = 0;
+    pdt_map.forEach(b => total_quantity += b.quantity);
 
     // If the product does not match the BUY criterion
     if(promo.get.Specific && pdt.product.sku != promo.get.Specific?.[0]) return 0;
@@ -154,7 +155,7 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     if(promo.buy.Specific && !pdt_map.get(promo.buy.Specific[0])) return 0
 
     // Check matches quantity condition for buy
-    if(promo.buy.Any && promo.buy.Any > pdt.quantity) return 0;
+    if(promo.buy.Any && promo.buy.Any > pdt.quantity && promo.buy.Any > total_quantity) return 0;
     else if(promo.buy.Specific && promo.buy.Specific[1] > (pdt_map.get(promo.buy.Specific[0])?.quantity ?? 0)) return 0;
 
     const discount = discountFromPromotion(promo);

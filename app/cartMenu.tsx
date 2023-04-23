@@ -4,7 +4,7 @@ import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
-import { parkSale } from "./helpers";
+import { determineOptimalPromotionPathway, parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "./stock-types";
 
@@ -74,6 +74,10 @@ export default function CartMenu({
         }[] = [];
 
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
+
+        const optimal_pdts = determineOptimalPromotionPathway(flat_products);
+        console.log(optimal_pdts);
+
         const product_map = new Map<string, ProductPurchase>();
         const product_assignment = new Map<string, {
             quantity_total: number,
@@ -145,8 +149,8 @@ export default function CartMenu({
                             // Do:
                             // 1. Check Discount is valid - Does the quantity required equal-?
                             if(
-                                // If promotion requires purchase of any other item, and there are more than 1 item in the cart
-                                (promo.buy.Any && product_map.size > 1)
+                                // If promotion requires purchase of any item, and there are more than 1 items in the cart or more than 1 of the current item
+                                (promo.buy.Any && product_map.size > 1 || b.quantity > 1)
     
                                 ||
     
@@ -161,7 +165,7 @@ export default function CartMenu({
                                 // Find all to-be-applied promotions
                                 const relevant_promotions = applied_promos.filter(k => k.affected_products.includes(b.id));
     
-                                // If the promo includes the "any" clause, we may select a random unallocated product at first future promotions may reorder this as to optimize application.
+                                // If the promo includes the "any" clause, we may select a random unallocated product at first, future promotions may reorder this as to optimize application.
                                 let specific = "";
                                 product_assignment.forEach((k, key) => {
                                     if(key == b.product.sku && k.quantity_total-k.quantity_allocated <= 1) specific = ""
@@ -671,13 +675,18 @@ export default function CartMenu({
 
                                                     <div className="min-w-[75px] flex flex-col items-center">
                                                         {
-                                                            applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) == e.variant_information.retail_price ?
-                                                            <p>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                            :
-                                                            <>
-                                                                <p className={`text-gray-500 line-through text-sm ${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-gray-500" : findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"}`}>${(e.variant_information.retail_price * 1.15).toFixed(2)}</p>
-                                                                <p className={`${findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).source == "loyalty" ? "text-gray-300" : ""}`}>${((applyDiscount(e.variant_information.retail_price  * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
-                                                            </>
+                                                            (() => {
+                                                                const max_disc = findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState));
+                                                                return (
+                                                                    applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) == e.variant_information.retail_price ?
+                                                                    <p>${((e.variant_information.retail_price * 1.15) * e.quantity).toFixed(2) }</p>
+                                                                    :
+                                                                    <>
+                                                                        <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(e.variant_information.retail_price * e.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
+                                                                        <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>${((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
+                                                                    </>
+                                                                )
+                                                            })()
                                                         }
                                                     </div>
                                                 </div>
