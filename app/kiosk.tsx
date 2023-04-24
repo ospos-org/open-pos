@@ -126,7 +126,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                     product_code: variant.barcode ?? product.sku ?? "",
                     discount: [{
                         source: "loyalty",
-                        value: fromDbDiscount(variant.loyalty_discount)
+                        value: fromDbDiscount(variant.loyalty_discount),
+                        applicable_quantity: -1
                     }],
                     product_cost: variant?.retail_price ?? 0,
                     product_name: product.company + " " + product.name,
@@ -149,7 +150,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                 product_code: variant.barcode ?? product.sku ?? "",
                 discount: [{
                     source: "loyalty",
-                    value: fromDbDiscount(variant.loyalty_discount)
+                    value: fromDbDiscount(variant.loyalty_discount),
+                    applicable_quantity: -1
                 }],
                 product_cost: variant?.retail_price ?? 0,
                 product_name: product.company + " " + product.name,

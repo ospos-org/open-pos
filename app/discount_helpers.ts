@@ -142,7 +142,7 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     pdt_map.forEach(b => total_quantity += b.quantity);
 
     // If the product does not match the BUY criterion
-    if(promo.get.Specific && pdt.product.sku != promo.get.Specific?.[0]) return 0;
+    if(promo.get.Specific && !pdt_map.get(promo.get.Specific[0])) return 0;
     if(promo.get.Category && !pdt.product.tags.includes(promo.get.Category?.[0])) return 0;
 
     // If promotion is a SoloThis or This type and the bought product is not <pdt>
@@ -159,13 +159,26 @@ export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: 
     else if(promo.buy.Specific && promo.buy.Specific[1] > (pdt_map.get(promo.buy.Specific[0])?.quantity ?? 0)) return 0;
 
     const discount = discountFromPromotion(promo);
-    
-    const normal_price = (pdt.variant_information.retail_price * 1.15);
-    const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
 
-    // console.log(`${pdt.product.name} W/ NP: ${normal_price} DOWN TO ${discounted_price} WITH PROMO ${promo.name}`)
- 
-    return normal_price - discounted_price;
+    // Is promotion for THIS or for ANOTHER?
+    if(promo.get.Specific && pdt.product.sku == promo.get.Specific?.[0]) {
+        // is for THIS
+        const normal_price = (pdt.variant_information.retail_price * 1.15);
+        const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+        return normal_price - discounted_price;
+
+    }else if(promo.get.Specific && pdt_map.get(promo.get.Specific[0])) {
+        // is for ANOTHER
+        const prd_pur = pdt_map.get(promo.get.Specific[0]);
+        const normal_price = (prd_pur!.variant_information.retail_price * 1.15);
+        const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+        return normal_price - discounted_price;
+    }else {
+        // impl! Handle category case?
+        const normal_price = (pdt.variant_information.retail_price * 1.15);
+        const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
+        return normal_price - discounted_price;
+    }
 }
 
 export function discountFromPromotion(promo: Promotion): { Absolute?: number | undefined, Percentage?: number | undefined } {

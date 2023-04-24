@@ -76,7 +76,7 @@ export default function CartMenu({
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
 
         const optimal_pdts = determineOptimalPromotionPathway(flat_products);
-        console.log(optimal_pdts);
+        console.log(JSON.parse(JSON.stringify( optimal_pdts )));
 
         const product_map = new Map<string, ProductPurchase>();
         const product_assignment = new Map<string, {
@@ -200,7 +200,8 @@ export default function CartMenu({
                                     b.discount.push({
                                         source: "promotion",
                                         value: fromDbDiscount(discount),
-                                        promotion: promo
+                                        promotion: promo,
+                                        applicable_quantity: 1
                                     })
                                     
                                     // Add promotion to the array of applied promotions to be shown in the checkout.

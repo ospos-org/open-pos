@@ -190,7 +190,9 @@ export type DbProductPurchase = {
 
 export type DiscountValue = {
     source: "user" | "promotion" | "loyalty",
-    value: string
+    value: string,
+    // Quantity discount is applicable for, if -1, can apply for any quantity.
+    applicable_quantity: number,
     promotion?: Promotion
 }
 
