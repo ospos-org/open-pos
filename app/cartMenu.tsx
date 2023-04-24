@@ -76,174 +76,204 @@ export default function CartMenu({
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
 
         const optimal_pdts = determineOptimalPromotionPathway(flat_products);
+        let optimal_queue = optimal_pdts.map(b => b);
+
         console.log(JSON.parse(JSON.stringify( optimal_pdts )));
 
-        const product_map = new Map<string, ProductPurchase>();
-        const product_assignment = new Map<string, {
-            quantity_total: number,
-            quantity_allocated: number,
-            allocations: Allocation[],
-        }>
+        const applied_promotions = orderState.map(b => {
+            return { ...b, products: b.products.map(k => {
+                // Find relevant in optimal list
+                const exists = optimal_queue.findIndex(n => n.reference_field.barcode == k.variant_information.barcode);
+                if(exists !== -1 && optimal_queue[exists].chosen_promotion != null && optimal_queue[exists].chosen_promotion?.promotion != null) {
+                    // Apply discount
+                    const di =  {
+                        source: "promotion",
+                        value: fromDbDiscount(discountFromPromotion(optimal_queue[exists].chosen_promotion!.promotion!)),
+                        promotion: optimal_queue[exists].chosen_promotion!.promotion,
+                        applicable_quantity: 1
+                    } as DiscountValue;
 
-        flat_products.map(k => {
-            const pdt = product_map.get(k.product.sku);
+                    console.log("applying, di: ", di);
 
-            if(pdt) {
-                product_map.set(k.product.sku, {
-                    ...k,
-                    quantity: pdt.quantity+k.quantity
-                })
-            }else {
-                product_map.set(k.product.sku, k)
-            }
-        })
-
-        product_map.forEach((val, key) => {
-            product_assignment.set(key, {
-                quantity_total: val.quantity,
-                quantity_allocated: 0,
-                allocations: []
-            })
-        })
-
-        // Returns the order list with every products promotions sorted by effect (most effectual first, least last...)
-        let sorted_promotions: Order[] = orderState.map(k => {
-            return {
-                ...k,
-                products: k.products.map(j => {
                     return {
-                        ...j,
-                        discount: j.discount.filter(b => b.source != "promotion"),
-                        active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map) - applyPromotion(a, j, product_map))
+                        ...k,
+                        discount: [...k.discount, di]
                     }
-                })
-            }
+
+                    // Remove from queue
+                    optimal_queue.splice(exists, 1);
+                }else {
+                    return k
+                }
+            })}
         });
 
-        // Now we must apply the best promotion to each product, keeping in mind that if a promotion's has a BUY condition with another product, that product must not have an alternate promotion applied,
-        // instead - the best promotion between the two must be applied, as the promotions are sorted by effectuality, this becomes the following index. If the following index proceeds to conflict with another product, further evaluation occurs. 
-        const applied_promotions: Order[] = sorted_promotions.map(k => {
-            return {
-                ...k,
-                products: k.products.map(b => {
-                    const promo = b.active_promotions[0];
-                    const discount = discountFromPromotion(promo);
+        // const product_map = new Map<string, ProductPurchase>();
+        // const product_assignment = new Map<string, {
+        //     quantity_total: number,
+        //     quantity_allocated: number,
+        //     allocations: Allocation[],
+        // }>
+
+        // flat_products.map(k => {
+        //     const pdt = product_map.get(k.product.sku);
+
+        //     if(pdt) {
+        //         product_map.set(k.product.sku, {
+        //             ...k,
+        //             quantity: pdt.quantity+k.quantity
+        //         })
+        //     }else {
+        //         product_map.set(k.product.sku, k)
+        //     }
+        // })
+
+        // product_map.forEach((val, key) => {
+        //     product_assignment.set(key, {
+        //         quantity_total: val.quantity,
+        //         quantity_allocated: 0,
+        //         allocations: []
+        //     })
+        // })
+
+        // // Returns the order list with every products promotions sorted by effect (most effectual first, least last...)
+        // let sorted_promotions: Order[] = orderState.map(k => {
+        //     return {
+        //         ...k,
+        //         products: k.products.map(j => {
+        //             return {
+        //                 ...j,
+        //                 discount: j.discount.filter(b => b.source != "promotion"),
+        //                 active_promotions: j.active_promotions.sort((a, b) => applyPromotion(b, j, product_map) - applyPromotion(a, j, product_map))
+        //             }
+        //         })
+        //     }
+        // });
+
+        // // Now we must apply the best promotion to each product, keeping in mind that if a promotion's has a BUY condition with another product, that product must not have an alternate promotion applied,
+        // // instead - the best promotion between the two must be applied, as the promotions are sorted by effectuality, this becomes the following index. If the following index proceeds to conflict with another product, further evaluation occurs. 
+        // const applied_promotions: Order[] = sorted_promotions.map(k => {
+        //     return {
+        //         ...k,
+        //         products: k.products.map(b => {
+        //             const promo = b.active_promotions[0];
+        //             const discount = discountFromPromotion(promo);
                     
-                    for(let j = 0; j < b.quantity; j++) {
-                        if(
-                            isGreaterDiscount(
-                                findMaxDiscount(
-                                    b.discount, 
-                                    b.variant_information.retail_price * 1.15, 
-                                    !(!(customerState))
-                                ).value, 
-                                fromDbDiscount(discount), 
-                                b.variant_information.retail_price * 1.15
-                            )
-                        ) {
-                            // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
+        //             for(let j = 0; j < b.quantity; j++) {
+        //                 if(
+        //                     isGreaterDiscount(
+        //                         findMaxDiscount(
+        //                             b.discount, 
+        //                             b.variant_information.retail_price * 1.15, 
+        //                             !(!(customerState))
+        //                         ).value, 
+        //                         fromDbDiscount(discount), 
+        //                         b.variant_information.retail_price * 1.15
+        //                     )
+        //                 ) {
+        //                     // impl! Edge case where you have more than one of the same promotion applied, i.e. 5x buy 1 get 1 free for 10 items total...
         
-                            // Is the greatest discount
-                            // console.log(`Promotion provides greater discount for ${b.product.name}`)
+        //                     // Is the greatest discount
+        //                     // console.log(`Promotion provides greater discount for ${b.product.name}`)
         
-                            // Do:
-                            // 1. Check Discount is valid - Does the quantity required equal-?
-                            if(
-                                // If promotion requires purchase of any item, and there are more than 1 items in the cart or more than 1 of the current item
-                                (promo.buy.Any && product_map.size > 1 || b.quantity > 1)
+        //                     // Do:
+        //                     // 1. Check Discount is valid - Does the quantity required equal-?
+        //                     if(
+        //                         // If promotion requires purchase of any item, and there are more than 1 items in the cart or more than 1 of the current item
+        //                         (promo.buy.Any && product_map.size > 1 || b.quantity > 1)
     
-                                ||
+        //                         ||
     
-                                (promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1]))
+        //                         (promo.buy.Specific && product_map.get(promo.buy.Specific[0]) && (product_map.get(promo.buy.Specific[0])?.quantity ?? 0 >= promo.buy.Specific[1]))
 
-                                ||
+        //                         ||
 
-                                (promo.buy.Category && product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "") && (product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "")?.quantity ?? 0 >= promo.buy.Category[1]))
-                            ) {  
-                                // Now we must verify all affected products, and check which promotions are applied to them, if there are none - apply it, otherwise compare the discount.
+        //                         (promo.buy.Category && product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "") && (product_map.get(flat_products.find(l => l.product.tags.includes(promo.buy.Category?.[0] ?? "-"))?.id ?? "")?.quantity ?? 0 >= promo.buy.Category[1]))
+        //                     ) {  
+        //                         // Now we must verify all affected products, and check which promotions are applied to them, if there are none - apply it, otherwise compare the discount.
     
-                                // Find all to-be-applied promotions
-                                const relevant_promotions = applied_promos.filter(k => k.affected_products.includes(b.id));
+        //                         // Find all to-be-applied promotions
+        //                         const relevant_promotions = applied_promos.filter(k => k.affected_products.includes(b.id));
     
-                                // If the promo includes the "any" clause, we may select a random unallocated product at first, future promotions may reorder this as to optimize application.
-                                let specific = "";
-                                product_assignment.forEach((k, key) => {
-                                    if(key == b.product.sku && k.quantity_total-k.quantity_allocated <= 1) specific = ""
-                                    else if(k.quantity_total > k.quantity_allocated) specific = key;
-                                });
+        //                         // If the promo includes the "any" clause, we may select a random unallocated product at first, future promotions may reorder this as to optimize application.
+        //                         let specific = "";
+        //                         product_assignment.forEach((k, key) => {
+        //                             if(key == b.product.sku && k.quantity_total-k.quantity_allocated <= 1) specific = ""
+        //                             else if(k.quantity_total > k.quantity_allocated) specific = key;
+        //                         });
 
-                                if(specific == "") {
-                                    // No unallocated products, see if any should be reallocated?
-                                    // impl!
+        //                         if(specific == "") {
+        //                             // No unallocated products, see if any should be reallocated?
+        //                             // impl!
 
-                                    // Pretend to allocate it, see the change in price - if better, swap, if not, ignore.
-                                    // Do this by deferring it until a later evaluation.           
-                                    deferred_promotions.push({
-                                        discount_value: discount,
-                                        name: promo.name,
-                                        promotion_id: promo.id,
-                                        affected_products: [b.id]
-                                    });   
-                                }else {
-                                    // List of all the products this specific promotion affects. Includes any specific requirements and all which match blanket "Any" and "Category" clauses, although more than one match may likely exist which exceeds the required minimum, therefore a "met-required" property must be triggered once requirements are met to remove over-allocation
-                                    // However: If a product has a requirement, the required product must be assigned in such a way that the promotions are maximized between, and applied to the betterment of the seller and buyer.
-                                    const affected_products: string[] = [b.id, promo.buy.Specific?.[0] ? promo.buy.Specific?.[0] : promo.buy.Category?.[0] ? promo.buy.Category?.[0] : specific];
+        //                             // Pretend to allocate it, see the change in price - if better, swap, if not, ignore.
+        //                             // Do this by deferring it until a later evaluation.           
+        //                             deferred_promotions.push({
+        //                                 discount_value: discount,
+        //                                 name: promo.name,
+        //                                 promotion_id: promo.id,
+        //                                 affected_products: [b.id]
+        //                             });   
+        //                         }else {
+        //                             // List of all the products this specific promotion affects. Includes any specific requirements and all which match blanket "Any" and "Category" clauses, although more than one match may likely exist which exceeds the required minimum, therefore a "met-required" property must be triggered once requirements are met to remove over-allocation
+        //                             // However: If a product has a requirement, the required product must be assigned in such a way that the promotions are maximized between, and applied to the betterment of the seller and buyer.
+        //                             const affected_products: string[] = [b.id, promo.buy.Specific?.[0] ? promo.buy.Specific?.[0] : promo.buy.Category?.[0] ? promo.buy.Category?.[0] : specific];
         
-                                    // for(let i = 0; i < relevant_promotions.length; i++) {
-                                    //     relevant_promotions[i].affected_products.map(k => {
-                                    //         // k represents the ID for the product.
+        //                             // for(let i = 0; i < relevant_promotions.length; i++) {
+        //                             //     relevant_promotions[i].affected_products.map(k => {
+        //                             //         // k represents the ID for the product.
         
-                                    //     })
-                                    // }
+        //                             //     })
+        //                             // }
                                     
-                                    // Apply discount by pushing it into considered discounts, if a user-produced discount or loyalty exceeds it, this is beyond the bounds of checking and overridden.
-                                    b.discount.push({
-                                        source: "promotion",
-                                        value: fromDbDiscount(discount),
-                                        promotion: promo,
-                                        applicable_quantity: 1
-                                    })
+        //                             // Apply discount by pushing it into considered discounts, if a user-produced discount or loyalty exceeds it, this is beyond the bounds of checking and overridden.
+        //                             b.discount.push({
+        //                                 source: "promotion",
+        //                                 value: fromDbDiscount(discount),
+        //                                 promotion: promo,
+        //                                 applicable_quantity: 1
+        //                             })
                                     
-                                    // Add promotion to the array of applied promotions to be shown in the checkout.
-                                    applied_promos.push({
-                                        discount_value: discount,
-                                        name: promo.name,
-                                        promotion_id: promo.id,
-                                        affected_products: affected_products
-                                    })
+        //                             // Add promotion to the array of applied promotions to be shown in the checkout.
+        //                             applied_promos.push({
+        //                                 discount_value: discount,
+        //                                 name: promo.name,
+        //                                 promotion_id: promo.id,
+        //                                 affected_products: affected_products
+        //                             })
         
-                                    // Collect assignment information for current product.
-                                    const prior = product_assignment.get(b.product.sku);
-                                    const old_arr = (prior?.allocations ? prior.allocations : [])
+        //                             // Collect assignment information for current product.
+        //                             const prior = product_assignment.get(b.product.sku);
+        //                             const old_arr = (prior?.allocations ? prior.allocations : [])
         
-                                    // Add the new promotional data into the allocation pool
-                                    old_arr.push({ 
-                                        swap_for_any: promo.buy.Any ? true : false,
-                                        promotion: promo
-                                    });
+        //                             // Add the new promotional data into the allocation pool
+        //                             old_arr.push({ 
+        //                                 swap_for_any: promo.buy.Any ? true : false,
+        //                                 promotion: promo
+        //                             });
         
-                                    // Reset this data with an update to the quantity fields, singularly incremented by stepwise iteration through product space.
-                                    product_assignment.set(b.product.sku, {
-                                        quantity_total: prior?.quantity_total ?? 0,
-                                        quantity_allocated: (prior?.quantity_allocated ?? 0) + 1,
-                                        allocations: old_arr
-                                    });
-                                }
-                            }
-                        }else {
-                            // console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
-                        }
-                    }
+        //                             // Reset this data with an update to the quantity fields, singularly incremented by stepwise iteration through product space.
+        //                             product_assignment.set(b.product.sku, {
+        //                                 quantity_total: prior?.quantity_total ?? 0,
+        //                                 quantity_allocated: (prior?.quantity_allocated ?? 0) + 1,
+        //                                 allocations: old_arr
+        //                             });
+        //                         }
+        //                     }
+        //                 }else {
+        //                     // console.log(`Promotion provides lesser discount for ${b.product.name}, so will be ignored.`)
+        //                 }
+        //             }
     
-                    return b;
-                })
-            } 
-        });
+        //             return b;
+        //         })
+        //     } 
+        // });
 
-        deferred_promotions.map(k => {
-            // k.promotion_id
-            // See if any of the deferred promotions provide greater benefits than the others
-        })
+        // deferred_promotions.map(k => {
+        //     // k.promotion_id
+        //     // See if any of the deferred promotions provide greater benefits than the others
+        // })
         
         // Order state has been changed. Regenerate values
         let non_discounted_sub_total = applied_promotions.reduce(
