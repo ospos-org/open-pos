@@ -541,7 +541,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                                                             <p className="text-gray-600">{e.variant_information.name}</p>
                                                                         </div>
                 
-                                                                        <p className="text-white font-bold">${applyDiscount(e.variant_information.retail_price * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value)?.toFixed(2)}</p>
+                                                                        <p className="text-white font-bold">${applyDiscount(e.variant_information.retail_price * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value)?.toFixed(2)}</p>
                                                                     </div>
                                                                 )
                                                             })
@@ -672,8 +672,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                                         const indx = new_products.findIndex(a => 
                                                             a.variant_information.barcode == p.variant_information.barcode
                                                             && isEquivalentDiscount(
-                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null), 
-                                                                findMaxDiscount(p.discount, p.product_cost, customerState != null),
+                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null)[0], 
+                                                                findMaxDiscount(p.discount, p.product_cost, customerState != null)[0],
                                                                 p.product_cost
                                                             )
                                                         );
@@ -696,8 +696,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                                         const indx = new_products.findIndex(a => 
                                                             a.variant_information.barcode == overflow_product?.variant_information.barcode
                                                             && isEquivalentDiscount(
-                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null), 
-                                                                findMaxDiscount(overflow_product.discount, overflow_product.product_cost, customerState != null),
+                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null)[0], 
+                                                                findMaxDiscount(overflow_product.discount, overflow_product.product_cost, customerState != null)[0],
                                                                 overflow_product.product_cost
                                                             )
                                                         );
@@ -738,8 +738,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                                                 findMaxDiscount([{
                                                                     source: "user",
                                                                     value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                                } as DiscountValue], a.product_cost, customerState != null), 
-                                                                findMaxDiscount(e.discount, e.product_cost, customerState != null),
+                                                                } as DiscountValue], a.product_cost, customerState != null)[0], 
+                                                                findMaxDiscount(e.discount, e.product_cost, customerState != null)[0],
                                                                 e.product_cost
                                                             )
                                                         );
