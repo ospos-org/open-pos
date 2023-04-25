@@ -3,7 +3,7 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
+import { applyDiscount, applyDiscountsConsiderateOfQuantity, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
 import { determineOptimalPromotionPathway, parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "./stock-types";
@@ -76,7 +76,7 @@ export default function CartMenu({
         let flat_products = orderState.map(k => k.products).flatMap(k => k);
 
         const optimal_pdts = determineOptimalPromotionPathway(flat_products);
-        let optimal_queue = optimal_pdts.filter(b => b.chosen_promotion?.promotion !== null);
+        let optimal_queue = optimal_pdts.filter(b => b.chosen_promotion?.promotion != null && b.chosen_promotion != null);
 
         console.log(JSON.parse(JSON.stringify( optimal_queue )));
 
@@ -131,10 +131,11 @@ export default function CartMenu({
                 p + applyDiscount(
                     c.products.reduce(function (prev, curr) {
                         return prev + (
-                            applyDiscount(
-                                curr.variant_information.retail_price, 
-                                findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
-                            ) * curr.quantity
+                            // applyDiscount(
+                            //     curr.variant_information.retail_price, 
+                            //     findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState))[0].value
+                            // ) * curr.quantity
+                            ((curr.variant_information.retail_price) * curr.quantity) - applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price, !(!customerState))
                         )
                     }, 0)
                 , c.discount)
@@ -144,11 +145,14 @@ export default function CartMenu({
             (p,c) => 
                 p += applyDiscount(
                     c.products.reduce(function (prev, curr) {
+                        // console.log(((curr.variant_information.retail_price * 1.15) * curr.quantity), " - ", applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price * 1.15, !(!customerState)))
+                        
                         return prev + (
-                            applyDiscount(
-                                curr.variant_information.retail_price * 1.15, 
-                                findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
-                            ) * curr.quantity
+                            // applyDiscount(
+                            //     curr.variant_information.retail_price * 1.15, 
+                            //     findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
+                            // ) * curr.quantity
+                            ((curr.variant_information.retail_price * 1.15) * curr.quantity) - applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price * 1.15, !(!customerState))
                         )
                     }, 0) 
                 , c.discount) 
@@ -529,7 +533,7 @@ export default function CartMenu({
                                                             onClick={() => {
                                                                 setPadState("discount");
                                                                 setDiscount({
-                                                                    ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false).value),
+                                                                    ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false)[0].value),
                                                                     product: e.variant_information,
                                                                     for: "product",
                                                                     exclusive: false
@@ -548,14 +552,20 @@ export default function CartMenu({
                                                     <div className="min-w-[75px] flex flex-col items-center">
                                                         {
                                                             (() => {
-                                                                const max_disc = findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState));
+                                                                const max_disc = findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0];
+
                                                                 return (
-                                                                    applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) == e.variant_information.retail_price ?
+                                                                    applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) == e.variant_information.retail_price ?
                                                                     <p>${((e.variant_information.retail_price * 1.15) * e.quantity).toFixed(2) }</p>
                                                                     :
                                                                     <>
                                                                         <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(e.variant_information.retail_price * e.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
-                                                                        <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>${((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState)).value) ?? 1)).toFixed(2)}</p>
+                                                                        <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
+                                                                            ${
+                                                                                ((((e.variant_information.retail_price) * e.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(e.quantity, e.discount, e.variant_information.retail_price * 1.15, !(!customerState))).toFixed(2)
+                                                                                // ((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
+                                                                            }
+                                                                        </p>
                                                                     </>
                                                                 )
                                                             })()

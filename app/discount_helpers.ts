@@ -13,6 +13,31 @@ export function isValidVariant(activeProduct: Product, activeVariant: StrictVari
     })
 }
 
+export function applyDiscountsConsiderateOfQuantity(quantity: number, discounts: DiscountValue[], price: number, cstate: boolean) {
+    let savings = 0;
+    let q = quantity;
+    
+    let promos: DiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion")));
+
+    while(q > 0 && promos.length > 0)
+    {
+        let discount_val = findMaxDiscount(promos, price, cstate);
+
+        while(discount_val[0].applicable_quantity > 0) {
+            discount_val[0].applicable_quantity -= 1;
+            q -= 1;
+    
+            let discount = discount_val[0].value;
+            savings += (price - applyDiscount(price, discount));
+            console.log("Applied", price - applyDiscount(price, discount));
+        }
+
+        promos = promos.filter((b, i) => i !== discount_val[1]);
+    }
+
+    return savings
+}
+
 export function applyDiscount(price: number, discount: string) {
     if(discount == "") discount = "a|0";
     
@@ -78,21 +103,24 @@ export function toDbDiscount(discount: string): { Absolute?: number, Percentage?
     }
 }
 
-export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean) {
+export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean): [DiscountValue, number] {
     let max_discount = {
         value: "a|0",
         source: "user"
     } as DiscountValue;
+
+    let index = 0;
 
     for(let i = 0; i < discountValues.length; i++) {
         if(discountValues[i].source == "loyalty" && !loyalty) { continue; }
 
         if(isGreaterDiscount(max_discount.value, discountValues[i].value, productValue)) {
             max_discount = discountValues[i]
+            index = i;
         }
     }
 
-    return max_discount
+    return [max_discount, index]
 }
 
 export function findMaxDiscountDb(discountValues: { Absolute?: number, Percentage?: number }[], productValue: number, loyalty: boolean) {

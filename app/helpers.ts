@@ -79,7 +79,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 },
                 products: e.products.map(k => { 
                     return { 
-                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value), 
                         product_cost: k.variant_information.retail_price * 1.15, 
                         product_code: k.product_code, 
                         product_name: k.product.company + " " + k.product.name, 
@@ -162,7 +162,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 } as OrderStatus,
                 products: e.products.map(k => { 
                     return { 
-                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState)).value), 
+                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value), 
                         product_cost: k.variant_information.retail_price * 1.15, 
                         product_code: k.product_code, 
                         product_name: k.product.company + " " + k.product.name, 
@@ -405,7 +405,13 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
     
                 // Find an appropriate external source by checking those remaining in the queue
                 product_queue.map(ref => {
-                    const indx_of_other = analysis_list.findIndex(k => k.id !== point.id && k.id == ref && k.utilized == null && !k.is_joined);
+                    const indx_of_other = analysis_list.findIndex(k => 
+                        k.id !== point.id   && 
+                        k.id == ref         &&
+                        k.utilized == null  && 
+                        !k.is_joined        
+                    );
+
                     if(indx_of_other == -1) return;
 
                     const val = analysis_list[indx_of_other];
@@ -474,6 +480,8 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 break;
             }
         }
+        
+        let should_apply = true;
 
         if(optimal_promotion != null && (point.utilized != null || point.is_joined)) { // && !point.is_joined
             const external_indx = analysis_list.findIndex(k => k.id == point.utilized?.utilizer);
@@ -483,22 +491,30 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
             
             // If the current promotion provides a greater saving than the external, replace.
             if(optimal_promotion[1] > (external_ref.chosen_promotion?.saving ?? 0)) {
-                product_queue.push(external_ref.utilized?.utilizer ?? "");
+                should_apply = true;
 
-                // Remove util from external
-                analysis_list[external_indx].utilized = null;
-                analysis_list[external_indx].chosen_promotion = null;
+                // Recursively delete and push
+                const delete_and_push = (id: string) => {
+                    console.log("DELETE EXTERN: ", id);
+                    const ext = analysis_list.findIndex(k => k.id == id);
+                    if(ext == -1) return;
 
-                // Push for reverification.
-                product_queue.push(external_ref.id);
+                    // Delete Fields...
+                    analysis_list[ext].utilized = null;
+                    analysis_list[ext].chosen_promotion = null;
 
-                // Applied later, must check if affects another external source...
-            }
+                    // Push into queue
+                    product_queue.push(id);
+                    
+                    if(analysis_list[ext].utilized != null && analysis_list[ext]!.utilized!.utilizer !== null) 
+                        delete_and_push(analysis_list[ext]!.utilized!.utilizer)
+                }
+
+                delete_and_push(external_ref.id);
+            }else should_apply = false;
         }
 
-        if(optimal_promotion) {
-            console.log("TO APPLY: ", optimal_promotion);
-
+        if(optimal_promotion && should_apply) {
             if(external_source_id != null) {
                 const external_indx = analysis_list.findIndex(k => k.id == external_source_id);
                 analysis_list[indx_of].is_joined = true;
