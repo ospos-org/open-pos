@@ -405,7 +405,7 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
     
                 // Find an appropriate external source by checking those remaining in the queue
                 product_queue.map(ref => {
-                    const indx_of_other = analysis_list.findIndex(k => k.id == ref && k.utilized == null && !k.is_joined);
+                    const indx_of_other = analysis_list.findIndex(k => k.id !== point.id && k.id == ref && k.utilized == null && !k.is_joined);
                     if(indx_of_other == -1) return;
 
                     const val = analysis_list[indx_of_other];
@@ -444,7 +444,7 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                                     external_source_id = val.id;
                                 }
                             }else if(optimal_promotion && optimal_promotion[0].get.Any) {
-                                console.log("Matching Any?", optimal_promotion[0].get);
+                                console.log("Matching Any?", products.find(b => b.variant_information.barcode == val.reference_field.barcode)?.product.name, optimal_promotion[0].get);
 
                                 external_source_id = val.id;
                             }else if(optimal_promotion && optimal_promotion[0].get.Specific ) {
@@ -477,6 +477,8 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
         if(optimal_promotion != null && (point.utilized != null || point.is_joined)) { // && !point.is_joined
             const external_indx = analysis_list.findIndex(k => k.id == point.utilized?.utilizer);
+            if(external_indx == -1) break;
+
             const external_ref = analysis_list[external_indx];
             
             // If the current promotion provides a greater saving than the external, replace.
@@ -535,82 +537,4 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
     console.log("Analysis", [...analysis_list.map(k => k.chosen_promotion)]);
     return analysis_list;
-
-    // Reformat Analysis List back to products.
-    // const reformatted = products.map(b => {
-    //     const ref = b.variant_information.barcode;
-        
-    //     const a_index = analysis_list.filter(k => k.reference_field.barcode == ref);
-
-    //     const promotions: ({
-    //         promotion: {
-    //             external: boolean;
-    //             promotion: Promotion;
-    //             saving: number;
-    //         } | null;
-    //         applicable_variations: number;
-    //     } | null)[] = a_index.map(an => {
-    //         return {
-    //             promotion: an.chosen_promotion,
-    //             applicable_variations: 1
-    //         }
-    //     })
-
-    //     console.log("Merge with ", [...promotions]);
-        
-    //     const refiltered_promotions = promotions.map((b, idx) => {
-    //         let indexes = promotions.map((k, i) => { 
-    //             if(i !== idx) return i;
-    //             else return null;
-    //         });
-
-    //         function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
-    //             return value !== null && value !== undefined;
-    //         }
-            
-    //         const unduped_indexes: number[] = indexes.filter(notEmpty);
-            
-    //         let total = unduped_indexes.length+1;
-    //         if(unduped_indexes.length > 0) {
-    //             // Merge all quantities
-    //             unduped_indexes.map(b => {
-    //                 promotions[b] = null;
-    //             });
-    //         }
-
-    //         return {
-    //             ...b,
-    //             applicable_variations: total 
-    //         }
-    //     }).filter(b => b);
-
-    //     const discounts = refiltered_promotions.map(a_index => {
-    //         if(a_index && a_index.promotion != null) {
-    //             console.log("Disc", {
-    //                 source: "promotion",
-    //                 value: discountFromPromotion(a_index.promotion!.promotion),
-    //                 promotion: a_index.promotion!.promotion
-    //             }, a_index.applicable_variations)
-
-    //             return {
-    //                 source: "promotion",
-    //                 value: discountFromPromotion(a_index.promotion!.promotion),
-    //                 promotion: a_index.promotion!.promotion,
-    //                 applicable_quantity: a_index?.applicable_variations
-    //             }
-    //         }else return null;
-    //     }).filter(b => b);
-
-    //     if(discounts.length > 0) {
-    //         return {
-    //             ...b,
-    //             discount: [
-    //                 ...b.discount,
-    //                 ...discounts
-    //             ]
-    //         }
-    //     }else return b;
-    // });
-
-    // return reformatted;
 }
