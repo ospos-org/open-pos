@@ -152,21 +152,21 @@ export default function KioskMenu({
                             debouncedResults(e.target.value, searchType);
                         }}
                             onFocus={(e) => {
-                            setSearchFocused(true)
+                                setSearchFocused(true)
                                 debouncedResults(e.target.value, searchType);
-                        }}
+                            }}
                             tabIndex={0}
                             // onBlur={() => setSearchFocused(false)}
                             onKeyDown={(e) => {
-                            if(e.key == "Escape") {
-                                e.preventDefault();
-                                setSearchFocused(false)
-                                e.currentTarget.blur()
-                            }
-                        }}
+                                if(e.key == "Escape") {
+                                    e.preventDefault();
+                                    setSearchFocused(false)
+                                    e.currentTarget.blur()
+                                }
+                            }}
                         />
 
-                        <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0">
+                        <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0 select-none">
                             <Image draggable={false} onClick={() => {
                                 setResult([]);
                                 setSearchType("product");
@@ -191,11 +191,11 @@ export default function KioskMenu({
                         </div>
 
                         {
-                        searchFocused ? 
-                        <Image width="20" height="20" src="/icons/x.svg" alt={''} draggable={false} onClick={() => setSearchFocused(false)}></Image>
-                        :
-                        <Image width="20" height="20" src="/icons/scan.svg" draggable={false} alt={''}></Image>
-                    }
+                            searchFocused ? 
+                            <Image className="select-none" width="20" height="20" src="/icons/x.svg" alt={''} draggable={false} onClick={() => setSearchFocused(false)}></Image>
+                            :
+                            <Image className="select-none" width="20" height="20" src="/icons/scan.svg" draggable={false} alt={''}></Image>
+                        }
                     </div>
                 </div>
 
@@ -956,7 +956,7 @@ export default function KioskMenu({
                                             setCustomerState(null)
                                         }}
                                     >
-                                        <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
+                                        <Image className="select-none" width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
                                         <p className="font-medium select-none">Remove Customer</p>
                                     </div>
                                     :
@@ -969,7 +969,7 @@ export default function KioskMenu({
                                             input_ref.current?.focus()
                                         }}
                                     >
-                                        <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                        <Image className="select-none" width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
                                         <p className="font-medium select-none">Select Customer</p>
                                     </div>
                                 }
@@ -1014,8 +1014,8 @@ export default function KioskMenu({
                                         })
                                     }}
                                     className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
-                                    <p className="font-medium">Add Cart Discount</p>
+                                    <Image className="select-none" width="25" height="25" src="/icons/sale-03.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
+                                    <p className="font-medium select-none">Add Cart Discount</p>
                                 </div>
         
                                 <div 
@@ -1023,8 +1023,8 @@ export default function KioskMenu({
                                         setPadState("ship-to-customer")
                                     }}
                                     className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
+                                    <Image className="select-none" width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                    <p className={`select-none ${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
                                 </div>
         
                                 <div 
@@ -1032,8 +1032,8 @@ export default function KioskMenu({
                                         setPadState("note")
                                     }}
                                     className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                    <p className="font-medium">Add Note</p>
+                                    <Image className="select-none" width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
+                                    <p className="font-medium select-none">Add Note</p>
                                 </div>
         
                                 <div 
@@ -1041,8 +1041,8 @@ export default function KioskMenu({
                                         setPadState("pickup-from-store")
                                     }}
                                     className={`flex flex-col justify-between gap-8 ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image width="25" height="25" src="/icons/building-02.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className={`${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
+                                    <Image className="select-none" width="25" height="25" src="/icons/building-02.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                    <p className={`select-none ${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
                                 </div>
         
                                 <div 
@@ -1050,8 +1050,8 @@ export default function KioskMenu({
                                         parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
                                     }}
                                     className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md  max-w-fit cursor-pointer`}>
-                                    <Image width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className="font-medium">Save Cart</p>
+                                    <Image className="select-none" width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                    <p className="font-medium select-none">Save Cart</p>
                                 </div>
                             </div>
                     }

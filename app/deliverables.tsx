@@ -31,16 +31,16 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                         deliverables.length <= 0 ?
                         <p className="text-gray-400">No Deliverables</p>
                         :
-                        <div>
+                        <div className="flex flex-col">
                             {
-                                JSON.stringify(deliverables)
-                                // deliverables.map(b => {
-                                //     return (
-                                //         <div>
-                                //             {b.id}
-                                //         </div>
-                                //     )
-                                // })
+                                deliverables.map(b => {
+                                    return (
+                                        <div className="border-gray-400 border-[2px] rounded-md">
+                                            {b.reference}
+                                            {/* {b.id} */}
+                                        </div>
+                                    )
+                                })
                             }
                         </div>
                     }

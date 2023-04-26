@@ -278,7 +278,7 @@ export default function CartMenu({
                                     orderInfo?.state.length !== 1 ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                             <div className="flex flex-col gap-1">
-                                                <div className="flex flex-row items-center gap-2">
+                                                <div className="flex flex-row items-center gap-2 select-none">
                                                     {
                                                         n.order_type == "Pickup" ?
                                                         <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
@@ -320,7 +320,7 @@ export default function CartMenu({
                                         orderInfo.state[0].order_type !== "Direct" ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                 <div className="flex flex-col gap-1">
-                                                    <div className="flex flex-row items-center gap-2">
+                                                    <div className="flex flex-row items-center gap-2 select-none">
                                                         {
                                                             n.order_type == "Pickup" ?
                                                             <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
@@ -539,7 +539,7 @@ export default function CartMenu({
                                                                     exclusive: false
                                                                 })
                                                             }}
-                                                            style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
+                                                            style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="select-none rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
                                                             onMouseOver={(e) => {
                                                                 e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
                                                             }}

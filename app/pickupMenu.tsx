@@ -45,7 +45,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const matches: Store[] = pickupStores ? pickupStores.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
+            const matches: Store[] = master_state.store_lut ? master_state.store_lut.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
 
             setSuggestions(matches);
             setLoading(false);
@@ -60,7 +60,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
 
     useEffect(() => {
         setPickupStores(master_state.store_lut)
-        setPickupStore(master_state.store_lut.find(k => k.id == master_state.store_id))
+        setPickupStore(master_state?.store_lut?.find(k => k.id == master_state.store_id))
 
         console.log(master_state.store_lut, master_state.store_id)
 
@@ -243,7 +243,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                 onClick={async () => {
                                                     if(generatedOrder.length < 1) return 
                                                     
-                                                    let inverse_order: { store: string, items: ProductPurchase[], type: "Direct" | "Shipment" | "Pickup" }[] = [];
+                                                    let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "Direct" | "Shipment" | "Pickup" }[] = [];
 
                                                     generatedOrder.map(k => {
                                                         const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Pickup" : k.ship && k.store != currentStore ? "Shipment" : "Direct"));
@@ -253,6 +253,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                         } else if(k.item) {
                                                             inverse_order.push({
                                                                 store: k.store,
+                                                                store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
                                                                 items: [ { ...k.item, quantity: k.quantity } ],
                                                                 type: k.ship ? "Pickup" : k.ship && k.store != currentStore ? "Shipment" : "Direct"
                                                             })
@@ -266,17 +267,17 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             redirect: "follow"
                                                         })).json();
 
-                                                        console.log("For store", pickupStore);
+                                                        console.log("For store", pickupStore, k);
 
                                                         return {
                                                             id: v4(),
                                                             destination: k.type == "Pickup" ? {
-                                                                store_code: pickupStore?.store_code,
-                                                                store_id: pickupStore?.store_id,
+                                                                store_code: pickupStore?.code,
+                                                                store_id: pickupStore?.id,
                                                                 contact: pickupStore?.contact!
                                                             } : { code: "000", contact: customerState?.contact },
                                                             origin:  {
-                                                                store_code: k.store,
+                                                                store_code: k.store_code,
                                                                 store_id: k.store,
                                                                 contact: data.contact 
                                                             },
@@ -292,7 +293,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             status_history: [],
                                                             order_history: [],
                                                             order_notes: orderState.map(b => b.order_notes).flat(),
-                                                            reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                            reference: `PU${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                             creation_date: getDate(),
                                                             discount: "a|0",
                                                             order_type: k.type

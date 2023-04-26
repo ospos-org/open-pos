@@ -325,7 +325,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         status_history: [],
                                                         order_history: [],
                                                         order_notes: orderState.map(b => b.order_notes).flat(),
-                                                        reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                        reference: `DP${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                         creation_date: getDate(),
                                                         discount: "a|0",
                                                         order_type: k.type

@@ -375,18 +375,18 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
     const product_queue = [...analysis_list.map(b => b.id)];
 
-    console.log("---")
-    console.log(product_queue, analysis_list);
+    //console.log("---")
+    //console.log(product_queue, analysis_list);
 
     while(product_queue.length > 0) {
         const elem = product_queue.pop();
         const indx_of = analysis_list.findIndex(k => k.id == elem);
 
-        console.log(product_queue, elem, indx_of);
+        //console.log(product_queue, elem, indx_of);
 
         let point = analysis_list[indx_of];
 
-        console.log("Investigating: ", { ...point });
+        //console.log("Investigating: ", { ...point });
 
         if(!point) continue;
 
@@ -394,9 +394,9 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
         let optimal_promotion: [Promotion, number] | null = point.promotion_sim[0];
         let external_source_id: string | null = null;
 
-        console.log("--- WITH: ", products.find(b =>
-            b.variant_information.barcode == point.reference_field.barcode
-        ), point)
+        //console.log("--- WITH: ", products.find(b =>
+            // b.variant_information.barcode == point.reference_field.barcode
+        // ), point)
 
         while(true) {
             if(optimal_promotion == null) break;
@@ -444,20 +444,20 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                             )
                         )
                             if(optimal_promotion && optimal_promotion[0].get.Category) {
-                                console.log("Matching Category?", optimal_promotion[0].get);
+                                //console.log("Matching Category?", optimal_promotion[0].get);
 
                                 if(val.tags.includes(optimal_promotion[0].get.Category?.[0] ?? "")) {
                                     external_source_id = val.id;
                                 }
                             }else if(optimal_promotion && optimal_promotion[0].get.Any) {
-                                console.log("Matching Any?", products.find(b => b.variant_information.barcode == val.reference_field.barcode)?.product.name, optimal_promotion[0].get);
+                                //console.log("Matching Any?", products.find(b => b.variant_information.barcode == val.reference_field.barcode)?.product.name, optimal_promotion[0].get);
 
                                 external_source_id = val.id;
                             }else if(optimal_promotion && optimal_promotion[0].get.Specific ) {
                                 const product_ref = products.findIndex(b => b.variant_information.barcode == val.reference_field.barcode);
         
                                 if(product_ref !== -1) {
-                                    console.log("Matching Specific?", products[product_ref], optimal_promotion[0].get);
+                                    //console.log("Matching Specific?", products[product_ref], optimal_promotion[0].get);
 
                                     if(products[product_ref].product_sku == optimal_promotion[0].get.Specific[0]) {
                                         // Has the *specific* product in cart
@@ -495,7 +495,7 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
                 // Recursively delete and push
                 const delete_and_push = (id: string) => {
-                    console.log("DELETE EXTERN: ", id);
+                    //console.log("DELETE EXTERN: ", id);
                     const ext = analysis_list.findIndex(k => k.id == id);
                     if(ext == -1) return;
 
@@ -542,15 +542,15 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
             };
             point.utilized = null;
 
-            console.log("optimal: ", point);
+            //console.log("optimal: ", point);
         }else {
-            console.log("no optimal promotion?")
+            //console.log("no optimal promotion?")
         }
         
         analysis_list[indx_of] = point;
-        console.log("EOL:", JSON.parse(JSON.stringify( analysis_list )));
+        //console.log("EOL:", JSON.parse(JSON.stringify( analysis_list )));
     }
 
-    console.log("Analysis", [...analysis_list.map(k => k.chosen_promotion)]);
+    //console.log("Analysis", [...analysis_list.map(k => k.chosen_promotion)]);
     return analysis_list;
 }

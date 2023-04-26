@@ -234,6 +234,8 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     
             const data: { product: any, promotions: any[] }[] = await fetchResult.json();
 
+            console.log(data);
+
             if(data.length == 1 && searchType == "product") {
                 const e: Product = data[0].product;
 
