@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MasterState, Order } from "./stock-types";
 import { OPEN_STOCK_URL } from "./helpers";
+import moment from "moment";
 
 export default function Deliverables({ master_state }: { master_state: MasterState }) {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
@@ -36,8 +37,11 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                                 deliverables.map(b => {
                                     return (
                                         <div className="border-gray-400 border-[2px] rounded-md">
-                                            {b.reference}
-                                            {/* {b.id} */}
+                                            <p>{b.reference}</p>
+                                            <p>{b.products.map(k => k.product_name).join(', ')}</p> {/* Cut this off with elipsis */}
+
+                                            <p>{moment(b.status.timestamp).format('D/MM/yy')}</p>
+                                            <p>{moment(b.status.timestamp).fromNow()}</p>
                                         </div>
                                     )
                                 })
