@@ -100,9 +100,16 @@ export default function App() {
 		})
 	}
 
+	const [ demoOverride, setDemoOverride ] = useState(false);
+
 	// Handle user authentication and pass it to child elements.
 	useEffect(() => {
-		if(codeInput[codeInput.length-1] != "") {
+		if(process.env.NEXT_PUBLIC_DEMO == "True" && demoOverride == false) {
+			setCodeInput(["1","2","3","2","1","2","3","2"])
+			setDemoOverride(true)
+		}
+
+		if(codeInput[codeInput.length-1] != "" || process.env.NEXT_PUBLIC_DEMO == "True") {
 			const copy = [ ...codeInput ];
 			const code_string = copy.join("");
 
