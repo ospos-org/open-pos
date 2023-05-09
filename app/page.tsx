@@ -146,7 +146,7 @@ export default function App() {
 
 					{
 						process.env.NEXT_PUBLIC_DEMO?.trim() == "True" ? 
-							<p className="text-xs text-white font-bold hidden sm:flex">OPENPOS</p> 
+							<p className="text-xs text-white font-bold hidden sm:flex">DEMO</p> 
 						: 
 							<></>
 					}
