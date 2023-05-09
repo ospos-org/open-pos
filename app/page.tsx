@@ -127,7 +127,7 @@ export default function App() {
 
     return (
             <div className="flex flex-col max-h-screen overflow-hidden">
-                <div className="bg-black h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0">
+                <div className={`${process.env.NEXT_PUBLIC_DEMO == "True" ? "bg-[#f70]" : "bg-black"} h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0`}>
                     <div className="flex flex-row gap-2 items-center" onClick={() => {
                         setUser(null);
                         setCodeInput(["","","","","","","",""])
@@ -138,7 +138,7 @@ export default function App() {
                                     <p className="text-xs text-white font-bold">{user?.name?.first?.toUpperCase()} {user?.name?.last?.toUpperCase()}</p>
                                 </div>
                             :
-                                <p className="text-xs text-white font-bold hidden sm:flex">OPENPOS</p>
+                                <p className="text-xs text-white font-bold hidden sm:flex">OPENPOS{process.env.NEXT_PUBLIC_DEMO == "True" ? "-DEMO" : <></>}</p>
                         }
                     </div>
 
