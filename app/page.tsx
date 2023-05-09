@@ -109,6 +109,8 @@ export default function App() {
 			setDemoOverride(true)
 		}
 
+		console.log("DEMO STATUS", process.env.NEXT_PUBLIC_DEMO)
+
 		if(codeInput[codeInput.length-1] != "" || process.env.NEXT_PUBLIC_DEMO == "True") {
 			const copy = [ ...codeInput ];
 			const code_string = copy.join("");
