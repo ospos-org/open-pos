@@ -247,6 +247,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tanstack/react-table@npm:^8.9.1":
+  version: 8.9.1
+  resolution: "@tanstack/react-table@npm:8.9.1"
+  dependencies:
+    "@tanstack/table-core": 8.9.1
+  peerDependencies:
+    react: ">=16"
+    react-dom: ">=16"
+  checksum: 16d044c382598aad3c984d8e175183c5fd48093249dfb51ee592d2f1bb16e253aa437e0834bf9d27d69043493feeb22a5185b3226c704b99e13c45950cb82141
+  languageName: node
+  linkType: hard
+
+"@tanstack/table-core@npm:8.9.1":
+  version: 8.9.1
+  resolution: "@tanstack/table-core@npm:8.9.1"
+  checksum: b9a514cfeb78b2ebece5116188ab929d0b0b72b6abfe6144c2b1dd68e32faafba5295b2b5dfefa9d3a0cf78dd0f20e7c313ff2dbdf013ee98232e856a549654f
+  languageName: node
+  linkType: hard
+
 "@tootallnate/once@npm:2":
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
@@ -841,6 +860,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"class-variance-authority@npm:^0.6.0":
+  version: 0.6.0
+  resolution: "class-variance-authority@npm:0.6.0"
+  dependencies:
+    clsx: 1.2.1
+  peerDependencies:
+    typescript: ">= 4.5.5 < 6"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: c86fe9d208b33afbd82e3349739f8be9bfceb17e78f2ee689039029de016c5547883b41ac8ab69630f433cf4d4c9159a3c82072e9d8b7225f63cd31c01d6c9b8
+  languageName: node
+  linkType: hard
+
 "clean-stack@npm:^2.0.0":
   version: 2.2.0
   resolution: "clean-stack@npm:2.2.0"
@@ -852,6 +885,13 @@ __metadata:
   version: 0.0.1
   resolution: "client-only@npm:0.0.1"
   checksum: 0c16bf660dadb90610553c1d8946a7fdfb81d624adea073b8440b7d795d5b5b08beb3c950c6a2cf16279365a3265158a236876d92bce16423c485c322d7dfaf8
+  languageName: node
+  linkType: hard
+
+"clsx@npm:1.2.1, clsx@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "clsx@npm:1.2.1"
+  checksum: 30befca8019b2eb7dbad38cff6266cf543091dae2825c856a62a8ccf2c3ab9c2907c4d12b288b73101196767f66812365400a227581484a05f968b0307cfaf12
   languageName: node
   linkType: hard
 
@@ -2514,6 +2554,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lucide-react@npm:^0.216.0":
+  version: 0.216.0
+  resolution: "lucide-react@npm:0.216.0"
+  peerDependencies:
+    react: ^16.5.1 || ^17.0.0 || ^18.0.0
+  checksum: 217bc7ba6cf79f0873520e2ac755b787fb71609d2cb73a2a8325f081b96555bd529cdec292c426231df7b11fe7cab20400cbbe0f4d9940db63cc8f65d284071e
+  languageName: node
+  linkType: hard
+
 "make-dir@npm:^3.0.2, make-dir@npm:^3.1.0":
   version: 3.1.0
   resolution: "make-dir@npm:3.1.0"
@@ -2966,17 +3015,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "open-pos@workspace:."
   dependencies:
+    "@tanstack/react-table": ^8.9.1
     "@types/lodash": ^4.14.191
     "@types/node": 18.11.10
     "@types/react": 18.0.25
     "@types/react-dom": 18.0.9
     "@types/uuid": ^9.0.0
     autoprefixer: ^10.4.13
+    class-variance-authority: ^0.6.0
+    clsx: ^1.2.1
     eslint: 8.28.0
     eslint-config-next: 13.0.6
     fs: ^0.0.1-security
     https: ^1.0.0
     lodash: ^4.17.21
+    lucide-react: ^0.216.0
     moment: ^2.29.4
     nanoid: ^4.0.0
     next: 13.0.6
@@ -2985,7 +3038,9 @@ __metadata:
     react-barcode-reader: ^0.0.2
     react-dom: 18.2.0
     react-feather: ^2.0.10
+    tailwind-merge: ^1.12.0
     tailwindcss: ^3.2.4
+    tailwindcss-animate: ^1.0.5
     typescript: 4.9.3
     url: ^0.11.0
     use-key: ^1.0.1
@@ -3832,6 +3887,22 @@ __metadata:
     "@pkgr/utils": ^2.3.1
     tslib: ^2.4.0
   checksum: 83e054fe4494dab42114fc4ed36a11b85e18742d304ade3f40d3afb4ba4145d76183adba1f29e2c36e9a0a453b93a83e2387505f96a0efd901f562927a968c44
+  languageName: node
+  linkType: hard
+
+"tailwind-merge@npm:^1.12.0":
+  version: 1.12.0
+  resolution: "tailwind-merge@npm:1.12.0"
+  checksum: 5ef323eec1051c4aa9626e29498f6c058dbbb242ca8156aa298de41ada3eda05a8f5f1260a57112c155f63b2e94c4b4ccab5386d60fae54de07aac6d9dbc60e4
+  languageName: node
+  linkType: hard
+
+"tailwindcss-animate@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "tailwindcss-animate@npm:1.0.5"
+  peerDependencies:
+    tailwindcss: "*"
+  checksum: 6b558f85a6af0780f018e1d23736d56dd59795f051df413bc2cf2fc2a021d6b1a3b78066f93e1045f3a39c11ee191c728db79e606d9a1def07fdf6a10f045312
   languageName: node
   linkType: hard
 
