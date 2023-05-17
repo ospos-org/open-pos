@@ -66,6 +66,7 @@ export default function KioskMenu({
    
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
+    const window_size = useWindowSize();
 
     useKey({
         'Escape': () => { 
@@ -245,7 +246,7 @@ export default function KioskMenu({
                                                                     setActiveVariant(vmap_list[0]);
                                                                     setActiveProductVariant(e.variants[0]);
                                                                 }}>
-                                                                    <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 1536 ? "50px minmax(180px, 1fr) 225px 100px" : "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
+                                                                    <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 1536 ? (windowSize?.width ?? 0) < 640 ? "50px 1fr 0px 75px" : "50px minmax(180px, 1fr) 225px 100px" : "50px minmax(200px, 1fr) minmax(300px, 2fr) 250px 125px" }}>
                                                                         <Image height={50} width={50} alt="" src={e.images[0]} className="rounded-sm"></Image>
 
                                                                         <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
@@ -255,8 +256,8 @@ export default function KioskMenu({
 
                                                                         <div className="hidden 2xl:flex flex-row items-center gap-2 flex-1 flex-wrap ">
                                                                             {
-                                                                            e.variant_groups.map(e => {
-                                                                                return (
+                                                                                e.variant_groups.map(e => {
+                                                                                    return (
                                                                                         <div key={e.category} className="bg-gray-600 flex flex-row items-center py-1 px-2 rounded-md gap-2 max-h-fit">
                                                                                             <p>{e.category}s </p>
 
@@ -268,9 +269,9 @@ export default function KioskMenu({
                                                                                             }
                                                                                             </div>
                                                                                         </div>
-                                                                                        )
-                                                                            })
-                                                                        }
+                                                                                    )
+                                                                                })
+                                                                            }
                                                                         </div>
 
                                                                         <div className="flex-1">
@@ -303,17 +304,17 @@ export default function KioskMenu({
                                                                                 }, 0);
 
                                                                                 return (
-                                                                                        <div className="flex flex-row items-center gap-2">
-                                                                                            {
-                                                                                            total_stock_in_store <= 0 ? 
-                                                                                            <p className="text-red-300 font-semibold">Out of stock</p>
-                                                                                            :
-                                                                                            <p>{total_stock_in_store} instore,</p>
-                                                                                        }
+                                                                                    <div className="hidden md:flex flex-row items-center gap-2">
+                                                                                        {
+                                                                                        total_stock_in_store <= 0 ? 
+                                                                                        <p className="text-red-300 font-semibold">Out of stock</p>
+                                                                                        :
+                                                                                        <p>{total_stock_in_store} instore,</p>
+                                                                                    }
 
-                                                                                            <p className="text-gray-400">{total_stock - total_stock_in_store} in other stores</p>
-                                                                                        </div>
-                                                                                        )
+                                                                                        <p className="text-gray-400">{total_stock - total_stock_in_store} in other stores</p>
+                                                                                    </div>
+                                                                                )
                                                                             })()
                                                                         }
                                                                         </div>
@@ -323,19 +324,19 @@ export default function KioskMenu({
                                                                             (() => {
                                                                                 const flat_map = e.variants.map(k => 
                                                                                     k.retail_price
-                                                                                    );
+                                                                                );
 
                                                                                 const min_total = Math.min(...flat_map);
                                                                                 const max_total = Math.max(...flat_map);
 
                                                                                 if(max_total == min_total) {
                                                                                     return (
-                                                                                            <p>${(max_total * 1.15).toFixed(2)}</p>
-                                                                                            )
+                                                                                        <p>${(max_total * 1.15).toFixed(2)}</p>
+                                                                                    )
                                                                                 }else {
                                                                                     return (
-                                                                                            <p>${(min_total * 1.15).toFixed(2)}-{(max_total * 1.15).toFixed(2)}</p>
-                                                                                            )
+                                                                                        <p>${(min_total * 1.15).toFixed(2)}-{(max_total * 1.15).toFixed(2)}</p>
+                                                                                    )
                                                                                 }
                                                                             })()
                                                                         }
@@ -343,8 +344,8 @@ export default function KioskMenu({
                                                                     </div>
 
                                                                     {
-                                                                    (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
-                                                                }
+                                                                        (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
+                                                                    }
                                                                 </div>
                                                                 )
                                                     })
@@ -374,43 +375,46 @@ export default function KioskMenu({
                                                                     }
                                                                 }}
                                                                     >
-                                                                    <div className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 100px 150px" : `0.25fr 1fr 150px` }}>
+                                                                    <div className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 250px" : `1fr 100px` }}>
                                                                         <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                                                             <p>{e.name}</p>
                                                                             <p className="text-sm text-gray-400">{e?.transactions?.split(",")?.length > 0 ? e?.transactions?.split(",")?.length : "No"} Past Order{e?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
                                                                         </div>
 
                                                                         {
-                                                                        (windowSize.width ?? 0) < 640 ?
-                                                                        <></>
-                                                                        :
-                                                                        <div className="flex 2xl:flex-row flex-col items-center 2xl:gap-4 flex-1">
-                                                                            <p>({e.contact.mobile.region_code}) {
-                                                                                (() => {
-                                                                                    const k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
-                                                                                    if(!k) return ""
-                                                                                    return `${k[1]} ${k[2]} ${k[3]}`
-                                                                                })()
-                                                                            }</p>
-                                                                            <p>{e.contact.email.full}</p>
+                                                                            (windowSize.width ?? 0) < 640 ?
+                                                                            <></>
+                                                                            :
+                                                                            <div className="flex 2xl:flex-row flex-col items-center 2xl:gap-4 flex-1">
+                                                                                <p>({e.contact.mobile.region_code}) {
+                                                                                    (() => {
+                                                                                        const k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                                                        if(!k) return ""
+                                                                                        return `${k[1]} ${k[2]} ${k[3]}`
+                                                                                    })()
+                                                                                }</p>
+                                                                                <p>{e.contact.email.full}</p>
+                                                                            </div>
+                                                                        }
+                                                                        
+                                                                        <div className="flex flex-col md:flex-row items-center">
+                                                                            <p className="text-gray-400 flex flex-1 self-center items-center justify-self-center justify-center text-center">${e.balance} Credit</p>
+
+                                                                            <p
+                                                                                onClick={(v) => {
+                                                                                v.preventDefault();
+
+                                                                                setCustomerState(e);
+                                                                                setSearchFocused(false);
+                                                                                setSearchType("product");
+                                                                                setResult([]);
+
+                                                                                input_ref.current?.value ? input_ref.current.value = "" : {};
+                                                                            }}
+                                                                                id="assign-to-cart"
+                                                                                className="whitespace-nowrap justify-self-end pr-4">Assign to cart</p>
                                                                         </div>
-                                                                    }
-
-                                                                        <p className="text-gray-400 flex flex-1 self-center items-center justify-self-center justify-center text-center">${e.balance} Credit</p>
-
-                                                                        <p
-                                                                            onClick={(v) => {
-                                                                            v.preventDefault();
-
-                                                                            setCustomerState(e);
-                                                                            setSearchFocused(false);
-                                                                            setSearchType("product");
-                                                                            setResult([]);
-
-                                                                            input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                                        }}
-                                                                            id="assign-to-cart"
-                                                                            className="whitespace-nowrap justify-self-end pr-4">Assign to cart</p>
+                                                                        
                                                                     </div>
 
                                                                     {
@@ -581,15 +585,17 @@ export default function KioskMenu({
                         activeProduct ? 
                             <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
                                 <div className="flex flex-row items-start gap-4">
-                                    <Image src={activeProductVariant?.images?.[0] ?? activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
+                                    <div className="flex flex-col md:flex-row items-start h-full flex-1 gap-2">
+                                        <div className="pr-4">
+                                            <Image src={activeProductVariant?.images?.[0] ?? activeProduct.images[0]} className="rounded-md" height={150} width={150} alt={activeProduct.name}></Image>
+                                        </div>
 
-                                    <div className="flex flex-row items-start h-full justify-between flex-1">
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col flex-1">
                                             <h2 className="text-xl font-medium">{activeProduct.name}</h2>
                                             <p className="text-gray-400">{activeProduct.company}</p>
                                             <br />
 
-                                            <div className="flex 2xl:flex-col flex-row justify-between gap-4 w-full flex-1">
+                                            <div className="flex 2xl:flex-col md:flex-row flex-col justify-between gap-4 w-full flex-1">
                                                 <div className="flex flex-col 2xl:flex-row 2xl:gap-4 2xl:items-center">
                                                     <div className="flex flex-row items-center gap-4">
                                                         <p className="text-gray-400">SKU:</p>
@@ -606,7 +612,7 @@ export default function KioskMenu({
                                                 </div>
 
                                                 <div>
-                                                    <div className="flex flex-col items-end 2xl:flex-row 2xl:items-center gap-2">
+                                                    <div className="flex flex-col items-start md:items-end 2xl:flex-row 2xl:items-center gap-2">
                                                         {
                                                             ((activeProductVariant?.stock.find(e => e.store.store_id == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
@@ -692,10 +698,9 @@ export default function KioskMenu({
                                             </div>
 
                                             <div 
-                                            
                                                 className={`select-none flex flex-col cursor-pointer justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                 <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                                <p className="font-medium">Show Related Orders</p>
+                                                <p className="font-medium">Related Orders</p>
                                             </div>
                                         </div>
                                     </div>
@@ -899,11 +904,11 @@ export default function KioskMenu({
                                                     }}
                                                     className={`select-none flex flex-col cursor-pointer justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                     <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
-                                                    <p className="font-medium">Show Related Orders</p>
+                                                    <p className="font-medium">Related Orders</p>
                                                 </div>
                                             </div>
-
                                         </div>
+
                                         <div className="flex flex-col gap-2">
                                             <p className="text-sm text-gray-400">ALL VARIANTS</p>
 
@@ -922,15 +927,18 @@ export default function KioskMenu({
                                                                         setActiveVariant(variant);
                                                                         setActiveProductVariant(e);
                                                                     }}
-                                                                    className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: "1fr 100px 150px 75px" }}>
+                                                                    className={`grid w-full px-[0.7rem] py-2 rounded-sm cursor-pointer items-center ${active ? "bg-gray-600" : ""}`} style={{ gridTemplateColumns: (window_size.width ?? 0) < 640 ? "1fr 1fr 75px" : "1fr 250px 75px" }}>
                                                                     <p className="flex-1 w-full">{e.name}</p>
+                                                                    
+                                                                    <div className="flex flex-col md:flex-row md:gap-4">
+                                                                        <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>
+                                                                        <p className="text-gray-300">
+                                                                            {
+                                                                                e.stock.map(e => (e.store.store_id == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                            } In other stores
+                                                                        </p>
+                                                                    </div>
 
-                                                                    <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>
-                                                                    <p className="text-gray-300">
-                                                                        {
-                                                                            e.stock.map(e => (e.store.store_id == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
-                                                                        } In other stores
-                                                                    </p>
                                                                     <p >${(e.retail_price * 1.15).toFixed(2)}</p>
                                                                 </div>
 
@@ -1067,16 +1075,11 @@ export default function KioskMenu({
                         )
                     })
                 }
-
-                {
-                    (useWindowSize().width ?? 0) < 640 ?
-                            <div onClick={() => setLowModeCartOn(true)}>
-                                Open Cart
-                            </div>
-                        :
-                            <></>
-                }
             </div>
+
+            {/* <div className="md:hidden flex flex-row bg-black p-2 w-screen text-white">
+                <p onClick={() => setLowModeCartOn(true)}>OC</p>
+            </div> */}
         </div>
     )
 }

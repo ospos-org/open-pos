@@ -21,7 +21,7 @@ import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./help
 import CustomerMenu from "./customerMenu";
 import RelatedOrders from "./relatedMenu";
 
-export default function Kiosk({ master_state }: { master_state: MasterState }) {
+export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
         customer: null,
         transaction_type: "Out",
@@ -295,7 +295,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
     const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
 
     const window_size = useWindowSize();
-    const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
+    
 
     useEffect(() => {
         return () => {
@@ -412,7 +412,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                             )
                         case "inv-transaction":
                             return (
-                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full gap-4">
+                                <div className="bg-gray-900 p-6 flex flex-col h-full gap-4" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
@@ -433,7 +433,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         case "await-debit":
                             // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
                             return (
-                                <div className="bg-blue-500 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full items-center">
+                                <div className="bg-blue-500 p-6 flex flex-col h-full items-center" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer w-full">
                                         <div 
                                             onClick={() => {
@@ -519,7 +519,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                             )
                         case "completed":
                             return (
-                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full gap-4">
+                                <div className="bg-gray-900 p-6 flex flex-col h-full gap-4" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div>
                                         <p className="text-gray-600">{customerState?.name ?? "Guest"}</p>
                                         <p className="text-white font-bold text-2xl">${kioskState.order_total}</p>
@@ -612,7 +612,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                             )
                         case "discount":
                             return (
-                                <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1">
+                                <div className="bg-gray-900 p-6 flex flex-col h-full justify-between flex-1" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
@@ -796,7 +796,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                         case "await-cash":
                             // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
                             return (
-                                <div className="bg-blue-500 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full items-center">
+                                <div className="bg-blue-500 p-6 flex flex-col h-full items-center" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer w-full">
                                         <div 
                                             onClick={() => {
@@ -882,7 +882,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                             )
                         case "note":
                             return (
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
@@ -916,7 +916,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                 customerState ? 
                                 <PickupMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
                                 :
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {
@@ -955,7 +955,7 @@ export default function Kiosk({ master_state }: { master_state: MasterState }) {
                                 customerState ? 
                                 <DispatchMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
                                 :
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
                                         <div 
                                             onClick={() => {

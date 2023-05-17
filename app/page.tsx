@@ -70,6 +70,13 @@ export default function App() {
 	}, [user])
 
 	const [ authCookie, setAuthCookie ] = useState("");
+	const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
+
+	useEffect(() => {
+		setTimeout(function () {
+			window.scrollTo(0, 1);
+		  }, 1000);
+	}, [])
 
 	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
 		fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
@@ -230,7 +237,7 @@ export default function App() {
 					<div className="fixed h-screen mt-[18px] min-h-screen max-h-screen w-screen min-w-full max-w-full bg-gray-800 z-50 flex flex-col items-center justify-center gap-14">
 						<p className="font-mono text-gray-400 font-semibold">LOGIN</p>
 						
-						<div className="flex flex-row items-center gap-4 flex-wrap">
+						<div className="flex flex-row items-center gap-4 flex-wrap max-w-[240px] md:max-w-full">
 							{
 								codeInput.map((k,indx) => {
 									return (((indx == codeInput.length-1 && k == "") || (k == "" && codeInput[indx+1] == "")) && (codeInput[indx-1] !== "" || indx == 0 || indx == codeInput.length)) ? 
@@ -333,9 +340,9 @@ export default function App() {
 				<></>
 			}
 
-			<div className="flex flex-row h-[calc(100vh-18px)] flex-shrink-0">
+			<div className="flex flex-row sm:h-[calc(100vh-18px)] h-[calc(100vh-58px)] flex-shrink-0">
 				{/* Menu Selector */}
-				<div className="bg-gray-900 flex flex-col p-4 h-full justify-between items-center flex-shrink-0">
+				<div className="hidden md:flex bg-gray-900 flex-col p-4 h-full justify-between items-center flex-shrink-0">
 					<div className="flex flex-col h-full gap-12 items-center">
 						{/* Kiosk */}
 						{
@@ -398,7 +405,7 @@ export default function App() {
 						(() => {
 							switch(page) {
 								case 0:
-									return <Kiosk master_state={masterState} />
+									return <Kiosk master_state={masterState} lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn} />
 								case 1:
 									return <Inventory />
 								case 2:
@@ -410,7 +417,7 @@ export default function App() {
 								case 5:
 									return <></>
 								default:
-									return <Kiosk master_state={masterState} />
+									return <Kiosk master_state={masterState} lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn} />
 							}
 						})()
 					}
@@ -418,7 +425,19 @@ export default function App() {
 				</div>
 			</div>
 
+			<div className="md:hidden h-[40px] flex flex-row bg-black p-2 w-screen text-white justify-between">
+				<p className="flex-1 font-bold">OPENPOS</p>
+
+				<Image onClick={() => {
+					{}
+				}} width="20" height="20" src="/icons/menu-01.svg" className="select-none cursor-pointer flex-1" alt={''} draggable={false} />
+
+				<Image onClick={() => {
+					setLowModeCartOn(!lowModeCartOn)
+				}} width="20" height="20" src={ !lowModeCartOn ? "/icons/corner-down-left.svg" : "/icons/corner-down-right.svg"} className="select-none cursor-pointer flex-1" alt={''} draggable={false} />
+				
+                {/* <p onClick={() => (true)}>OC</p> */}
+            </div>
 		</div>
-		
 	)
 }

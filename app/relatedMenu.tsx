@@ -28,7 +28,7 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
     }, [activeProductVariant]);
 
     return (
-        <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto min-w-[550px] max-w-[550px] p-6 flex flex-col h-full justify-between flex-1 gap-8">
+        <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             <div className="flex flex-row justify-between cursor-pointer">
                 <div 
                     onClick={() => {

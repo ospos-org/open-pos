@@ -87,7 +87,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
     }, [orderState])
 
     return (
-        <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
+        <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             <div className="flex flex-col h-full gap-24">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-row justify-between cursor-pointer">
@@ -105,9 +105,9 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
 
                     {
                         hasNegativeStock ?
-                        <div className="flex flex-row justify-between bg-red-900 px-2 pr-4 py-2 rounded-md">
-                            <p className="text-white bg-red-400 px-2 rounded-md">Warning:</p>
-                            <p className="text-white">Cart contains products with negative stock levels</p>
+                        <div className="flex flex-col justify-between bg-red-900 px-2 pr-4 py-2 rounded-md gap-2">
+                            <p className="text-white bg-red-600 px-2 rounded-md font-bold font-mono text-center">WARNING</p>
+                            <p className="text-red-200 p-2">This cart contains products with negative stock levels, proceed with caution.</p>
                         </div>
                         :
                         <></>
@@ -196,7 +196,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center">
+                <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center pb-16">
                     <div 
                         className="flex flex-row items-end gap-2 cursor-pointer"
                         onClick={() => {

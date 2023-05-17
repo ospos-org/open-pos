@@ -174,7 +174,7 @@ export default function CartMenu({
     }, [orderState, customerState])
 
     return (
-        <div className="bg-gray-900 min-w-[550px] max-w-[550px] p-6 flex flex-col h-full">
+        <div className="bg-gray-900 p-6 flex flex-col h-full" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             <div className="flex flex-col gap-4 flex-1 max-h-full">
                 {/* Order Information */}
                 <div className="flex flex-row items-center justify-between max-h-screen overflow-hidden">
@@ -383,37 +383,89 @@ export default function CartMenu({
                                             <div
                                                 key={e.id} className="text-white">
                                                 <div className="flex flex-row items-center gap-4">
-                                                    <div className="relative">
-                                                        <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
+                                                    <div className="flex flex-col md:flex-row items-center md:gap-4 gap-2">
+                                                        <div className="relative">
+                                                            <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
 
-                                                        {
-                                                            n.order_type == "Direct" ?
-                                                                (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
-                                                                >
-                                                                (q_here?.quantity.quantity_sellable ?? 0)
-                                                                ?
-                                                                <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                            {
+                                                                n.order_type == "Direct" ?
+                                                                    (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
+                                                                    >
+                                                                    (q_here?.quantity.quantity_sellable ?? 0)
+                                                                    ?
+                                                                    <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                    :
+                                                                    // e.variant_information.stock.map(e => (e.store.code == master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                    // Determine the accurate representation of a non-diminishing item.
+                                                                    e.variant_information.stock_information.non_diminishing ?
+                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                                    :
+                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
                                                                 :
-                                                                // e.variant_information.stock.map(e => (e.store.code == master_state.store_id) ? 0 : e.quantity.quantity_on_hand).reduce(function (prev, curr) { return prev + curr }, 0)
-                                                                // Determine the accurate representation of a non-diminishing item.
-                                                                e.variant_information.stock_information.non_diminishing ?
-                                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                                                :
-                                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                                            :
-                                                                <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
-                                                        }
-                                                    </div>
+                                                                    <div className="bg-gray-600 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{e.quantity}</div>
+                                                            }
+                                                        </div>
 
-                                                    <div className="flex flex-col gap-2 items-center justify-center">
-                                                        <Image
-                                                            onClick={() => {
-                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
+                                                        <div className="flex flex-row sm:flex-col gap-2 items-center justify-center">
+                                                            <Image
+                                                                onClick={() => {
+                                                                    if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock)) {
+                                                                        const product_list_clone = n.products.map(k => {
+                                                                            if(k.id == e.id) {
+                                                                                return {
+                                                                                    ...k,
+                                                                                    quantity: k.quantity+1
+                                                                                }
+                                                                            }else {
+                                                                                return k
+                                                                            }
+                                                                        })
+
+                                                                        const new_state = {
+                                                                            ...n,
+                                                                            products: product_list_clone
+                                                                        }
+
+                                                                        const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+
+                                                                        setOrderState(sortOrders(new_order ?? []))
+                                                                    }
+                                                                }} 
+                                                                onMouseOver={(v) => {
+                                                                    if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock))
+                                                                        v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                    else 
+                                                                        v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
+                                                                }}
+                                                                onMouseLeave={(v) => {
+                                                                    v.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                }}
+                                                                draggable="false"
+                                                                className="select-none"
+                                                                src={
+                                                                    "/icons/arrow-block-up.svg"
+                                                                } 
+                                                                width="15" height="15" alt={''} style={{ filter: 
+                                                                    (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
+                                                                    <= 
+                                                                    total_stock
+                                                                    // ((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0)) >= total_stock)
+                                                                    ? 
+                                                                    "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
+                                                                    :
+                                                                    "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)" 
+                                                                }} ></Image>
+                                                            <Image
+                                                                onClick={() => {
                                                                     const product_list_clone = n.products.map(k => {
                                                                         if(k.id == e.id) {
-                                                                            return {
-                                                                                ...k,
-                                                                                quantity: k.quantity+1
+                                                                            if(k.quantity <= 1) {
+                                                                                return null;
+                                                                            }else {
+                                                                                return {
+                                                                                    ...k,
+                                                                                    quantity: k.quantity-1
+                                                                                }
                                                                             }
                                                                         }else {
                                                                             return k
@@ -422,87 +474,37 @@ export default function CartMenu({
 
                                                                     const new_state = {
                                                                         ...n,
-                                                                        products: product_list_clone
+                                                                        products: product_list_clone.filter(k => k) as ProductPurchase[]
                                                                     }
 
-                                                                    const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                    // If no products exist anymore.
 
-                                                                    setOrderState(sortOrders(new_order ?? []))
-                                                                }
-                                                            }} 
-                                                            onMouseOver={(v) => {
-                                                                if(!((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= total_stock))
-                                                                    v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                                                else 
-                                                                    v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
-                                                            }}
-                                                            onMouseLeave={(v) => {
-                                                                v.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                            }}
-                                                            draggable="false"
-                                                            className="select-none"
-                                                            src={
-                                                                "/icons/arrow-block-up.svg"
-                                                            } 
-                                                            width="15" height="15" alt={''} style={{ filter: 
-                                                                (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
-                                                                <= 
-                                                                total_stock
-                                                                // ((n.products.reduce((p, k) => p += k.variant_information.barcode == e.variant_information.barcode && isEqual(k.variant, e.variant) ? k.quantity : 0, 0)) >= total_stock)
-                                                                ? 
-                                                                "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
-                                                                :
-                                                                "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)" 
-                                                            }} ></Image>
-                                                        <Image
-                                                            onClick={() => {
-                                                                const product_list_clone = n.products.map(k => {
-                                                                    if(k.id == e.id) {
-                                                                        if(k.quantity <= 1) {
-                                                                            return null;
-                                                                        }else {
-                                                                            return {
-                                                                                ...k,
-                                                                                quantity: k.quantity-1
-                                                                            }
-                                                                        }
+                                                                    if(new_state.products.length <= 0) {
+                                                                        const new_order: Order[] = orderInfo?.state.map(e => e.id == n.id ? null : e)?.filter(b => b) as any as Order[];
+                                                                        setOrderState(sortOrders(new_order ?? []))
                                                                     }else {
-                                                                        return k
+                                                                        const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                        setOrderState(sortOrders(new_order ?? []))
                                                                     }
-                                                                })
-
-                                                                const new_state = {
-                                                                    ...n,
-                                                                    products: product_list_clone.filter(k => k) as ProductPurchase[]
-                                                                }
-
-                                                                // If no products exist anymore.
-
-                                                                if(new_state.products.length <= 0) {
-                                                                    const new_order: Order[] = orderInfo?.state.map(e => e.id == n.id ? null : e)?.filter(b => b) as any as Order[];
-                                                                    setOrderState(sortOrders(new_order ?? []))
-                                                                }else {
-                                                                    const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
-                                                                    setOrderState(sortOrders(new_order ?? []))
-                                                                }
-                                                            }} 
-                                                            draggable="false"
-                                                            className="select-none"
-                                                            onMouseOver={(b) => {
-                                                                b.currentTarget.style.filter = (n.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
-                                                                "invert(50%) sepia(98%) saturate(3136%) hue-rotate(332deg) brightness(94%) contrast(99%)"
-                                                                : 
-                                                                "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                            }}
-                                                            width="15" height="15" src={
-                                                                (n.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
-                                                                "/icons/x-square.svg" 
-                                                                : 
-                                                                "/icons/arrow-block-down.svg"
-                                                            } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                                                                }} 
+                                                                draggable="false"
+                                                                className="select-none"
+                                                                onMouseOver={(b) => {
+                                                                    b.currentTarget.style.filter = (n.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
+                                                                    "invert(50%) sepia(98%) saturate(3136%) hue-rotate(332deg) brightness(94%) contrast(99%)"
+                                                                    : 
+                                                                    "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                }}
+                                                                width="15" height="15" src={
+                                                                    (n.products.find(k => k.id == e.id)?.quantity ?? 1) <= 1 ? 
+                                                                    "/icons/x-square.svg" 
+                                                                    : 
+                                                                    "/icons/arrow-block-down.svg"
+                                                                } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                                                        </div>
                                                     </div>
                                                     
                                                     <div className="flex-1 cursor-pointer"
@@ -527,49 +529,51 @@ export default function CartMenu({
                                                                 <></>
                                                         }
                                                     </div>
+                                                        
+                                                    <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+                                                        <div className="flex flex-row items-center gap-2">
+                                                            <Image 
+                                                                onClick={() => {
+                                                                    setPadState("discount");
+                                                                    setDiscount({
+                                                                        ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false)[0].value),
+                                                                        product: e.variant_information,
+                                                                        for: "product",
+                                                                        exclusive: false
+                                                                    })
+                                                                }}
+                                                                style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="select-none rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
+                                                                onMouseOver={(e) => {
+                                                                    e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
+                                                                }}
+                                                            ></Image>
+                                                        </div>
 
-                                                    <div className="flex flex-row items-center gap-2">
-                                                        <Image 
-                                                            onClick={() => {
-                                                                setPadState("discount");
-                                                                setDiscount({
-                                                                    ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false)[0].value),
-                                                                    product: e.variant_information,
-                                                                    for: "product",
-                                                                    exclusive: false
-                                                                })
-                                                            }}
-                                                            style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="select-none rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
-                                                            onMouseOver={(e) => {
-                                                                e.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                                                            }}
-                                                        ></Image>
-                                                    </div>
+                                                        <div className="min-w-[75px] flex flex-col items-center">
+                                                            {
+                                                                (() => {
+                                                                    const max_disc = findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0];
 
-                                                    <div className="min-w-[75px] flex flex-col items-center">
-                                                        {
-                                                            (() => {
-                                                                const max_disc = findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0];
-
-                                                                return (
-                                                                    applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) == e.variant_information.retail_price ?
-                                                                    <p>${((e.variant_information.retail_price * 1.15) * e.quantity).toFixed(2) }</p>
-                                                                    :
-                                                                    <>
-                                                                        <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(e.variant_information.retail_price * e.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
-                                                                        <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
-                                                                            ${
-                                                                                ((((e.variant_information.retail_price) * e.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(e.quantity, e.discount, e.variant_information.retail_price * 1.15, !(!customerState))).toFixed(2)
-                                                                                // ((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
-                                                                            }
-                                                                        </p>
-                                                                    </>
-                                                                )
-                                                            })()
-                                                        }
+                                                                    return (
+                                                                        applyDiscount(e.variant_information.retail_price, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) == e.variant_information.retail_price ?
+                                                                        <p>${((e.variant_information.retail_price * 1.15) * e.quantity).toFixed(2) }</p>
+                                                                        :
+                                                                        <>
+                                                                            <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(e.variant_information.retail_price * e.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
+                                                                            <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
+                                                                                ${
+                                                                                    ((((e.variant_information.retail_price) * e.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(e.quantity, e.discount, e.variant_information.retail_price * 1.15, !(!customerState))).toFixed(2)
+                                                                                    // ((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
+                                                                                }
+                                                                            </p>
+                                                                        </>
+                                                                    )
+                                                                })()
+                                                            }
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
