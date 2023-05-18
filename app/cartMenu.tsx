@@ -204,7 +204,7 @@ export default function CartMenu({
                             <div 
                                 onClick={() => {
                                     setResult([]); 
-                                    setSearchType("customer");    
+                                    setSearchType("customer");
 
                                     input_ref.current?.value ? input_ref.current.value = "" : {};
                                     input_ref.current?.focus()

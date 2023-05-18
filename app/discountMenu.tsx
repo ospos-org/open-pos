@@ -192,7 +192,7 @@ const DiscountMenu: FC<{ discountGroup: [{
                         })
                     }}
                     className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${discount.value > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
-                    <p className="text-blue-500 font-semibold">Remove Discount</p>
+                    <p className="text-blue-500 font-semibold">Remove</p>
                 </div>
 
                 <div

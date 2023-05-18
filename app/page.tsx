@@ -71,6 +71,7 @@ export default function App() {
 
 	const [ authCookie, setAuthCookie ] = useState("");
 	const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
+	const [ menuOpen, setMenuOpen ] = useState(false);
 
 	useEffect(() => {
 		setTimeout(function () {
@@ -135,8 +136,8 @@ export default function App() {
     const windowSize = useWindowSize();
 
     return (
-            <div className="flex flex-col max-h-screen overflow-hidden">
-                <div className={`${process.env.NEXT_PUBLIC_DEMO?.trim()== "True" ? "bg-[#f70]" : "bg-black"} h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0`}>
+		<div className="flex flex-col max-h-screen overflow-hidden">
+			<div className={`${process.env.NEXT_PUBLIC_DEMO?.trim()== "True" ? "bg-[#f70]" : "bg-black"} h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0`}>
                     <div className="flex flex-row gap-2 items-center" onClick={() => {
                         setUser(null);
                         setCodeInput(["","","","","","","",""])
@@ -230,11 +231,11 @@ export default function App() {
     						<div className="text-xs text-green-500 font-bold">{masterState.store_code}</div>
     					</div>
 				    </div>
-			 </div>
+			</div>
 
 			{
 				!user ? 
-					<div className="fixed h-screen mt-[18px] min-h-screen max-h-screen w-screen min-w-full max-w-full bg-gray-800 z-50 flex flex-col items-center justify-center gap-14">
+					<div className="fixed h-[100dvh] mt-[18px] min-h-[100dvh] max-h-[100dvh] w-screen min-w-full max-w-full bg-gray-800 z-50 flex flex-col items-center justify-center gap-8">
 						<p className="font-mono text-gray-400 font-semibold">LOGIN</p>
 						
 						<div className="flex flex-row items-center gap-4 flex-wrap max-w-[240px] md:max-w-full">
@@ -340,7 +341,7 @@ export default function App() {
 				<></>
 			}
 
-			<div className="flex flex-row sm:h-[calc(100vh-18px)] h-[calc(100vh-58px)] flex-shrink-0">
+			<div className="flex flex-row sm:h-[calc(100dvh-18px)] h-[calc(100dvh-58px)] flex-shrink-0">
 				{/* Menu Selector */}
 				<div className="hidden md:flex bg-gray-900 flex-col p-4 h-full justify-between items-center flex-shrink-0">
 					<div className="flex flex-col h-full gap-12 items-center">
@@ -429,7 +430,7 @@ export default function App() {
 				<p className="flex-1 font-bold">OPENPOS</p>
 
 				<Image onClick={() => {
-					{}
+					setMenuOpen(!menuOpen)
 				}} width="20" height="20" src="/icons/menu-01.svg" className="select-none cursor-pointer flex-1" alt={''} draggable={false} />
 
 				<Image onClick={() => {
@@ -438,6 +439,90 @@ export default function App() {
 				
                 {/* <p onClick={() => (true)}>OC</p> */}
             </div>
+			
+			{
+				menuOpen ? 
+				<div className="absolute bottom-0 mb-[40px] h-[440px] w-screen bg-black text-white h-80px rounded-t-md">
+					<div className="flex flex-col p-8 h-full flex-shrink-0 gap-6">
+						{/* Kiosk */}
+						
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(0)}>
+							{
+								page == 0 ?
+								<Image className="select-none svg cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01-filled.svg" alt="" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} onClick={() => setPage(0)}></Image>
+								:	
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(0)}></Image>
+							}
+
+							<p className={`font-bold ${page == 0 ? "" : "text-gray-300"}`}>Cart</p>
+						</div>
+
+						{/* Inventory / Order Search */}
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(1)}>
+							{
+								page == 1 ?
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}  alt={''} ></Image>
+								:	
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} ></Image>
+							}
+
+							<p className={`font-bold ${page == 1 ? "" : "text-gray-300"}`}>Inventory</p>
+						</div>
+						
+						{/* Job Calender - Place to-do-jobs */}
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(2)}>
+							{
+								page == 2 ?
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''} onClick={() => setPage(2)}></Image>
+								:	
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(2)}></Image>
+							}
+
+							<p className={`font-bold ${page == 2 ? "" : "text-gray-300"}`}>Calender</p>
+						</div>
+						
+
+						{/* Deliverables - Deliveries and Outgoing Orders */}
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(3)}>
+							{
+								page == 3 ?
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right-filled.svg" alt={''} onClick={() => setPage(3)}></Image>
+								:	
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right.svg" alt={''} onClick={() => setPage(3)}></Image>
+							}
+
+							<p className={`font-bold ${page == 3 ? "" : "text-gray-300"}`}>Deliverables</p>
+						</div>
+
+						
+						{/* Incomings - Incoming Orders */}
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(4)}>
+							{
+								page == 4 ?
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right-filled.svg" alt={''} onClick={() => setPage(4)}></Image>
+								:	
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right.svg" alt={''} onClick={() => setPage(4)}></Image>
+							}
+
+							<p className={`font-bold ${page == 4 ? "" : "text-gray-300"}`}>Incomings</p>
+						</div>
+						
+						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(5)}>
+							{
+								page == 5 ?
+								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04-filled.svg" alt={''} onClick={() => setPage(5)}></Image>
+								:	
+								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04.svg" alt={''} onClick={() => setPage(5)}></Image>
+							}
+
+							<p className={`font-bold ${page == 5 ? "" : "text-gray-300"}`}>Settings</p>
+						</div>
+					</div>	
+				</div>
+				:
+				<></>
+			}
+			
 		</div>
 	)
 }
