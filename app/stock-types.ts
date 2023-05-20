@@ -151,6 +151,21 @@ export type Move = {
     contact: ContactInformation
 }
 
+export type FulfillmentStatus = {
+    pick_status: PickStatus,
+    pick_history: History<PickStatus>[],
+    last_updated: string,
+    notes: Note[]
+}
+
+export type History<T> = {
+    item: T,
+    reason: string,
+    timestamp: string
+}
+
+export type PickStatus = "pending" | "picked" | "failed" | "uncertain" | "processing" | "other"
+
 export type ProductPurchase = {
     id: string,
 
@@ -164,7 +179,9 @@ export type ProductPurchase = {
     product_variant_name: string,
 
     quantity: number,
-    transaction_type: TransactionType
+    transaction_type: TransactionType,
+
+    product_fulfillment_status: FulfillmentStatus,
 
     /// Extra information for internal referencing (caching) that should be removed before sending to server
     product: Product,
@@ -185,7 +202,8 @@ export type DbProductPurchase = {
     quantity: number,
     id: string,
 
-    transaction_type: TransactionType
+    transaction_type: TransactionType,
+    product_fulfillment_status: FulfillmentStatus,
 }
 
 export type DiscountValue = {

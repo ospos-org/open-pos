@@ -138,7 +138,14 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
 
                     product: product,
                     variant_information: variant ?? product.variants[0],
-                    active_promotions: promotions
+                    active_promotions: promotions,
+
+                    product_fulfillment_status: {
+                        pick_status: "pending",
+                        pick_history: [],
+                        last_updated: getDate(),
+                        notes: []
+                    }
                 };
     
                 new_order_products_state = [ ...orderProducts, po ]
@@ -162,7 +169,14 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
 
                 product: product,
                 variant_information: variant ?? product.variants[0],
-                active_promotions: promotions
+                active_promotions: promotions,
+
+                product_fulfillment_status: {
+                    pick_status: "pending",
+                    pick_history: [],
+                    last_updated: getDate(),
+                    notes: []
+                }
             };
 
             new_order_products_state = [ ...orderProducts, po ]

@@ -426,7 +426,7 @@ export default function App() {
 				</div>
 			</div>
 
-			<div className="md:hidden h-[40px] flex flex-row bg-black p-2 w-screen text-white justify-between">
+			<div className="sm:hidden h-[40px] flex flex-row bg-black p-2 w-screen text-white justify-between z-10">
 				<p className="flex-1 font-bold">OPENPOS</p>
 
 				<Image onClick={() => {
@@ -441,41 +441,52 @@ export default function App() {
             </div>
 			
 			{
-				menuOpen ? 
-				<div className="absolute bottom-0 mb-[40px] h-[440px] w-screen bg-black text-white h-80px rounded-t-md">
+				menuOpen && (windowSize.height ?? 0 <= 640) ? 
+				<div 
+					onClick={() => {
+						setMenuOpen(false)
+					}}
+					className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"></div>
+				:
+				<></>
+			}
+
+			{
+				menuOpen && (windowSize.height ?? 0 <= 640) ? 
+				<div className="absolute z-50 bottom-0 mb-[40px] h-[440px] w-screen bg-black text-white h-80px rounded-t-md">
 					<div className="flex flex-col p-8 h-full flex-shrink-0 gap-6">
 						{/* Kiosk */}
 						
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(0)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(0); setMenuOpen(false)}}>
 							{
 								page == 0 ?
-								<Image className="select-none svg cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01-filled.svg" alt="" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} onClick={() => setPage(0)}></Image>
+								<Image className="select-none svg cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01-filled.svg" alt="" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}></Image>
 								:	
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(0)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 0 ? "" : "text-gray-300"}`}>Cart</p>
 						</div>
 
 						{/* Inventory / Order Search */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(1)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(1); setMenuOpen(false)}}>
 							{
 								page == 1 ?
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}  alt={''} ></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}  alt={''}></Image>
 								:	
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} ></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 1 ? "" : "text-gray-300"}`}>Inventory</p>
 						</div>
 						
 						{/* Job Calender - Place to-do-jobs */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(2)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(2); setMenuOpen(false)}}>
 							{
 								page == 2 ?
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''} onClick={() => setPage(2)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''}></Image>
 								:	
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(2)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 2 ? "" : "text-gray-300"}`}>Calender</p>
@@ -483,12 +494,12 @@ export default function App() {
 						
 
 						{/* Deliverables - Deliveries and Outgoing Orders */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(3)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(3); setMenuOpen(false)}}>
 							{
 								page == 3 ?
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right-filled.svg" alt={''} onClick={() => setPage(3)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right-filled.svg" alt={''}></Image>
 								:	
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right.svg" alt={''} onClick={() => setPage(3)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right.svg" alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 3 ? "" : "text-gray-300"}`}>Deliverables</p>
@@ -496,23 +507,23 @@ export default function App() {
 
 						
 						{/* Incomings - Incoming Orders */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(4)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(4); setMenuOpen(false)}}>
 							{
 								page == 4 ?
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right-filled.svg" alt={''} onClick={() => setPage(4)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right-filled.svg" alt={''}></Image>
 								:	
-								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right.svg" alt={''} onClick={() => setPage(4)}></Image>
+								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right.svg" alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 4 ? "" : "text-gray-300"}`}>Incomings</p>
 						</div>
 						
-						<div className="flex flex-row gap-4 items-center" onClick={() => setPage(5)}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(5); setMenuOpen(false)}}>
 							{
 								page == 5 ?
-								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04-filled.svg" alt={''} onClick={() => setPage(5)}></Image>
+								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04-filled.svg" alt={''}></Image>
 								:	
-								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04.svg" alt={''} onClick={() => setPage(5)}></Image>
+								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04.svg" alt={''}></Image>
 							}
 
 							<p className={`font-bold ${page == 5 ? "" : "text-gray-300"}`}>Settings</p>

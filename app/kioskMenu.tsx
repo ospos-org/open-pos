@@ -710,13 +710,13 @@ export default function KioskMenu({
                                     <div className="flex flex-col gap-8 max-w-[550px] w-full">
                                         <PromotionList promotions={activeProductPromotions} cart={orderState}/>
 
-                                        <div className="flex flex-col gap-4">
+                                        <div className="flex flex-col gap-4 flex-wrap">
                                             {
                                                 activeProduct.variant_groups.map(e => {
                                                     return (
                                                         <div className="flex flex-col gap-2" key={e.category}>
                                                             <p className="text-sm text-gray-400">{e.category.toLocaleUpperCase()}</p>
-                                                            <div className="flex flex-row items-center gap-2 select-none">
+                                                            <div className="flex flex-row items-center gap-2 select-none flex-wrap">
                                                                 {
                                                                     e.variants.map(k => {
                                                                         const match = activeVariant?.find(function(o) {
