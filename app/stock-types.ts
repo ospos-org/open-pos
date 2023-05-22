@@ -49,6 +49,26 @@ export type TransactionCustomer = {
 
 export type CustomerType = "Store" | "Individual" | "Commercial"
 
+export type ProductCategory = {
+    name: string,
+    // Length of instances is quantity.
+    items: ProductCategoryItem[]
+}
+
+export type ProductCategoryItem = {
+    name: string,
+    variant: string,
+    order_reference: string,
+    sku: string,
+    barcode: string,
+    // Length of instances is quantity.
+    instances: {
+        product_purchase_id: string,
+        transaction_id: string,
+        state: ProductInstance
+    }[],
+}
+
 export type PaymentIntent = {
     amount: Price
     delay_action: "Cancel" | "Complete" | "RequireFurtherAction"
@@ -181,12 +201,18 @@ export type ProductPurchase = {
     quantity: number,
     transaction_type: TransactionType,
 
-    product_fulfillment_status: FulfillmentStatus,
+    tags: string[],
+    instances?: ProductInstance[],
 
     /// Extra information for internal referencing (caching) that should be removed before sending to server
     product: Product,
     variant_information: VariantInformation,
     active_promotions: Promotion[]
+}
+
+export type ProductInstance = {
+    id: string,
+    fulfillment_status: FulfillmentStatus
 }
 
 export type DbProductPurchase = {
@@ -202,8 +228,10 @@ export type DbProductPurchase = {
     quantity: number,
     id: string,
 
+    tags: string[],
+
     transaction_type: TransactionType,
-    product_fulfillment_status: FulfillmentStatus,
+    instances: ProductInstance[],
 }
 
 export type DiscountValue = {

@@ -412,7 +412,7 @@ export default function App() {
 								case 2:
 									return <Job />
 								case 3:
-									return <Deliverables master_state={masterState} />
+									return <Deliverables master_state={masterState} setLowModeCartOn={setLowModeCartOn} lowModeCartOn={lowModeCartOn} />
 								case 4:
 									return <Incomings />
 								case 5:

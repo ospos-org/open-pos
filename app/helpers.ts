@@ -88,7 +88,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                         quantity: k.quantity, 
                         id: k.id,
                         transaction_type: k.transaction_type,
-                    }
+                        tags: k.tags
+                    } as DbProductPurchase
                 }) as DbProductPurchase[],
                 status: (transaction_type == "Saved" || transaction_type == "Quote" ? {   
                     status: {
@@ -170,6 +171,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                         quantity: k.quantity, 
                         product_sku: k.product_sku,
                         id: k.id,
+                        tags: k.tags,
                         transaction_type: k.transaction_type,
                     }
                 }) as DbProductPurchase[],

@@ -1,11 +1,123 @@
 import { useEffect, useState } from "react";
-import { MasterState, Order } from "./stock-types";
-import { OPEN_STOCK_URL } from "./helpers";
+import { FulfillmentStatus, MasterState, Order, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
+import { OPEN_STOCK_URL, useWindowSize } from "./helpers";
 import moment from "moment";
+import Image from "next/image";
 
-export default function Deliverables({ master_state }: { master_state: MasterState }) {
+import { Skeleton } from "@/components/ui/skeleton"
+
+export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
     const [ isLoading, setIsLoading ] = useState(true);
+    const windowSize = useWindowSize();
+
+    const [ productCategories, setProductCategories ] = useState<ProductCategory[]>([]);
+    const [ menuState, setMenuState ] = useState<{
+        product: string,
+        barcode: string,
+        instances: {
+            product_purchase_id: string,
+            transaction_id: string,
+            state: ProductInstance
+        }[]
+    } | null>(null);
+    const [ menuInformation, setMenuInformation ] = useState<Product | null>(null);
+    const [ stateChange, setStateChange ] = useState<{
+        product_purchase_id: string,
+        transaction_id: string,
+        state: ProductInstance
+    } | null>(null);
+    const [ pendingStatus, setPendingStatus ] = useState<string | null>();
+
+    useEffect(() => {
+        if(menuState != null)
+            fetch(`${OPEN_STOCK_URL}/product/${menuState?.product}`, {
+                method: "GET",
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                const data: Product = await k.json();
+                setMenuInformation(data);
+            })
+    }, [menuState])
+
+    const parseDeliverables = (deliverables: Order[]) => {
+        let categories: ProductCategory[] = [];
+
+        console.log(deliverables)
+
+        deliverables.map(k => {
+            k.products.map(b => {
+                // For each product, try place it
+                for(let i = 0; i < b.tags.length; i++){
+                    let match = categories.findIndex(e => e.name == b.tags[i])
+
+                    if(match != -1) {
+                        let loc = categories[match].items.findIndex(k => k.barcode == b.product_code)
+                        if(loc != -1) {
+                            categories[match].items[loc].instances.push(
+                                ...(b?.instances ?? [])
+                                .filter(n => n.fulfillment_status.pick_status != "picked")
+                                .map(n => {
+                                    return {
+                                        state: n,
+                                        product_purchase_id: b.id,
+                                        // a: b.variant_information.id
+                                        transaction_id: k.reference
+                                    }
+                                })
+                            )
+                        }else {
+                            categories[match].items.push({
+                                name: b.product_name,
+                                variant: b.product_variant_name,
+                                order_reference: k.reference,
+                                sku: b.product_sku,
+                                barcode: b.product_code,
+                                // Length of instances is quantity.
+                                instances: (b?.instances ?? [])
+                                    .filter(n => n.fulfillment_status.pick_status != "picked")
+                                    .map(n => {
+                                        return {
+                                            state: n,
+                                            product_purchase_id: b.id,
+                                            // a: b.variant_information.id
+                                            transaction_id: k.reference
+                                        }
+                                    })
+                            })
+                        }
+
+                        return
+                    }
+                }
+
+                // If we made it here, doesn't exit.
+                categories.push({
+                    name: b.tags[0],
+                    items: [{
+                        name: b.product_name,
+                        variant: b.product_variant_name,
+                        order_reference: k.reference,
+                        sku: b.product_sku,
+                        barcode: b.product_code,
+                        // Length of instances is quantity.
+                        instances: (b?.instances ?? [])
+                            .filter(n => n.fulfillment_status.pick_status != "picked")
+                            .map(n => {
+                                return {
+                                    state: n,
+                                    product_purchase_id: b.id,
+                                    transaction_id: k.reference
+                                }
+                            })
+                    }]
+                })
+            })
+        })
+
+        return categories
+    }
 
     useEffect(() => {
         setIsLoading(true);
@@ -16,9 +128,10 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
             redirect: "follow"
         })
         .then(async b => {
-            const data = await b.json();
+            const data: Order[] = await b.json();
             setDeliverables(data);
             setIsLoading(false);
+            setProductCategories(parseDeliverables(data))
         })
     }, [])
 
@@ -42,7 +155,7 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                                             deliverables.length <= 0 ?
                                             <p className="text-gray-400">No Deliverables</p>
                                             :
-                                            <div className="grid grid-flow-row" style={{ gridTemplateColumns: "125px 100px 100px" }}>
+                                            <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center" style={{ gridTemplateColumns: "1fr 100px 100px" }}>
                                                 {
                                                     deliverables.map(b => {
                                                         let total_products = 0
@@ -50,18 +163,47 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
 
                                                         b.products.map(v => {
                                                             total_products += v.quantity
-                                                            completed += 1
+                                                            v?.instances?.map(k => {
+                                                                if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
+                                                                    completed += 1
+                                                                }
+                                                            })
+                                                        })
+
+                                                        const pairings = new Map()
+
+                                                        b.products.map(n => {
+                                                            n?.instances?.map(l => {
+                                                                if(pairings.get(l.fulfillment_status.pick_status) == undefined){
+                                                                    pairings.set(l.fulfillment_status.pick_status, true)
+                                                                }
+                                                            })
                                                         })
 
                                                         return (
                                                             <>
-                                                                <p className="text-white font-bold">{b.reference}</p>
-                                                                
-                                                                {/* <p>{b.products.map(k => k.product_name).join(', ')}</p>  */}
+                                                                <div className="flex flex-col">
+                                                                    <p className="text-white font-bold">{b.reference}</p>
+                                                                    
+                                                                    <div className="flex flex-row items-center gap-2">
+                                                                        {
+                                                                            completed == total_products ?
+                                                                                <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                            :
+                                                                                <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                        }
 
-                    
+                                                                        <p className="text-white text-opacity-50"><i className="text-white font-bold text-opacity-100 not-italic">{completed} / {total_products}</i></p>
+                                                                    </div>
+                                                                </div>
+
                                                                 <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
-                                                                <p className="text-white text-opacity-75">{moment(b.status.timestamp).fromNow()}</p>
+
+                                                                <p 
+                                                                    onClick={() => {
+                                                                    }}
+                                                                    className="bg-gray-100 text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-8">-{">"}</p> 
+                                                                {/* <p className="text-white text-opacity-75">{moment(b.status.timestamp).fromNow()}</p> */}
                                                             </>
                                                         )
                                                     })
@@ -72,16 +214,314 @@ export default function Deliverables({ master_state }: { master_state: MasterSta
                                 )
                             case 1:
                                 return (
-                                    <div></div>
+                                    <div className="flex flex-col gap-2">
+                                        {
+                                            deliverables.length <= 0 ?
+                                            <p className="text-gray-400">No Deliverables</p>
+                                            :
+                                            <div className="flex flex-col gap-4" style={{ gridTemplateColumns: "125px 150px 100px 100px" }}>
+                                                <div className="hidden sm:grid" style={{ gridTemplateColumns: `1fr 100px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
+                                                    <p className="text-white font-bold">Product Name</p>
+                                                    <p className="text-gray-400 md:text-center">Quantity</p>
+                                                    <p className="text-gray-400">Order</p>
+                                                </div>
+
+                                                {
+                                                    productCategories.map(b => {
+                                                        return (
+                                                            <div className="flex flex-col">
+                                                                <p className="text-gray-400 font-bold text-sm">{b.name.toUpperCase()}</p>
+
+                                                                <div className="flex flex-col gap-2">
+                                                                    {
+                                                                        b.items.sort((a, b) => { return a.name.localeCompare(b.name) }).map(k => {
+                                                                            const b = k.instances.filter(n => n.state.fulfillment_status.pick_status.toLowerCase() == "picked")
+                                                                            return (
+                                                                                <div
+                                                                                    onClick={() => {
+                                                                                        setMenuState({
+                                                                                            instances: k.instances,
+                                                                                            product: k.sku,
+                                                                                            barcode: k.barcode
+                                                                                        })
+                                                                                    }} 
+                                                                                    className="grid" 
+                                                                                    style={{ gridTemplateColumns: `1fr ${(windowSize?.width ?? 0) > 640 ? "100px 100px" : "50px"}` }}>
+                                                                                    <div className="flex lg:flex-row flex-col lg:gap-2 justify-between">
+                                                                                        <p className="text-white font-bold">{k.name}</p>
+                                                                                        <p className="text-gray-400">{k.variant}</p>
+                                                                                    </div>
+
+                                                                                    <p className="text-gray-400 text-end w-full font-bold md:text-center">{b.length} / {k.instances.length}</p>
+                                                                                    
+                                                                                    <p className="text-gray-400 hidden md:flex">{k.order_reference}</p>
+                                                                                </div>
+                                                                            )
+                                                                        })
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 )
                         }
                     })()
                 }
             </div>
+            
+            {
+				(menuState != null || stateChange != null) && (windowSize.height ?? 0 <= 640) ? 
+				<div 
+					onClick={() => {
+                        if (stateChange != null) setStateChange(null)
+                        else setMenuState(null)
+					}}
+					className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"></div>
+				:
+				<></>
+			}
 
-            <div>
-                {/* Order Information */}
-            </div>
+
+            {
+                stateChange != null ?
+                <div className="absolute overflow-y-scroll flex flex-col gap-4 z-50 bottom-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
+                    <div className="flex flex-col">
+                        <p className="text-gray-400 text-sm font-bold">CURRENT STATUS</p>
+                        <p>{stateChange.state.fulfillment_status.pick_status}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <p className="text-gray-400 text-sm font-bold">SET STATUS</p>
+                        
+                        <div className="flex flex-row flex-wrap gap-2">
+                            {
+                                ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
+                                    return <p 
+                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
+                                        onClick={() => {
+                                            if(k == stateChange.state.fulfillment_status.pick_status) setPendingStatus(null)
+                                            else setPendingStatus(k.toLowerCase())
+                                        }}>{k}</p>
+                                })
+                            }
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <p className="text-gray-400 text-sm font-bold">STATUS HISTORY</p>
+
+                        <div className={`flex flex-col gap-2 ${pendingStatus != null ? "pb-[60px]" : ""}`}>
+                            {
+                                stateChange.state.fulfillment_status.pick_history.map(k => {
+                                    return (
+                                        <div className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                                            <div className="flex flex-col">
+                                                <p className="font-bold">{k.item}</p>
+                                                <p className="text-gray-400 text-sm">{k.reason}</p>
+                                            </div>
+                                            <p className="text-gray-400 text-sm text-end">{new Date(k.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    )
+                                })
+                            }
+                        </div>
+                    </div>
+                        
+                    { 
+                        pendingStatus != null ?
+                        <div className="fixed flex flex-row gap-4 bottom-[45px] min-w-[calc(100vw-30px)] bg-black">
+                            <div
+                                onClick={() => {
+                                    setPendingStatus(null)
+                                }} 
+                                className="bg-white text-black flex-1 text-center p-4 rounded-md">
+                                <p>Discard</p>
+                            </div>
+
+                            <div
+                                onClick={() => {
+                                    fetch(`${OPEN_STOCK_URL}/transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
+                                        method: "POST",
+                                        body: pendingStatus,
+                                        credentials: "include",
+                                        redirect: "follow"
+                                    }).then(async k => {
+                                        if(k.ok) {
+                                            setPendingStatus(null)
+                                            setStateChange(null)
+
+                                            const data: Transaction = await k.json();
+                                            let abn: Order[] = deliverables;
+
+                                            data.products.map(b => {
+                                                abn = deliverables.map(k => {
+                                                    return b.id == k.id ? b : k
+                                                }) as Order[];
+
+                                                console.log("ABN", abn, b)
+                                            })
+
+                                            setDeliverables(abn)
+                                            const categories = parseDeliverables(abn);
+                                            setProductCategories(categories)
+
+                                            categories.map(c => {
+                                                c.items.map(k => {
+                                                    if(k.barcode == menuState?.barcode) {
+                                                        setMenuState({
+                                                            instances: k.instances,
+                                                            product: k.sku,
+                                                            barcode: k.barcode
+                                                        })
+                                                    }
+                                                }) 
+                                            })
+                                        }
+                                    })
+                                }} 
+                                className="bg-blue-700 flex-1 text-center p-4 rounded-md">
+                                <p>Save</p>
+                            </div>
+                            
+                        </div>
+                        :
+                        <></>
+                    }
+                </div>
+                :
+                <></>
+            }
+
+            {
+                menuState != null ?
+                <div className="absolute overflow-y-scroll flex flex-col gap-4 z-40 bottom-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
+                    {
+                        menuInformation ?
+                        <div className="flex flex-col">
+                            <p className="font-bold text-lg">{menuInformation?.name}</p>
+                            <p className="text-gray-400">{menuInformation?.description.substring(0, 40)}...</p>
+                        </div>
+                        :
+                        <div className="flex flex-col gap-[4px]">
+                            <Skeleton className="w-[100px] h-[26px] rounded-sm" />
+                            <Skeleton className="w-full h-[22px] rounded-sm" />
+                        </div>
+                    }
+
+                    <div className="flex flex-row items-start justify-between">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col">
+                                <p className="text-gray-400 text-sm font-bold">VARIANT</p>
+                                {
+                                    menuInformation?.variants ?
+                                        menuInformation?.variants
+                                        .filter(k => k.barcode == menuState.barcode)
+                                        .map(k => {
+                                            return (
+                                                <div className="flex flex-row items-center gap-2 pr-4 ">
+                                                    <p className="font-semibold">{k.name}</p>
+                                                </div>
+                                            )
+                                        })
+                                    :
+                                        <Skeleton className="w-full h-[24px] rounded-sm" />
+                                }
+                            </div>
+                            
+                            <div className="flex flex-col">
+                                <p className="text-gray-400 text-sm font-bold">QUANTITY</p>
+                                {
+                                    menuInformation?.variants ?
+                                        <p>{menuState.instances.length}</p>
+                                    :
+                                        <Skeleton className="w-[25px] h-[24px] rounded-sm" />
+                                }
+                            </div>
+                        </div>
+                        
+                        {
+                            menuInformation?.images?.[0] ?
+                            <div className="pr-4">
+                                <Image src={menuInformation?.variants.find(k => k.barcode == menuState.barcode)?.images?.[0] ?? menuInformation.images?.[0]} className="rounded-md" height={150} width={150} alt={menuInformation?.name}></Image>
+                            </div>
+                            :
+                            <div className="pr-4">
+                                <Skeleton className="mr-4 w-[150px] h-[150px] rounded-sm" />
+                            </div>
+                        }
+                    </div>
+                    
+                    <div className="flex flex-col">
+                        <p className="text-gray-400 text-sm font-bold">INSTANCES</p>
+
+                        <div className="flex flex-col gap-2">
+                            {
+                                menuState?.instances.map(k => {
+                                    return (
+                                        <div className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
+                                            <div className="flex flex-row items-center gap-2">
+                                                {(() => {
+                                                    switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {
+                                                        case "pending":
+                                                            return (
+                                                                <div className="bg-orange-400 h-3 w-3 rounded-full"></div>
+                                                            )
+                                                        case "picked":
+                                                            return (
+                                                                <div className="bg-green-600 h-3 w-3 rounded-full"></div>
+                                                            )
+                                                        case "failed":
+                                                            return (
+                                                                <div className="bg-red-600 h-3 w-3 rounded-full"></div>
+                                                            )
+                                                        case "uncertain":
+                                                            return (
+                                                                <div className="bg-blue-400 h-3 w-3 rounded-full"></div>
+                                                            )
+                                                        case "processing":
+                                                            return (
+                                                                <div className="bg-orange-400 h-3 w-3 rounded-full"></div>
+                                                            )
+                                                        default:
+                                                            return (
+                                                                <div className="bg-gray"></div>
+                                                            )
+                                                    }
+                                                })()}
+
+                                                <p>{k.state.fulfillment_status.pick_status}</p>
+                                            </div>
+                                            
+                                            <p className="font-bold text-gray-400">{k.transaction_id}</p>
+                                            <p 
+                                                onClick={() => {
+                                                    setStateChange(k)
+                                                }}
+                                                className="bg-gray-100 rounded-md text-gray-800 font-bold px-8">-{">"}</p>
+                                        </div>
+                                    )
+                                })
+                            }
+                        </div>
+                    </div>
+                </div>
+                :
+                <></>
+            }
+
+            {
+                ((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640) ?
+                    <div className="bg-gray-900 p-6 flex flex-col h-full" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
+
+                    </div>
+                :
+                    <></>
+            }
+            
         </>
     )
 }
