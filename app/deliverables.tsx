@@ -175,10 +175,14 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                         b.products.map(n => {
                                                             n?.instances?.map(l => {
                                                                 if(pairings.get(l.fulfillment_status.pick_status) == undefined){
-                                                                    pairings.set(l.fulfillment_status.pick_status, true)
+                                                                    pairings.set(l.fulfillment_status.pick_status, 1)
+                                                                }else {
+                                                                    pairings.set(l.fulfillment_status.pick_status, pairings.get(l.fulfillment_status.pick_status)+1)
                                                                 }
                                                             })
                                                         })
+
+                                                        const mapped = Array.from(pairings, ([name, value]) => ({ name, value }));
 
                                                         return (
                                                             <>
@@ -186,6 +190,16 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                     <p className="text-white font-bold">{b.reference}</p>
                                                                     
                                                                     <div className="flex flex-row items-center gap-2">
+                                                                        {
+                                                                            mapped.map(status => {
+                                                                                return (
+                                                                                    <div>
+                                                                                        {status.name}
+                                                                                        {status.value}
+                                                                                    </div>
+                                                                                )
+                                                                            })
+                                                                        }
                                                                         {
                                                                             completed == total_products ?
                                                                                 <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
