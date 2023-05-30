@@ -86,7 +86,7 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                         </div>
 
                         {
-                            (!notEnd && (indx == n.length-1)) ? <></> : <hr className="border-gray-500" />
+                            notEnd ? <></> : <hr className="border-gray-500" />
                         }
                     </div>
                 )

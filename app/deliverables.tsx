@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FulfillmentStatus, MasterState, Order, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
+import { FulfillmentStatus, MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
 import { OPEN_STOCK_URL, useWindowSize } from "./helpers";
 import moment from "moment";
 import Image from "next/image";
@@ -155,9 +155,9 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                             deliverables.length <= 0 ?
                                             <p className="text-gray-400">No Deliverables</p>
                                             :
-                                            <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center" style={{ gridTemplateColumns: "1fr 100px 100px" }}>
+                                            <div className="flex flex-col gap-4">
                                                 {
-                                                    deliverables.map(b => {
+                                                    deliverables.map((b, indx) => {
                                                         let total_products = 0
                                                         let completed = 0;
 
@@ -183,41 +183,92 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                         })
 
                                                         const mapped = Array.from(pairings, ([name, value]) => ({ name, value }));
+                                                        mapped.sort((a, b) => {
+                                                            if (a.name < b.name) {
+                                                                return -1;
+                                                            }else if (a.name > b.name) {
+                                                                return 1;
+                                                            }else {
+                                                                return 0;
+                                                            }
+                                                        });
 
                                                         return (
                                                             <>
-                                                                <div className="flex flex-col">
-                                                                    <p className="text-white font-bold">{b.reference}</p>
-                                                                    
-                                                                    <div className="flex flex-row items-center gap-2">
-                                                                        {
-                                                                            mapped.map(status => {
-                                                                                return (
-                                                                                    <div>
-                                                                                        {status.name}
-                                                                                        {status.value}
-                                                                                    </div>
-                                                                                )
-                                                                            })
-                                                                        }
-                                                                        {
-                                                                            completed == total_products ?
-                                                                                <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                            :
-                                                                                <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                        }
+                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center" style={{ gridTemplateColumns: "1fr 100px 100px 117px" }}>
+                                                                    <div className="flex flex-col gap-2">
+                                                                        <div className="flex flex-row gap-2">
+                                                                            <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
+                                                                            <p className="text-white font-semibold not-italic">Products Picked</p>
+                                                                        </div>
+                                                                        
+                                                                        <div className="flex flex-row items-center gap-2">
+                                                                            <div className="flex flex-row items-center justify-between gap-2">
+                                                                                {
+                                                                                    mapped.map((status: { name: PickStatus, value: number }) => {
+                                                                                        return (
+                                                                                            <div className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
+                                                                                                {(() => {
+                                                                                                    switch(status.name.toLowerCase()) {
+                                                                                                        case "picked":
+                                                                                                            return (
+                                                                                                                <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                            )
+                                                                                                        case "pending":
+                                                                                                            return (
+                                                                                                                <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                            )
+                                                                                                        case "failed":
+                                                                                                            return (
+                                                                                                                <div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                            )
+                                                                                                        case "uncertain":
+                                                                                                            return (
+                                                                                                                <div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                            )
+                                                                                                        case "processing":
+                                                                                                            return (
+                                                                                                                <div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                            )
+                                                                                                        default:
+                                                                                                            return <></>
+                                                                                                    }
+                                                                                                })()}
+                                                                                                
+                                                                                                <p className="text-gray-200 text-sm">{status.value}</p>
+                                                                                            </div>
+                                                                                        )
+                                                                                        
+                                                                                    })
+                                                                                }
+                                                                            </div>
+                                                                            
+                                                                            {/* {
+                                                                                completed == total_products ?
+                                                                                    <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                :
+                                                                                    <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                            } */}
 
-                                                                        <p className="text-white text-opacity-50"><i className="text-white font-bold text-opacity-100 not-italic">{completed} / {total_products}</i></p>
+                                                                            
+                                                                        </div>
                                                                     </div>
+
+                                                                    <p className="text-white font-mono font-bold">{b.reference}</p>
+                                                                    <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
+
+                                                                    <p 
+                                                                        onClick={() => {
+                                                                        }}
+                                                                        className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4">Edit  -{">"}</p> 
+                                                                    {/* <p className="text-white text-opacity-75">{moment(b.status.timestamp).fromNow()}</p> */}
+                                                                
+                                                                    
                                                                 </div>
 
-                                                                <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
-
-                                                                <p 
-                                                                    onClick={() => {
-                                                                    }}
-                                                                    className="bg-gray-100 text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-8">-{">"}</p> 
-                                                                {/* <p className="text-white text-opacity-75">{moment(b.status.timestamp).fromNow()}</p> */}
+                                                                {
+                                                                    indx == deliverables.length-1 ? <></> : <hr className="border-gray-700" />
+                                                                }
                                                             </>
                                                         )
                                                     })
@@ -482,7 +533,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                     switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {
                                                         case "pending":
                                                             return (
-                                                                <div className="bg-orange-400 h-3 w-3 rounded-full"></div>
+                                                                <div className="bg-gray-400 h-3 w-3 rounded-full"></div>
                                                             )
                                                         case "picked":
                                                             return (

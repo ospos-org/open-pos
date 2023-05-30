@@ -431,7 +431,10 @@ export default function KioskMenu({
                                                     :
                                                     (result as Transaction[]).map((e: Transaction, indx) => {
                                                         return (
-                                                                <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={!(indx == result.length-1)} />
+                                                            <>
+                                                                <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={indx == result.length-1 || result.length == 1} />
+                                                            </>
+                                                            
                                                         )
                                                     })
                                             )
