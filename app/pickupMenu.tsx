@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 import { customAlphabet } from "nanoid";
 import Image from "next/image";
-import { createRef, FC, useEffect, useMemo, useState } from "react";
+import { createRef, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
@@ -25,6 +25,18 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     const [ pickupStores, setPickupStores ] = useState<Store[]>()
     const [ pickupStore, setPickupStore ] = useState<Store>();
 
+    const fetchDistanceData = useCallback(async () => {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore}`, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow"
+        })?.then(async e => {
+            return await e.json();
+        })
+
+        return distance_data;
+    }, [currentStore]);
+
     useEffect(() => {
         fetchDistanceData().then(data => {
             const ord = generateOrders(generateProductMap(orderState), data, currentStore);
@@ -39,7 +51,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                 }
             }))
         });
-    }, [orderState])
+    }, [orderState, fetchDistanceData, currentStore])
 
     const debouncedResults = useMemo(() => {
         return debounce(async (address: string) => {
@@ -50,7 +62,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
             setSuggestions(matches);
             setLoading(false);
         }, 25);
-    }, []);
+    }, [master_state.store_lut]);
 
     useEffect(() => {
         return () => {
@@ -61,31 +73,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     useEffect(() => {
         setPickupStores(master_state.store_lut)
         setPickupStore(master_state?.store_lut?.find(k => k.id == master_state.store_id))
-
-        console.log(master_state.store_lut, master_state.store_id)
-
-        // fetch(`${OPEN_STOCK_URL}/store/`, {
-        //     method: "GET",
-        //     credentials: "include",
-        //     redirect: "follow"
-        // }).then(async e => {
-        //     const stores: Store[] = await e.json();
-        //     setPickupStores(stores)
-        //     setPickupStore(stores.find(k => k.store_id == currentStore))
-        // })
-    }, [currentStore])
-
-    const fetchDistanceData = async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })?.then(async e => {
-            return await e.json();
-        })
-
-        return distance_data;
-    }
+    }, [currentStore, master_state.store_id, master_state.store_lut])
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -228,7 +216,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                 <div className="text-white">
                                                     <p className="font-semibold">{customerState?.contact.name}</p>
                                                     <p className="">{customerState?.contact.email.full}</p>
-                                                    <p className="">{customerState?.contact.mobile.region_code} {customerState?.contact.mobile.root}</p>
+                                                    <p className="">{customerState?.contact.mobile.number}</p>
                                                     <br />
                                                     <p className="text-gray-400">Pickup from:</p>
                                                     <p className="font-semibold">{pickupStore?.name} ({pickupStore?.code})</p>
@@ -397,7 +385,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                 <p className="text-gray-400">Phone Number</p>
                                                 <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                     <input 
-                                                        placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                        placeholder="Phone Number" defaultValue={customerState?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
                                                         onChange={(e) => {
                                                             if(customerState)
                                                                 setCustomerState({
@@ -405,8 +393,8 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                     contact: {
                                                                         ...customerState.contact,
                                                                         mobile: {
-                                                                            region_code: "+64",
-                                                                            root: e.target.value
+                                                                            valid: "true",
+                                                                            number: e.target.value
                                                                         }
                                                                     }
                                                                 }) 

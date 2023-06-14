@@ -77,7 +77,7 @@ export type PaymentIntent = {
     fulfillment_date: string
     id: string
     order_ids: string[]
-    payment_method: "Card" | "Cash" | "Transfer"
+    payment_method: "Card" | "Cash" | "Transfer" | { "Other" : string }
     processing_fee: Price
     processor: {
         /// Store Code
@@ -90,8 +90,10 @@ export type PaymentIntent = {
         software_version: 'k0.5.2', 
         token: string
     }
-    status: { Unfulfilled: string } | { Pending: string } | { Processing: string } | { Failed: CardDetails } | { Complete: CardDetails } 
+    status: { Unfulfilled: string } | { Pending: string } | { Processing: string } | { Failed: Processable } | { Complete: Processable } 
 }
+
+export type Processable = { CardDetails: CardDetails } | { Anonymous: String }
 
 export type CardDetails = {
     card_brand: string,
@@ -434,8 +436,8 @@ export type Email = {
 }
 
 export type Mobile = {
-    region_code: string,
-    root: string
+    valid: string,
+    number: string
 }
 
 export type Note = {

@@ -9,7 +9,7 @@ import OrderView from "./orderView";
 
 export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
-    const [ isLoading, setIsLoading ] = useState(true);
+    const [ , setIsLoading ] = useState(true);
     const windowSize = useWindowSize();
 
     const [ productCategories, setProductCategories ] = useState<ProductCategory[]>([]);
@@ -136,7 +136,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
             setIsLoading(false);
             setProductCategories(parseDeliverables(data))
         })
-    }, [])
+    }, [master_state.store_id])
 
     const [ viewingMode, setViewingMode ] = useState(0);
 
@@ -210,7 +210,9 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                                 {
                                                                                     mapped.map((status: { name: PickStatus, value: number }) => {
                                                                                         return (
-                                                                                            <div className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
+                                                                                            <div
+                                                                                                key={JSON.stringify(status)} 
+                                                                                                className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
                                                                                                 {(() => {
                                                                                                     switch(status.name.toLowerCase()) {
                                                                                                         case "picked":
@@ -290,7 +292,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                 {
                                                     productCategories.map(b => {
                                                         return (
-                                                            <div className="flex flex-col">
+                                                            <div key={`PRODUCT CATEGORIES: ${b.name}-${b.items.length}`} className="flex flex-col">
                                                                 <p className="text-gray-400 font-bold text-sm">{b.name.toUpperCase()}</p>
 
                                                                 <div className="flex flex-col gap-2">
@@ -299,6 +301,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                             const b = k.instances.filter(n => n.state.fulfillment_status.pick_status.toLowerCase() == "picked")
                                                                             return (
                                                                                 <div
+                                                                                    key={`ITEM: ${k.barcode}-${k.sku}`}
                                                                                     onClick={() => {
                                                                                         setMenuState({
                                                                                             instances: k.instances,
@@ -362,6 +365,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                             {
                                 ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
                                     return <p 
+                                        key={JSON.stringify(k)}
                                         className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
                                         onClick={() => {
                                             if(k == stateChange.state.fulfillment_status.pick_status) setPendingStatus(null)
@@ -379,7 +383,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                             {
                                 stateChange.state.fulfillment_status.pick_history.map(k => {
                                     return (
-                                        <div className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                                        <div key={JSON.stringify(k)} className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
                                             <div className="flex flex-col">
                                                 <p className="font-bold">{k.item}</p>
                                                 <p className="text-gray-400 text-sm">{k.reason}</p>
@@ -483,7 +487,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                         .filter(k => k.barcode == menuState.barcode)
                                         .map(k => {
                                             return (
-                                                <div className="flex flex-row items-center gap-2 pr-4 ">
+                                                <div key={JSON.stringify(k)} className="flex flex-row items-center gap-2 pr-4 ">
                                                     <p className="font-semibold">{k.name}</p>
                                                 </div>
                                             )
@@ -523,7 +527,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                             {
                                 menuState?.instances.map(k => {
                                     return (
-                                        <div className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
+                                        <div key={JSON.stringify(k)} className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
                                             <div className="flex flex-row items-center gap-2">
                                                 {(() => {
                                                     switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {

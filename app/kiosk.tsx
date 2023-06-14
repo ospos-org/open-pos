@@ -469,23 +469,25 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                             processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
                                             status: {
                                                 Complete: {
-                                                    card_brand: "VISA",
-                                                    last_4: "4025",
-                                                    exp_month: "03",
-                                                    exp_year: "2023",
-                                                    fingerprint: "a20@jA928ajsf9a9828",
-                                                    card_type: "DEBIT",
-                                                    prepaid_type: "NULL",
-                                                    bin: "",
+                                                    CardDetails: {
+                                                        card_brand: "VISA",
+                                                        last_4: "4025",
+                                                        exp_month: "03",
+                                                        exp_year: "2023",
+                                                        fingerprint: "a20@jA928ajsf9a9828",
+                                                        card_type: "DEBIT",
+                                                        prepaid_type: "NULL",
+                                                        bin: "",
 
-                                                    entry_method: "PIN",
-                                                    cvv_accepted: "TRUE",
-                                                    avs_accepted: "TRUE",
-                                                    auth_result_code: "YES",
-                                                    statement_description: "DEBIT ACCEPTED",
-                                                    card_payment_timeline: {
-                                                        authorized_at: "",
-                                                        captured_at: ""
+                                                        entry_method: "PIN",
+                                                        cvv_accepted: "TRUE",
+                                                        avs_accepted: "TRUE",
+                                                        auth_result_code: "YES",
+                                                        statement_description: "DEBIT ACCEPTED",
+                                                        card_payment_timeline: {
+                                                            authorized_at: "",
+                                                            captured_at: ""
+                                                        }
                                                     }
                                                 }
                                             }
@@ -840,23 +842,25 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                                     processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
                                                     status: { 
                                                         Complete: {
-                                                            card_brand: "VISA",
-                                                            last_4: "4025",
-                                                            exp_month: "03",
-                                                            exp_year: "2023",
-                                                            fingerprint: "a20@jA928ajsf9a9828",
-                                                            card_type: "DEBIT",
-                                                            prepaid_type: "NULL",
-                                                            bin: "",
-        
-                                                            entry_method: "PIN",
-                                                            cvv_accepted: "TRUE",
-                                                            avs_accepted: "TRUE",
-                                                            auth_result_code: "YES",
-                                                            statement_description: "DEBIT ACCEPTED",
-                                                            card_payment_timeline: {
-                                                                authorized_at: "",
-                                                                captured_at: ""
+                                                            CardDetails: {
+                                                                card_brand: "VISA",
+                                                                last_4: "4025",
+                                                                exp_month: "03",
+                                                                exp_year: "2023",
+                                                                fingerprint: "a20@jA928ajsf9a9828",
+                                                                card_type: "DEBIT",
+                                                                prepaid_type: "NULL",
+                                                                bin: "",
+            
+                                                                entry_method: "PIN",
+                                                                cvv_accepted: "TRUE",
+                                                                avs_accepted: "TRUE",
+                                                                auth_result_code: "YES",
+                                                                statement_description: "DEBIT ACCEPTED",
+                                                                card_payment_timeline: {
+                                                                    authorized_at: "",
+                                                                    captured_at: ""
+                                                                }
                                                             }
                                                         }
                                                     }

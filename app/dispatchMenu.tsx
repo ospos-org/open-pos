@@ -1,7 +1,7 @@
 import { debounce } from "lodash";
 import { customAlphabet } from "nanoid";
 import Image from "next/image";
-import { createRef, FC, useEffect, useMemo, useState } from "react";
+import { createRef, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "./kiosk";
@@ -22,6 +22,18 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ searching, setSearching ] = useState(false);
     const [ loading, setLoading ] = useState(false);
 
+    const fetchDistanceData = useCallback(async () => {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
+            method: "GET",
+            credentials: "include",
+            redirect: "follow"
+        })?.then(async e => {
+            return await e.json();
+        })
+
+        return distance_data;
+    }, [customerState?.id]);
+
     useEffect(() => {
         fetchDistanceData().then(data => {
             const ord = generateOrders(generateProductMap(orderState), data, currentStore);
@@ -36,7 +48,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                 }
             }))
         });
-    }, [orderState])
+    }, [orderState, currentStore, fetchDistanceData])
 
     const debouncedResults = useMemo(() => {
         return debounce(async (address: string) => {
@@ -63,18 +75,6 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
             debouncedResults.cancel();
         };
     });
-
-    const fetchDistanceData = async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })?.then(async e => {
-            return await e.json();
-        })
-
-        return distance_data;
-    }
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -217,7 +217,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 <div className="text-white">
                                                     <p className="font-semibold">{customerState?.contact.name}</p>
                                                     <p className="">{customerState?.contact.email.full}</p>
-                                                    <p className="">{customerState?.contact.mobile.region_code} {customerState?.contact.mobile.root}</p>
+                                                    <p className="">{customerState?.contact.mobile.number}</p>
                                                     <br />
                                                     <p className="font-semibold">{customerState?.contact.address.street}</p>
                                                     <p>{customerState?.contact.address.street2}</p>
@@ -379,7 +379,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                 <p className="text-gray-400">Phone Number</p>
                                                 <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                                     <input 
-                                                        placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                        placeholder="Phone Number" defaultValue={customerState?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
                                                         onChange={(e) => {
                                                             if(customerState)
                                                                 setCustomerState({
@@ -387,8 +387,8 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                     contact: {
                                                                         ...customerState.contact,
                                                                         mobile: {
-                                                                            region_code: "+64",
-                                                                            root: e.target.value
+                                                                            valid: "true",
+                                                                            number: e.target.value
                                                                         }
                                                                     }
                                                                 }) 

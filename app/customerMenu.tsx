@@ -21,8 +21,8 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
         contact: {
             name: "",
             mobile: {
-                region_code: "",
-                root: ""
+                number: "",
+                valid: "false"
             },
             email: {
                 root: "",
@@ -135,7 +135,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                             <p className="text-gray-400">Phone Number</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.root} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
                                     onChange={(e) => {
                                         if(customerState)
                                             setCustomerStateInternal({
@@ -143,8 +143,8 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                                 contact: {
                                                     ...customerState.contact,
                                                     mobile: {
-                                                        region_code: "+64",
-                                                        root: e.target.value
+                                                        valid: "true",
+                                                        number: e.target.value
                                                     }
                                                 }
                                             }) 

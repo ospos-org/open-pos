@@ -386,14 +386,14 @@ export default function KioskMenu({
                                                                             <></>
                                                                             :
                                                                             <div className="flex 2xl:flex-row flex-col items-center 2xl:gap-4 flex-1">
-                                                                                <p>({e.contact.mobile.region_code}) {
+                                                                                <p>{
                                                                                     (() => {
-                                                                                        const k = e.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                                                        const k = e.contact.mobile.number.match(/^(\d{3})(\d{3})(\d{4})$/);
                                                                                         if(!k) return ""
                                                                                         return `${k[1]} ${k[2]} ${k[3]}`
                                                                                     })()
                                                                                 }</p>
-                                                                                <p>{e.contact.email.full}</p>
+                                                                                <p className="text-gray-400">{e.contact.email.full}</p>
                                                                             </div>
                                                                         }
                                                                         
@@ -474,9 +474,9 @@ export default function KioskMenu({
                                             <div className="bg-gray-700 w-fit flex flex-row items-center gap-4 px-2 py-2 rounded-md">
                                                 <Image src="/icons/phone.svg" alt="" width="20" height="20" style={{ filter: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
 
-                                                <p className="text-gray-200 font-semibold">({activeCustomer.contact.mobile.region_code}) {
+                                                <p className="text-gray-200 font-semibold">{
                                                     (() => {
-                                                        const k = activeCustomer.contact.mobile.root.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                                        const k = activeCustomer.contact.mobile.number.match(/^(\d{3})(\d{3})(\d{4})$/);
                                                         if(!k) return ""
                                                         return `${k[1]} ${k[2]} ${k[3]}`
                                                     })()
@@ -485,7 +485,7 @@ export default function KioskMenu({
                                         </div>
                                     </div>
 
-                                    <div className={`flex 2xl:flex-row flex-col flex-row items-center 2xl:gap-4 gap-2`}>
+                                    <div className={`flex 2xl:flex-row flex-row items-center 2xl:gap-4 gap-2`}>
                                         <div>
                                             {
                                                 customerState ? 

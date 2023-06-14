@@ -23,10 +23,10 @@ export default function App() {
 		store_id: "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", // "628f74d7-de00-4956-a5b6-2031e0c72128",
 		store_code: "002",
 		store_contact: {
-			name: "Torpedo4",
+			name: "Torpedo7",
 			mobile: {
-				region_code: "21212120",
-				root: "+64"
+				number: "+6421212120",
+				valid: "true"
 			},
 			email: {
 				root: "order",
@@ -55,17 +55,21 @@ export default function App() {
 			credentials: "include"
 		}).then(async b => {
 			const data = await b.json();
-			setMasterState({
-				...masterState,
-				store_lut: data
+			setMasterState(m => {
+				return {
+					...m,
+					store_lut: data
+				}
 			})
 		})
 	}, []);
 
 	useEffect(() => {
-		setMasterState({
-			...masterState,
-			employee: user
+		setMasterState(m => {
+			return {
+				...m,
+				employee: user
+			}
 		})
 	}, [user])
 
