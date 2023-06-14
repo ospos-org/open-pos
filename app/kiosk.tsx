@@ -569,7 +569,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                                     kioskState.payment.map(e => {
                                                         return (
                                                             <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`} className="flex flex-row justify-between items-center text-white gap-4 w-full flex-1">
-                                                                <p className="text-gray-300 font-bold">{e.payment_method?.toUpperCase()}</p>
+                                                                <p className="text-gray-300 font-bold">{JSON.stringify(e.payment_method)}</p>
                                                                 <hr className="flex-1 border-gray-500 h-[3px] border-[2px] bg-gray-500 rounded-md" />
                                                                 <p>${e.amount?.quantity.toFixed(2)}</p>
                                                             </div>
