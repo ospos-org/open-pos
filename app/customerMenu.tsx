@@ -22,7 +22,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
             name: "",
             mobile: {
                 number: "",
-                valid: "false"
+                valid: false
             },
             email: {
                 root: "",
@@ -143,7 +143,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                                 contact: {
                                                     ...customerState.contact,
                                                     mobile: {
-                                                        valid: "true",
+                                                        valid: true,
                                                         number: e.target.value
                                                     }
                                                 }

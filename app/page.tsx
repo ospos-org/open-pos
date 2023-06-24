@@ -26,7 +26,7 @@ export default function App() {
 			name: "Torpedo7",
 			mobile: {
 				number: "+6421212120",
-				valid: "true"
+				valid: true
 			},
 			email: {
 				root: "order",

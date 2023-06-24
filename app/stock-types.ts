@@ -436,7 +436,7 @@ export type Email = {
 }
 
 export type Mobile = {
-    valid: string,
+    valid: boolean,
     number: string
 }
 

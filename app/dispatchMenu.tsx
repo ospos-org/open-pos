@@ -387,7 +387,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                     contact: {
                                                                         ...customerState.contact,
                                                                         mobile: {
-                                                                            valid: "true",
+                                                                            valid: true,
                                                                             number: e.target.value
                                                                         }
                                                                     }

@@ -393,7 +393,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                     contact: {
                                                                         ...customerState.contact,
                                                                         mobile: {
-                                                                            valid: "true",
+                                                                            valid: true,
                                                                             number: e.target.value
                                                                         }
                                                                     }
