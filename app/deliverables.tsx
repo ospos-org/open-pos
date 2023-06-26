@@ -198,7 +198,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
                                                         return (
                                                             <>
-                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : "1fr 250px 117px" }}>
+                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : "1fr 250px 117px" }}>
                                                                     <div className="flex flex-col gap-2">
                                                                         <div className="flex flex-row gap-2">
                                                                             <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
@@ -259,8 +259,8 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                         onClick={() => {
                                                                             setActiveOrder(b)
                                                                         }}
-                                                                        className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4">
-                                                                        <i className="md:visible hidden">Edit  </i>-{">"}
+                                                                        className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
+                                                                        <i className="md:visible invisible not-italic text-sm">Edit  </i>-{">"}
                                                                     </p> 
                                                                 </div>
 
