@@ -29,7 +29,7 @@ export function applyDiscountsConsiderateOfQuantity(quantity: number, discounts:
     
             let discount = discount_val[0].value;
             savings += (price - applyDiscount(price, discount));
-            console.log("Applied", price - applyDiscount(price, discount));
+            // console.log("Applied", price - applyDiscount(price, discount));
         }
 
         promos = promos.filter((b, i) => i !== discount_val[1]);

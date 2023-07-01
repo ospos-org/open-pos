@@ -78,7 +78,7 @@ export default function CartMenu({
         const optimal_pdts = determineOptimalPromotionPathway(flat_products);
         let optimal_queue = optimal_pdts.filter(b => b.chosen_promotion?.promotion != null && b.chosen_promotion != null);
 
-        console.log(JSON.parse(JSON.stringify( optimal_queue )));
+        // console.log(JSON.parse(JSON.stringify( optimal_queue )));
 
         const applied_promotions = orderState.map(b => {
             return { ...b, products: b.products.map(k => {
@@ -88,7 +88,7 @@ export default function CartMenu({
                     // Find relevant in optimal list
                     const exists = optimal_queue.findIndex(n => n.reference_field.barcode == k.variant_information.barcode);
 
-                    console.log("::index::", exists, optimal_queue[exists]);
+                    // console.log("::index::", exists, optimal_queue[exists]);
 
                     if(exists !== -1 && optimal_queue[exists].chosen_promotion != null && optimal_queue[exists].chosen_promotion?.promotion != null) {
                         // Apply discount
@@ -99,7 +99,7 @@ export default function CartMenu({
                             applicable_quantity: 1
                         } as DiscountValue;
 
-                        console.log("applying, di: ", di);
+                        // console.log("applying, di: ", di);
                         dim.push(di);
 
                         // Remove from queue
@@ -114,7 +114,7 @@ export default function CartMenu({
             })}
         });
 
-        console.log(JSON.parse(JSON.stringify( applied_promotions )));
+        // console.log(JSON.parse(JSON.stringify( applied_promotions )));
         
         // Order state has been changed. Regenerate values
         let non_discounted_sub_total = applied_promotions.reduce(
@@ -174,7 +174,7 @@ export default function CartMenu({
     }, [orderState, customerState])
 
     return (
-        <div className="bg-gray-900 p-6 flex flex-col h-full" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
+        <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             <div className="flex flex-col gap-4 flex-1 max-h-full">
                 {/* Order Information */}
                 <div className="flex flex-row items-center justify-between max-h-screen overflow-hidden">
@@ -259,8 +259,7 @@ export default function CartMenu({
                         }}>Clear Cart</p>
                         {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
                     </div>
-                </div>
-                
+                </div>     
 
                 <hr className="border-gray-400 opacity-25"/>
                 

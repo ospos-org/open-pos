@@ -675,7 +675,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
 
                                                     // Merge any new duplicate products with the same discount.
                                                     const merged = new_products.map((p, i) => {
-                                                        console.log(`${p.product_name}: Product Match? `);
+                                                        // console.log(`${p.product_name}: Product Match? `);
 
                                                         const indx = new_products.findIndex(a => 
                                                             a.variant_information.barcode == p.variant_information.barcode
@@ -710,7 +710,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                                             )
                                                         );
 
-                                                        console.log("Dealing with overflow value, ", indx);
+                                                        // console.log("Dealing with overflow value, ", indx);
                                                         
                                                         // If overflow product already exists (in exact kind), increase quantity - otherwise ...
                                                         if(indx != -1) {
@@ -752,7 +752,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                                             )
                                                         );
 
-                                                        console.log(`Value at ${i}, has index ${indx}, name ${e.product_name}`);
+                                                        // console.log(`Value at ${i}, has index ${indx}, name ${e.product_name}`);
                                                         
                                                         if(indx != -1) {
                                                             clone[indx].quantity += e.quantity;

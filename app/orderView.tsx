@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Customer, FulfillmentStatus, MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
+import { Customer, FulfillmentStatus, MasterState, Order, OrderStatus, OrderStatusStatus, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
 import { OPEN_STOCK_URL, useWindowSize } from "./helpers";
 import moment from "moment";
 import Image from "next/image";
@@ -7,12 +7,13 @@ import { NoteElement } from "./noteElement";
 import { applyDiscount, fromDbDiscount, toAbsoluteDiscount, toDbDiscount, findMaxDiscount } from "./discount_helpers";
 import Link from "next/link";
 import NotesMenu from "./notesMenu";
+import { getDate } from "./kiosk";
 
 export default function OrderView({ activeOrder }: { activeOrder: Order }) {
     const [ orderInfo, setOrderInfo ] = useState<Transaction | null>(null);
     const [ customerInfo, setCustomerInfo ] = useState<Customer | null>(null);
 
-    console.log(activeOrder)
+    // console.log(activeOrder)
 
     useEffect(() => {
         fetch(`${OPEN_STOCK_URL}/transaction/ref/${activeOrder.reference}`, {
@@ -24,7 +25,7 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
                 const data: Transaction[] = await d.json();
                 setOrderInfo(data[0]);
 
-                console.log("CUST", data);
+                // console.log("CUST", data);
 
                 fetch(`${OPEN_STOCK_URL}/customer/${data[0].customer.customer_id}`, {
                     method: "GET",
@@ -60,12 +61,25 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex flex-row items-center justify-between">
+            <div className="flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-row items-center justify-between w-full">
                     <div className="flex flex-col">
                         <p className="text-gray-300 font-semibold">{customerInfo?.name}</p>
                         <p className="text-lg font-semibold text-white">{activeOrder?.reference} - {activeOrder?.order_type}</p>
                     </div>
+                </div>
+
+                <div className="bg-gray-800 rounded-md p-1">
+                    {
+                        activeOrder.order_type === "Pickup" ?
+                        <Image 
+                            className=""
+                            height={40} width={40} src="/icons/building-02.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
+                        :
+                        <Image 
+                            className=""
+                            height={40} width={40} src="/icons/globe-05.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image> 
+                    }
                 </div>
 
                 <div className="flex flex-col items-center justify-center text-white">
@@ -79,23 +93,48 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
                 {
                     completedPercentage === 0 ?
                     <div 
-                        onClick={() => {
-                        }}
-                        className="bg-green-600 opacity-25 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-none select-none">
-                        <p>Fulfil Order</p>
+                        className="bg-green-600 cursor-not-allowed opacity-25 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 select-none">
+                        <p>{activeOrder.order_type === "Pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
                     </div>
                     :
-                    completedPercentage === 1 ?
-                    <p>Fulfil Order</p>
+                    completedPercentage === 100 ?
+                    <div 
+                        onClick={async () => {
+                            if (activeOrder.order_type === "Pickup") {
+                                const new_status: OrderStatusStatus = {
+                                    InStore: getDate()
+                                }
+                                
+                                const data = await fetch(`${OPEN_STOCK_URL}/transaction/status/order/${activeOrder.reference}`, {
+                                    method: "POST",
+                                    credentials: "include",
+                                    redirect: "follow",
+                                    body: JSON.stringify(new_status)
+                                })
+                                
+                                if (data.ok) {
+                                    const updated = await data.json();
+                                    console.log("New Status", updated)
+                                }
+                            } else {
+                                console.log("CHANGE TO SCREEN TO SHOW PACKING")
+                            }
+                        }}
+                        className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
+                        <p>{activeOrder.order_type === "Pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <Image 
+                            className=""
+                            height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
+                    </div>
                     :
                     <div 
                         onClick={() => {
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>Partially Fulfil</p>
+                        <p>{activeOrder.order_type === "Pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -106,11 +145,8 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
                 <div 
                     onClick={() => {
                     }}
-                    className="bg-red-600 bg-opacity-80 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                    <p>Fail Order</p>
-                    <Image 
-                        className=""
-                        height={15} width={15} src="/icons/x.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
+                    className="bg-red-600 opacity-60 hover:opacity-100 transition-all rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
+                    <p>Cancel Order</p>
                 </div>
             </div>
 
@@ -263,7 +299,9 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
             <div className="flex flex-col gap-2">
                 <p className="text-gray-400">NOTES</p>
 
-                <NotesMenu notes={[activeOrder]} callback={() => {}}/>
+                <NotesMenu notes={[activeOrder]} callback={() => {
+
+                }}/>
             </div>
         </div>
     )

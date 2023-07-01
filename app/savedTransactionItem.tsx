@@ -90,7 +90,6 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
                     <Image
                         className="cursor-pointer"
                         onClick={async () => {
-                            console.log(transactionState);   
                             // Order's product purchases contain the following properties which we must fetch for.
                             // product: Product,
                             // variant_information: VariantInformation,
@@ -141,7 +140,6 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
             
             {/* <Image 
                 onClick={async () => {
-                    console.log(transaction);   
                     // Order's product purchases contain the following properties which we must fetch for.
                     // product: Product,
                     // variant_information: VariantInformation,

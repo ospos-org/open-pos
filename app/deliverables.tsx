@@ -47,7 +47,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
     const parseDeliverables = (deliverables: Order[]) => {
         let categories: ProductCategory[] = [];
 
-        console.log(deliverables)
+        // console.log(deliverables)
 
         deliverables.map(k => {
             k.products.map(b => {
@@ -142,7 +142,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
     return (
         <>
-            <div className="flex flex-col gap-4 md:p-12 p-6 w-full">
+            <div className="flex flex-col gap-4 md:p-4 p-6 w-full">
                 <div className="flex w-full max-w-full flex-row items-center gap-2 bg-gray-400 bg-opacity-10 p-2 rounded-md">
                     <div className={`text-white ${viewingMode == 0 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(0)}>Order</div>
                     <div className={`text-white ${viewingMode == 1 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(1)}>Batch</div>
@@ -198,10 +198,15 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
                                                         return (
                                                             <>
-                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : "1fr 250px 117px" }}>
+                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : ".5fr 1fr 250px 117px" }}>
                                                                     <div className="flex flex-col gap-2">
                                                                         <div className="flex flex-row gap-2">
-                                                                            <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
+                                                                            { 
+                                                                                completed === total_products ? 
+                                                                                    <p className="text-white font-mono font-bold px-2 bg-green-600 rounded-md">{completed}/{total_products}</p>
+                                                                                :
+                                                                                    <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
+                                                                            }
                                                                             <p className="text-white font-semibold not-italic md:visible hidden">Products Picked</p>
                                                                         </div>
                                                                         
@@ -250,6 +255,19 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                         </div>
                                                                     </div>
                                                                     
+                                                                    {
+                                                                        (windowSize?.width ?? 0) > 640 
+                                                                        ?
+                                                                        <p className="text-white opacity-40 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                                                                            {
+                                                                                b.products.map(k => k.product_name).join(", ")
+                                                                            }
+                                                                        </p>
+                                                                        :
+                                                                        <></>
+                                                                    }
+                                                                    
+
                                                                     <div className="flex flex-col md:flex-row md:gap-4">
                                                                         <p className="text-white font-mono font-bold">{b.reference}</p>
                                                                         <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
@@ -260,7 +278,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                             setActiveOrder(b)
                                                                         }}
                                                                         className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
-                                                                        <i className="md:visible invisible not-italic text-sm">Edit  </i>-{">"}
+                                                                        <i className="md:visible invisible not-italic text-sm">View  </i>-{">"}
                                                                     </p> 
                                                                 </div>
 
@@ -283,10 +301,10 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                             <p className="text-gray-400">No Deliverables</p>
                                             :
                                             <div className="flex flex-col gap-4" style={{ gridTemplateColumns: "125px 150px 100px 100px" }}>
-                                                <div className="hidden sm:grid" style={{ gridTemplateColumns: `1fr 100px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
+                                                <div className="hidden sm:grid items-center justify-center text-left" style={{ gridTemplateColumns: `1fr 140px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
                                                     <p className="text-white font-bold">Product Name</p>
                                                     <p className="text-gray-400 md:text-center">Quantity</p>
-                                                    <p className="text-gray-400 text-end">Order</p>
+                                                    <p className="text-gray-400 text-end pr-4">Order</p>
                                                 </div>
 
                                                 {
@@ -309,7 +327,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                                             barcode: k.barcode
                                                                                         })
                                                                                     }} 
-                                                                                    className="grid" 
+                                                                                    className="grid hover:bg-gray-700 p-2 px-4 rounded-md cursor-pointer items-center" 
                                                                                     style={{ gridTemplateColumns: `1fr ${(windowSize?.width ?? 0) > 640 ? "100px 100px" : "50px"}` }}>
                                                                                     <div className="flex flex-col justify-between">
                                                                                         <p className="text-white font-bold">{k.name}</p>
@@ -427,7 +445,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                     return b.id == k.id ? b : k
                                                 }) as Order[];
 
-                                                console.log("ABN", abn, b)
+                                                // console.log("ABN", abn, b)
                                             })
 
                                             setDeliverables(abn)
@@ -580,7 +598,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
             {
                 ((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640) ?
-                    <div className="bg-gray-900 p-6 flex flex-col h-full" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
+                    <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
                             activeOrder != null ? <OrderView activeOrder={activeOrder} /> : <></>
                         }

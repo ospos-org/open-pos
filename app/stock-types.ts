@@ -244,8 +244,10 @@ export type DiscountValue = {
     promotion?: Promotion
 }
 
+export type OrderStatusStatus = { Queued: string } | { Transit: TransitInformation } | { Processing: string } | { InStore: string} | { Fulfilled: string} | { Failed: string }
+
 export type OrderStatus = {
-    status: { Queued: string } | { Transit: TransitInformation } | { Processing: string } | { InStore: string} | { Fulfilled: string} | { Failed: string },
+    status: OrderStatusStatus,
     assigned_products: string[],
     timestamp: string
 }

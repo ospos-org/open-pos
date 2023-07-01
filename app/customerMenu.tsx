@@ -266,7 +266,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                     redirect: "follow"
                                 })?.then(async e => {
                                     const data: Customer = await e.json();
-                                    console.log(data);
+                                    // console.log(data);
                                     setCustomerState({ ...data });
                                     setActiveCustomer({ ...data });
 

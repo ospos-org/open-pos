@@ -255,8 +255,6 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             redirect: "follow"
                                                         })).json();
 
-                                                        console.log("For store", pickupStore, k);
-
                                                         return {
                                                             id: v4(),
                                                             destination: k.type == "Pickup" ? {
