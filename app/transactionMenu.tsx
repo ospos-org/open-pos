@@ -55,7 +55,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
 
                 {
                     transaction[0].products.length > 1 ?
-                    <div className="relative inline-block w-fit float-right">
+                    <div className="relative inline-block w-fit float-right flex-grow flex-shrink-0">
                         <p className="text-gray-400 text-sm">Transaction contains multiple orders</p>
                         <div className={`bg-gray-800 w-full select-none text-white flex flex-row justify-between gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
                             setSelectorOpen(!selectorOpen)

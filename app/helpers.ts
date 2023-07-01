@@ -176,7 +176,6 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     }
                 }) as DbProductPurchase[],
                 status_history: [
-                    ...e.status_history as StatusHistory[],
                     {
                         item: {   
                             status: {

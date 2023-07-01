@@ -404,7 +404,7 @@ export default function App() {
 					</div>
 				</div>
 				{/* Content for Menu */}
-				<div className="bg-gray-800 flex flex-1">
+				<div className="bg-gray-800 flex flex-1 overflow-hidden">
 					
 					{
 						(() => {

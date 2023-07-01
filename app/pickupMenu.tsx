@@ -146,7 +146,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             <div key={`PPURCH-SHIP-${k.item?.id}-${k.store}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
                                                                 <div onClick={() => {
                                                                     setGeneratedOrder(
-                                                                        generatedOrder.map(b => (b?.item?.id == k?.item?.id && b.store == k.store) ? { ...b, ship: !b.ship } : b)
+                                                                        generatedOrder.map(b => (b?.item?.id == k?.item?.id && b.store == k.store) ? { ...b, ship: !k.ship } : b)
                                                                     )
                                                                 }} className="cursor-pointer select-none">
                                                                     {
