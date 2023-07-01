@@ -6,6 +6,10 @@ OpenPOS is an open source visual Point of Sale system built on [`open-stock`](ht
 
 > **`BETA`** OpenPOS is in beta. This means, the sofware **is not stable**. Do not rely on it in any critical mannor for your business. 
 
+### Demo
+View a live demo [here](https://open-retail.bennjii.dev/). \
+This demo *is not always active*, If it's not operational, feel free to [email me](mailto:contact@bennjii.dev) and I'll bring it online.
+
 ### Mission
 OpenPOS is the completely open-source visual POS system. It was initially created in conjunction with the backend management system [`open-stock`](https://github.com/bennjii/open-stock) to develop a proof of concept for the viability and usability of its system, but has since proven this possibility and aims to become its own viable product once significant headway can be reached in terms of implementing the following features:
 
