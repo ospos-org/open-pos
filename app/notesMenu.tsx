@@ -3,7 +3,7 @@ import { FC, createRef, useState, useEffect } from "react";
 import { NoteElement } from "./noteElement";
 import { Note, Order } from "./stock-types";
 
-const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback }) => {
+const NotesMenu: FC<{ notes: Order[], callback: Function, autoFocus?: boolean }> = ({ notes, callback, autoFocus }) => {
     const input_ref = createRef<HTMLInputElement>();
     const [ activeOrder, setActiveOrder ] = useState<Order>(notes[0]);
     const [ selectorOpen, setSelectorOpen ] = useState(false);
@@ -70,7 +70,7 @@ const NotesMenu: FC<{ notes: Order[], callback: Function }> = ({ notes, callback
                             }
                         }}
                         placeholder={"Order Note"}
-                        autoFocus className="flex-1 text-white py-4 px-2 rounded-md bg-transparent outline-none" type="text" />
+                        autoFocus={autoFocus ?? true} className="flex-1 text-white py-4 px-2 rounded-md bg-transparent outline-none" type="text" />
                     
                     <Image
                         onClick={() => {

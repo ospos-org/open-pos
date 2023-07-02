@@ -299,7 +299,7 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
             <div className="flex flex-col gap-2">
                 <p className="text-gray-400">NOTES</p>
 
-                <NotesMenu notes={[activeOrder]} callback={() => {
+                <NotesMenu notes={[activeOrder]} autoFocus={false} callback={() => {
 
                 }}/>
             </div>
