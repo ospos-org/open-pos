@@ -2,13 +2,12 @@
 
 import Kiosk from './kiosk'
 import { createRef, useEffect, useState } from 'react'
-import { Home } from 'react-feather';
 import Image from "next/image"
 import Inventory from './inventory';
 import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
-import { ContactInformation, Employee, MasterState } from './stock-types';
+import { Employee, MasterState } from './stock-types';
 import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
 
 const ICON_SIZE = 30
@@ -134,7 +133,7 @@ export default function App() {
 				setInterval(() => fetch_cookie(rid, pass, () => {}), 9 * 60 * 1000)
 			});
 		}
-	}, [codeInput])
+	}, [codeInput, demoOverride])
 
 	const input_ref = createRef<HTMLInputElement>();
     const windowSize = useWindowSize();
@@ -177,7 +176,7 @@ export default function App() {
                             {
                                 (windowSize.width ?? 0) < 640 ?
                                 <>
-                                	<p className="text-xs text-white text-green-500 font-bold">ONL</p>
+                                	<p className="text-xs text-green-500 font-bold">ONL</p>
                                 </>
                                 :
                                 <>
@@ -191,7 +190,7 @@ export default function App() {
                             {
                                 (windowSize.width ?? 0) < 640 ?
                                 <>
-                                <p className="text-xs text-white text-green-500 font-bold">PRIN</p>
+                                <p className="text-xs text-green-500 font-bold">PRIN</p>
                                 </>
                                 :
                                 <>
@@ -205,7 +204,7 @@ export default function App() {
                             {
                                 (windowSize.width ?? 0) < 640 ?
                                 <>
-                                    <p className="text-xs text-white text-green-500 font-bold">TERM</p>
+                                    <p className="text-xs text-green-500 font-bold">TERM</p>
                                 </>
                                 :
                                 <>
@@ -366,7 +365,7 @@ export default function App() {
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-outline.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''} onClick={() => setPage(1)}></Image>
 							}
 							
-							{/* Job Calender - Place to-do-jobs */}
+							{/* Job Calendar - Place to-do-jobs */}
 							{
 								page == 2 ?
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''} onClick={() => setPage(2)}></Image>
@@ -461,7 +460,7 @@ export default function App() {
 					<div className="flex flex-col p-8 h-full flex-shrink-0 gap-6">
 						{/* Kiosk */}
 						
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(0); setMenuOpen(false)}}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(0); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 0 ?
 								<Image className="select-none svg cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/shopping-bag-01-filled.svg" alt="" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}></Image>
@@ -473,7 +472,7 @@ export default function App() {
 						</div>
 
 						{/* Inventory / Order Search */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(1); setMenuOpen(false)}}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(1); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 1 ?
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/cube-01-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}  alt={''}></Image>
@@ -484,8 +483,8 @@ export default function App() {
 							<p className={`font-bold ${page == 1 ? "" : "text-gray-300"}`}>Inventory</p>
 						</div>
 						
-						{/* Job Calender - Place to-do-jobs */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(2); setMenuOpen(false)}}>
+						{/* Job Calendar - Place to-do-jobs */}
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(2); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 2 ?
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar-filled.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} alt={''}></Image>
@@ -493,12 +492,12 @@ export default function App() {
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/calendar.svg" style={{ filter: "invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)" }} alt={''}></Image>
 							}
 
-							<p className={`font-bold ${page == 2 ? "" : "text-gray-300"}`}>Calender</p>
+							<p className={`font-bold ${page == 2 ? "" : "text-gray-300"}`}>Calendar</p>
 						</div>
 						
 
 						{/* Deliverables - Deliveries and Outgoing Orders */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(3); setMenuOpen(false)}}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(3); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 3 ?
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-up-right-filled.svg" alt={''}></Image>
@@ -511,7 +510,7 @@ export default function App() {
 
 						
 						{/* Incomings - Incoming Orders */}
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(4); setMenuOpen(false)}}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(4); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 4 ?
 								<Image className="select-none cursor-pointer" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/arrow-square-down-right-filled.svg" alt={''}></Image>
@@ -522,7 +521,7 @@ export default function App() {
 							<p className={`font-bold ${page == 4 ? "" : "text-gray-300"}`}>Incomings</p>
 						</div>
 						
-						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(5); setMenuOpen(false)}}>
+						<div className="flex flex-row gap-4 items-center" onClick={() => { setPage(5); setMenuOpen(false); setLowModeCartOn(false) }}>
 							{
 								page == 5 ?
 								<Image className="select-none" width={`${ICON_SIZE}`} height={`${ICON_SIZE}`} src="/icons/settings-04-filled.svg" alt={''}></Image>

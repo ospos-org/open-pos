@@ -142,235 +142,240 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
     return (
         <>
-            <div className="flex flex-col gap-4 md:p-4 p-6 w-full">
-                <div className="flex w-full max-w-full flex-row items-center gap-2 bg-gray-400 bg-opacity-10 p-2 rounded-md">
-                    <div className={`text-white ${viewingMode == 0 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(0)}>Order</div>
-                    <div className={`text-white ${viewingMode == 1 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(1)}>Batch</div>
-                </div>
+            {
+                (!lowModeCartOn || ((windowSize.width ?? 0) > 640)) ? 
+                <div className="flex flex-col gap-4 md:p-4 p-6 w-full">
+                    <div className="flex w-full max-w-full flex-row items-center gap-2 bg-gray-400 bg-opacity-10 p-2 rounded-md">
+                        <div className={`text-white ${viewingMode == 0 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(0)}>Order</div>
+                        <div className={`text-white ${viewingMode == 1 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(1)}>Batch</div>
+                    </div>
 
-                {
-                    (() => {
-                        switch(viewingMode) {
-                            case 0:
-                                return (
-                                    <div>
-                                        {
-                                            deliverables.length <= 0 ?
-                                            <p className="text-gray-400">No Deliverables</p>
-                                            :
-                                            <div className="flex flex-col gap-4">
-                                                {
-                                                    deliverables.map((b, indx) => {
-                                                        let total_products = 0
-                                                        let completed = 0;
+                    {
+                        (() => {
+                            switch(viewingMode) {
+                                case 0:
+                                    return (
+                                        <div>
+                                            {
+                                                deliverables.length <= 0 ?
+                                                <p className="text-gray-400">No Deliverables</p>
+                                                :
+                                                <div className="flex flex-col gap-4">
+                                                    {
+                                                        deliverables.map((b, indx) => {
+                                                            let total_products = 0
+                                                            let completed = 0;
 
-                                                        b.products.map(v => {
-                                                            total_products += v.quantity
-                                                            v?.instances?.map(k => {
-                                                                if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
-                                                                    completed += 1
-                                                                }
+                                                            b.products.map(v => {
+                                                                total_products += v.quantity
+                                                                v?.instances?.map(k => {
+                                                                    if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
+                                                                        completed += 1
+                                                                    }
+                                                                })
                                                             })
-                                                        })
 
-                                                        const pairings = new Map()
+                                                            const pairings = new Map()
 
-                                                        b.products.map(n => {
-                                                            n?.instances?.map(l => {
-                                                                if(pairings.get(l.fulfillment_status.pick_status) == undefined){
-                                                                    pairings.set(l.fulfillment_status.pick_status, 1)
+                                                            b.products.map(n => {
+                                                                n?.instances?.map(l => {
+                                                                    if(pairings.get(l.fulfillment_status.pick_status) == undefined){
+                                                                        pairings.set(l.fulfillment_status.pick_status, 1)
+                                                                    }else {
+                                                                        pairings.set(l.fulfillment_status.pick_status, pairings.get(l.fulfillment_status.pick_status)+1)
+                                                                    }
+                                                                })
+                                                            })
+
+                                                            const mapped = Array.from(pairings, ([name, value]) => ({ name, value }));
+                                                            mapped.sort((a, b) => {
+                                                                if (a.name < b.name) {
+                                                                    return -1;
+                                                                }else if (a.name > b.name) {
+                                                                    return 1;
                                                                 }else {
-                                                                    pairings.set(l.fulfillment_status.pick_status, pairings.get(l.fulfillment_status.pick_status)+1)
+                                                                    return 0;
                                                                 }
-                                                            })
-                                                        })
+                                                            });
 
-                                                        const mapped = Array.from(pairings, ([name, value]) => ({ name, value }));
-                                                        mapped.sort((a, b) => {
-                                                            if (a.name < b.name) {
-                                                                return -1;
-                                                            }else if (a.name > b.name) {
-                                                                return 1;
-                                                            }else {
-                                                                return 0;
-                                                            }
-                                                        });
-
-                                                        return (
-                                                            <>
-                                                                <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : ".5fr 1fr 250px 117px" }}>
-                                                                    <div className="flex flex-col gap-2">
-                                                                        <div className="flex flex-row gap-2">
-                                                                            { 
-                                                                                completed === total_products ? 
-                                                                                    <p className="text-white font-mono font-bold px-2 bg-green-600 rounded-md">{completed}/{total_products}</p>
-                                                                                :
-                                                                                    <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
-                                                                            }
-                                                                            <p className="text-white font-semibold not-italic md:visible hidden">Products Picked</p>
-                                                                        </div>
-                                                                        
-                                                                        <div className="flex flex-row items-center gap-2">
-                                                                            <div className="flex flex-row items-center justify-between gap-2">
-                                                                                {
-                                                                                    mapped.map((status: { name: PickStatus, value: number }) => {
-                                                                                        return (
-                                                                                            <div
-                                                                                                key={JSON.stringify(status)} 
-                                                                                                className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
-                                                                                                {(() => {
-                                                                                                    switch(status.name.toLowerCase()) {
-                                                                                                        case "picked":
-                                                                                                            return (
-                                                                                                                <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                                                            )
-                                                                                                        case "pending":
-                                                                                                            return (
-                                                                                                                <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                                                            )
-                                                                                                        case "failed":
-                                                                                                            return (
-                                                                                                                <div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                                                            )
-                                                                                                        case "uncertain":
-                                                                                                            return (
-                                                                                                                <div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                                                            )
-                                                                                                        case "processing":
-                                                                                                            return (
-                                                                                                                <div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
-                                                                                                            )
-                                                                                                        default:
-                                                                                                            return <></>
-                                                                                                    }
-                                                                                                })()}
-                                                                                                
-                                                                                                <p className="text-gray-200 text-sm">{status.value}</p>
-                                                                                            </div>
-                                                                                        )
-                                                                                        
-                                                                                    })
+                                                            return (
+                                                                <>
+                                                                    <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : ".5fr 1fr 250px 117px" }}>
+                                                                        <div className="flex flex-col gap-2">
+                                                                            <div className="flex flex-row gap-2">
+                                                                                { 
+                                                                                    completed === total_products ? 
+                                                                                        <p className="text-white font-mono font-bold px-2 bg-green-600 rounded-md">{completed}/{total_products}</p>
+                                                                                    :
+                                                                                        <p className="text-white font-mono font-bold px-2 bg-gray-700 rounded-md">{completed}/{total_products}</p>
                                                                                 }
+                                                                                <p className="text-white font-semibold not-italic md:visible hidden">Products Picked</p>
+                                                                            </div>
+                                                                            
+                                                                            <div className="flex flex-row items-center gap-2">
+                                                                                <div className="flex flex-row items-center justify-between gap-2">
+                                                                                    {
+                                                                                        mapped.map((status: { name: PickStatus, value: number }) => {
+                                                                                            return (
+                                                                                                <div
+                                                                                                    key={JSON.stringify(status)} 
+                                                                                                    className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
+                                                                                                    {(() => {
+                                                                                                        switch(status.name.toLowerCase()) {
+                                                                                                            case "picked":
+                                                                                                                return (
+                                                                                                                    <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                                )
+                                                                                                            case "pending":
+                                                                                                                return (
+                                                                                                                    <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                                )
+                                                                                                            case "failed":
+                                                                                                                return (
+                                                                                                                    <div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                                )
+                                                                                                            case "uncertain":
+                                                                                                                return (
+                                                                                                                    <div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                                )
+                                                                                                            case "processing":
+                                                                                                                return (
+                                                                                                                    <div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+                                                                                                                )
+                                                                                                            default:
+                                                                                                                return <></>
+                                                                                                        }
+                                                                                                    })()}
+                                                                                                    
+                                                                                                    <p className="text-gray-200 text-sm">{status.value}</p>
+                                                                                                </div>
+                                                                                            )
+                                                                                            
+                                                                                        })
+                                                                                    }
+                                                                                </div>
                                                                             </div>
                                                                         </div>
+                                                                        
+                                                                        {
+                                                                            (windowSize?.width ?? 0) > 640 
+                                                                            ?
+                                                                            <p className="text-white opacity-40 overflow-ellipsis overflow-hidden whitespace-nowrap">
+                                                                                {
+                                                                                    b.products.map(k => k.product_name).join(", ")
+                                                                                }
+                                                                            </p>
+                                                                            :
+                                                                            <></>
+                                                                        }
+                                                                        
+
+                                                                        <div className="flex flex-col md:flex-row md:gap-4">
+                                                                            <p className="text-white font-mono font-bold">{b.reference}</p>
+                                                                            <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
+                                                                        </div>
+
+                                                                        <p 
+                                                                            onClick={() => {
+                                                                                setActiveOrder(b)
+                                                                                setLowModeCartOn(!lowModeCartOn)
+                                                                            }}
+                                                                            className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
+                                                                            <i className="md:visible invisible not-italic text-sm">{(windowSize?.width ?? 0) > 640 ? "View " : ""}</i>-{">"}
+                                                                        </p> 
                                                                     </div>
-                                                                    
+
                                                                     {
-                                                                        (windowSize?.width ?? 0) > 640 
-                                                                        ?
-                                                                        <p className="text-white opacity-40 overflow-ellipsis overflow-hidden whitespace-nowrap">
-                                                                            {
-                                                                                b.products.map(k => k.product_name).join(", ")
-                                                                            }
-                                                                        </p>
-                                                                        :
-                                                                        <></>
+                                                                        indx == deliverables.length-1 ? <></> : <hr className="border-gray-700" />
                                                                     }
-                                                                    
-
-                                                                    <div className="flex flex-col md:flex-row md:gap-4">
-                                                                        <p className="text-white font-mono font-bold">{b.reference}</p>
-                                                                        <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
-                                                                    </div>
-
-                                                                    <p 
-                                                                        onClick={() => {
-                                                                            setActiveOrder(b)
-                                                                        }}
-                                                                        className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
-                                                                        <i className="md:visible invisible not-italic text-sm">View  </i>-{">"}
-                                                                    </p> 
-                                                                </div>
-
-                                                                {
-                                                                    indx == deliverables.length-1 ? <></> : <hr className="border-gray-700" />
-                                                                }
-                                                            </>
-                                                        )
-                                                    })
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                )
-                            case 1:
-                                return (
-                                    <div className="flex flex-col gap-2">
-                                        {
-                                            deliverables.length <= 0 ?
-                                            <p className="text-gray-400">No Deliverables</p>
-                                            :
-                                            <div className="flex flex-col gap-4" style={{ gridTemplateColumns: "125px 150px 100px 100px" }}>
-                                                <div className="hidden sm:grid items-center justify-center text-left" style={{ gridTemplateColumns: `1fr 140px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
-                                                    <p className="text-white font-bold">Product Name</p>
-                                                    <p className="text-gray-400 md:text-center">Quantity</p>
-                                                    <p className="text-gray-400 text-end pr-4">Order</p>
+                                                                </>
+                                                            )
+                                                        })
+                                                    }
                                                 </div>
+                                            }
+                                        </div>
+                                    )
+                                case 1:
+                                    return (
+                                        <div className="flex flex-col gap-2">
+                                            {
+                                                deliverables.length <= 0 ?
+                                                <p className="text-gray-400">No Deliverables</p>
+                                                :
+                                                <div className="flex flex-col gap-4" style={{ gridTemplateColumns: "125px 150px 100px 100px" }}>
+                                                    <div className="hidden sm:grid items-center justify-center text-left" style={{ gridTemplateColumns: `1fr 140px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
+                                                        <p className="text-white font-bold">Product Name</p>
+                                                        <p className="text-gray-400 md:text-center">Quantity</p>
+                                                        <p className="text-gray-400 text-end pr-4">Order</p>
+                                                    </div>
 
-                                                {
-                                                    productCategories.map(b => {
-                                                        return (
-                                                            <div key={`PRODUCT CATEGORIES: ${b.name}-${b.items.length}`} className="flex flex-col">
-                                                                <p className="text-gray-400 font-bold text-sm">{b.name.toUpperCase()}</p>
+                                                    {
+                                                        productCategories.map(b => {
+                                                            return (
+                                                                <div key={`PRODUCT CATEGORIES: ${b.name}-${b.items.length}`} className="flex flex-col">
+                                                                    <p className="text-gray-400 font-bold text-sm">{b.name.toUpperCase()}</p>
 
-                                                                <div className="flex flex-col gap-2">
-                                                                    {
-                                                                        b.items.sort((a, b) => { return a.name.localeCompare(b.name) }).map(k => {
-                                                                            const b = k.instances.filter(n => n.state.fulfillment_status.pick_status.toLowerCase() == "picked")
-                                                                            return (
-                                                                                <div
-                                                                                    key={`ITEM: ${k.barcode}-${k.sku}`}
-                                                                                    onClick={() => {
-                                                                                        setMenuState({
-                                                                                            instances: k.instances,
-                                                                                            product: k.sku,
-                                                                                            barcode: k.barcode
-                                                                                        })
-                                                                                    }} 
-                                                                                    className="grid hover:bg-gray-700 p-2 px-4 rounded-md cursor-pointer items-center" 
-                                                                                    style={{ gridTemplateColumns: `1fr ${(windowSize?.width ?? 0) > 640 ? "100px 100px" : "50px"}` }}>
-                                                                                    <div className="flex flex-col justify-between">
-                                                                                        <p className="text-white font-bold">{k.name}</p>
-                                                                                        <p className="text-gray-400">{k.variant}</p>
+                                                                    <div className="flex flex-col gap-2">
+                                                                        {
+                                                                            b.items.sort((a, b) => { return a.name.localeCompare(b.name) }).map(k => {
+                                                                                const b = k.instances.filter(n => n.state.fulfillment_status.pick_status.toLowerCase() == "picked")
+                                                                                return (
+                                                                                    <div
+                                                                                        key={`ITEM: ${k.barcode}-${k.sku}`}
+                                                                                        onClick={() => {
+                                                                                            setMenuState({
+                                                                                                instances: k.instances,
+                                                                                                product: k.sku,
+                                                                                                barcode: k.barcode
+                                                                                            })
+                                                                                        }} 
+                                                                                        className="grid hover:bg-gray-700 p-2 px-4 rounded-md cursor-pointer items-center" 
+                                                                                        style={{ gridTemplateColumns: `1fr ${(windowSize?.width ?? 0) > 640 ? "100px 100px" : "50px"}` }}>
+                                                                                        <div className="flex flex-col justify-between">
+                                                                                            <p className="text-white font-bold">{k.name}</p>
+                                                                                            <p className="text-gray-400">{k.variant}</p>
+                                                                                        </div>
+
+                                                                                        <p className={`${b.length == k.instances.length ? "text-gray-600" : " text-gray-400"} text-end w-full font-bold md:text-center`}>{b.length} / {k.instances.length}</p>
+                                                                                        
+                                                                                        <p className="text-gray-400 hidden md:flex">{k.order_reference}</p>
                                                                                     </div>
-
-                                                                                    <p className={`${b.length == k.instances.length ? "text-gray-600" : " text-gray-400"} text-end w-full font-bold md:text-center`}>{b.length} / {k.instances.length}</p>
-                                                                                    
-                                                                                    <p className="text-gray-400 hidden md:flex">{k.order_reference}</p>
-                                                                                </div>
-                                                                            )
-                                                                        })
-                                                                    }
+                                                                                )
+                                                                            })
+                                                                        }
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )
-                                                    })
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                )
-                        }
-                    })()
-                }
-            </div>
-            
-            {
-				(menuState != null || stateChange != null) && (windowSize.height ?? 0 <= 640) ? 
-				<div 
-					onClick={() => {
-                        if (stateChange != null) setStateChange(null)
-                        else setMenuState(null)
-					}}
-					className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"></div>
-				:
-				<></>
-			}
+                                                            )
+                                                        })
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    )
+                            }
+                        })()
+                    }
 
+                    {
+                        (menuState != null || stateChange != null) && (windowSize.height ?? 0 <= 640) ? 
+                        <div 
+                            onClick={() => {
+                                if (stateChange != null) setStateChange(null)
+                                else setMenuState(null)
+                            }}
+                            className="bg-black h-[100vh] sm:w-[calc(100dw-62px)] sm:left-[62px] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 left-0 fixed z-5 opacity-40"></div>
+                        :
+                        <></>
+                    }
+                </div>
+                :
+                <></>
+            }
 
             {
                 stateChange != null ?
-                <div className="absolute overflow-y-scroll flex flex-col gap-4 z-50 bottom-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
+                <div className="absolute overflow-y-scroll sm:w-[calc(100vw-62px)] sm:left-[62px] flex flex-col gap-4 z-50 bottom-0 sm:mb-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
                     <div className="flex flex-col">
                         <p className="text-gray-400 text-sm font-bold">CURRENT STATUS</p>
                         <p>{stateChange.state.fulfillment_status.pick_status}</p>
@@ -481,7 +486,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
             {
                 menuState != null ?
-                <div className="absolute overflow-y-scroll flex flex-col gap-4 z-40 bottom-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
+                <div className="absolute overflow-y-scroll sm:w-[calc(100vw-62px)] sm:left-[62px] flex flex-col gap-4 z-40 bottom-0 sm:mb-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
                     {
                         menuInformation ?
                         <div className="flex flex-col">
@@ -600,13 +605,19 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                 ((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640) ?
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
-                            activeOrder != null ? <OrderView activeOrder={activeOrder} /> : <></>
+                            activeOrder != null ? 
+                                <OrderView activeOrder={activeOrder} /> 
+                            : 
+                                <div className="h-full flex flex-col items-center justify-center flex-1">
+                                    <p className="text-gray-400 text-center self-center">
+                                        Please <strong>view</strong> an order to begin.
+                                    </p>
+                                </div>
                         }
                     </div>
                 :
                     <></>
             }
-            
         </>
     )
 }
