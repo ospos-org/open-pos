@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton"
 import OrderView from "./orderView";
 
+
 export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
     const [ , setIsLoading ] = useState(true);
@@ -140,6 +141,8 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
     const [ viewingMode, setViewingMode ] = useState(0);
 
+    console.log(stateChange, windowSize.width)
+
     return (
         <>
             {
@@ -200,7 +203,16 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
 
                                                             return (
                                                                 <>
-                                                                    <div className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr 50px" : ".5fr 1fr 250px 117px" }}>
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            if ((windowSize?.width ?? 0) < 640) {
+                                                                                setActiveOrder(b)
+                                                                                setLowModeCartOn(!lowModeCartOn)
+                                                                                setStateChange(null)
+                                                                                setMenuState(null)
+                                                                            }
+                                                                        }} 
+                                                                        className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr" : ".5fr 1fr 250px 117px" }}>
                                                                         <div className="flex flex-col gap-2">
                                                                             <div className="flex flex-row gap-2">
                                                                                 { 
@@ -270,19 +282,27 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                         }
                                                                         
 
-                                                                        <div className="flex flex-col md:flex-row md:gap-4">
+                                                                        <div className="flex flex-col md:flex-row items-end sm:items-start md:gap-4">
                                                                             <p className="text-white font-mono font-bold">{b.reference}</p>
                                                                             <p className="text-white text-opacity-50">{moment(b.status.timestamp).format('D/MM/yy')}</p>
                                                                         </div>
 
-                                                                        <p 
-                                                                            onClick={() => {
-                                                                                setActiveOrder(b)
-                                                                                setLowModeCartOn(!lowModeCartOn)
-                                                                            }}
-                                                                            className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
-                                                                            <i className="md:visible invisible not-italic text-sm">{(windowSize?.width ?? 0) > 640 ? "View " : ""}</i>-{">"}
-                                                                        </p> 
+                                                                        {
+                                                                            (windowSize?.width ?? 0) > 640 
+                                                                            ?
+                                                                            <p 
+                                                                                onClick={() => {
+                                                                                    setActiveOrder(b)
+                                                                                    setLowModeCartOn(!lowModeCartOn)
+                                                                                    setStateChange(null)
+                                                                                    setMenuState(null)
+                                                                                }}
+                                                                                className="bg-gray-100 text-sm text-end w-fit rounded-md place-center self-center items-center text-gray-800 font-bold px-4 justify-self-end hover:cursor-pointer">
+                                                                                <i className="md:visible invisible not-italic text-sm">{(windowSize?.width ?? 0) > 640 ? "View " : ""}</i>-{">"}
+                                                                            </p> 
+                                                                            :
+                                                                            <></>
+                                                                        }
                                                                     </div>
 
                                                                     {
@@ -358,7 +378,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                     }
 
                     {
-                        (menuState != null || stateChange != null) && (windowSize.height ?? 0 <= 640) ? 
+                        (menuState != null || stateChange != null) && ((windowSize.width ?? 0) <= 640) ? 
                         <div 
                             onClick={() => {
                                 if (stateChange != null) setStateChange(null)
@@ -374,107 +394,231 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
             }
 
             {
-                stateChange != null ?
-                <div className="absolute overflow-y-scroll sm:w-[calc(100vw-62px)] sm:left-[62px] flex flex-col gap-4 z-50 bottom-0 sm:mb-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
-                    <div className="flex flex-col">
-                        <p className="text-gray-400 text-sm font-bold">CURRENT STATUS</p>
-                        <p>{stateChange.state.fulfillment_status.pick_status}</p>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <p className="text-gray-400 text-sm font-bold">SET STATUS</p>
-                        
-                        <div className="flex flex-row flex-wrap gap-2">
+                stateChange != null || menuState != null ?
+                <div className="absolute pointer-events-none sm:relative flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
+                    {
+                        menuState != null ?
+                        <div className="absolute pointer-events-auto sm:relative overflow-y-scroll flex flex-col gap-4 z-40 bottom-0 sm:mb-0 mb-[40px] sm:h-full h-[440px] p-4 sm:w-full w-screen bg-black text-white h-80px sm:rounded-none rounded-t-md">
                             {
-                                ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
-                                    return <p 
-                                        key={JSON.stringify(k)}
-                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
-                                        onClick={() => {
-                                            if(k == stateChange.state.fulfillment_status.pick_status) setPendingStatus(null)
-                                            else setPendingStatus(k.toLowerCase())
-                                        }}>{k}</p>
-                                })
+                                menuInformation ?
+                                <div className="flex flex-col">
+                                    <p className="font-bold text-lg">{menuInformation?.name}</p>
+                                    <p className="text-gray-400">{menuInformation?.description.substring(0, 40)}...</p>
+                                </div>
+                                :
+                                <div className="flex flex-col gap-[4px]">
+                                    <Skeleton className="w-[100px] h-[26px] rounded-sm" />
+                                    <Skeleton className="w-full h-[22px] rounded-sm" />
+                                </div>
                             }
-                        </div>
-                    </div>
 
-                    <div className="flex flex-col">
-                        <p className="text-gray-400 text-sm font-bold">STATUS HISTORY</p>
-
-                        <div className={`flex flex-col gap-2 ${pendingStatus != null ? "pb-[60px]" : ""}`}>
-                            {
-                                stateChange.state.fulfillment_status.pick_history.map(k => {
-                                    return (
-                                        <div key={JSON.stringify(k)} className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                                            <div className="flex flex-col">
-                                                <p className="font-bold">{k.item}</p>
-                                                <p className="text-gray-400 text-sm">{k.reason}</p>
-                                            </div>
-                                            <p className="text-gray-400 text-sm text-end">{new Date(k.timestamp).toLocaleString()}</p>
-                                        </div>
-                                    )
-                                })
-                            }
-                        </div>
-                    </div>
-                        
-                    { 
-                        pendingStatus != null ?
-                        <div className="fixed flex flex-row gap-4 bottom-[45px] min-w-[calc(100vw-30px)] bg-black">
-                            <div
-                                onClick={() => {
-                                    setPendingStatus(null)
-                                }} 
-                                className="bg-white text-black flex-1 text-center p-4 rounded-md">
-                                <p>Discard</p>
-                            </div>
-
-                            <div
-                                onClick={() => {
-                                    fetch(`${OPEN_STOCK_URL}/transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
-                                        method: "POST",
-                                        body: pendingStatus,
-                                        credentials: "include",
-                                        redirect: "follow"
-                                    }).then(async k => {
-                                        if(k.ok) {
-                                            setPendingStatus(null)
-                                            setStateChange(null)
-
-                                            const data: Transaction = await k.json();
-                                            let abn: Order[] = deliverables;
-
-                                            data.products.map(b => {
-                                                abn = deliverables.map(k => {
-                                                    return b.id == k.id ? b : k
-                                                }) as Order[];
-
-                                                // console.log("ABN", abn, b)
-                                            })
-
-                                            setDeliverables(abn)
-                                            const categories = parseDeliverables(abn);
-                                            setProductCategories(categories)
-
-                                            categories.map(c => {
-                                                c.items.map(k => {
-                                                    if(k.barcode == menuState?.barcode) {
-                                                        setMenuState({
-                                                            instances: k.instances,
-                                                            product: k.sku,
-                                                            barcode: k.barcode
-                                                        })
-                                                    }
-                                                }) 
-                                            })
+                            <div className="flex flex-row items-start justify-between">
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex flex-col">
+                                        <p className="text-gray-400 text-sm font-bold">VARIANT</p>
+                                        {
+                                            menuInformation?.variants ?
+                                                menuInformation?.variants
+                                                .filter(k => k.barcode == menuState.barcode)
+                                                .map(k => {
+                                                    return (
+                                                        <div key={JSON.stringify(k)} className="flex flex-row items-center gap-2 pr-4 ">
+                                                            <p className="font-semibold">{k.name}</p>
+                                                        </div>
+                                                    )
+                                                })
+                                            :
+                                                <Skeleton className="w-full h-[24px] rounded-sm" />
                                         }
-                                    })
-                                }} 
-                                className="bg-blue-700 flex-1 text-center p-4 rounded-md">
-                                <p>Save</p>
+                                    </div>
+                                    
+                                    <div className="flex flex-col">
+                                        <p className="text-gray-400 text-sm font-bold">QUANTITY</p>
+                                        {
+                                            menuInformation?.variants ?
+                                                <p>{menuState.instances.length}</p>
+                                            :
+                                                <Skeleton className="w-[25px] h-[24px] rounded-sm" />
+                                        }
+                                    </div>
+                                </div>
+                                
+                                {
+                                    menuInformation?.images?.[0] ?
+                                    <div className="pr-4">
+                                        <Image src={menuInformation?.variants.find(k => k.barcode == menuState.barcode)?.images?.[0] ?? menuInformation.images?.[0]} className="rounded-md" height={150} width={150} alt={menuInformation?.name}></Image>
+                                    </div>
+                                    :
+                                    <div className="pr-4">
+                                        <Skeleton className="mr-4 w-[150px] h-[150px] rounded-sm" />
+                                    </div>
+                                }
                             </div>
                             
+                            <div className="flex flex-col">
+                                <p className="text-gray-400 text-sm font-bold">INSTANCES</p>
+
+                                <div className="flex flex-col gap-2">
+                                    {
+                                        menuState?.instances.map(k => {
+                                            return (
+                                                <div key={JSON.stringify(k)} className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
+                                                    <div className="flex flex-row items-center gap-2">
+                                                        {(() => {
+                                                            switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {
+                                                                case "pending":
+                                                                    return (
+                                                                        <div className="bg-gray-400 h-3 w-3 rounded-full"></div>
+                                                                    )
+                                                                case "picked":
+                                                                    return (
+                                                                        <div className="bg-green-600 h-3 w-3 rounded-full"></div>
+                                                                    )
+                                                                case "failed":
+                                                                    return (
+                                                                        <div className="bg-red-600 h-3 w-3 rounded-full"></div>
+                                                                    )
+                                                                case "uncertain":
+                                                                    return (
+                                                                        <div className="bg-blue-400 h-3 w-3 rounded-full"></div>
+                                                                    )
+                                                                case "processing":
+                                                                    return (
+                                                                        <div className="bg-orange-400 h-3 w-3 rounded-full"></div>
+                                                                    )
+                                                                default:
+                                                                    return (
+                                                                        <div className="bg-gray"></div>
+                                                                    )
+                                                            }
+                                                        })()}
+
+                                                        <p>{k.state.fulfillment_status.pick_status}</p>
+                                                    </div>
+                                                    
+                                                    <p className="font-bold text-gray-400">{k.transaction_id}</p>
+                                                    <p 
+                                                        onClick={() => {
+                                                            setStateChange(k)
+                                                        }}
+                                                        className="bg-gray-100 rounded-md text-gray-800 font-bold px-8">-{">"}</p>
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        :
+                        <></>
+                    }
+
+                    {
+                        stateChange != null ?
+                        <div className="absolute pointer-events-auto sm:relative overflow-y-scroll flex flex-col gap-4 z-50 bottom-0 sm:mb-0 mb-[40px] sm:h-full h-[440px] p-4 sm:w-full w-screen bg-black text-white h-80px sm:rounded-none rounded-t-md">
+                            <div className="flex flex-col">
+                                <p className="text-gray-400 text-sm font-bold">CURRENT STATUS</p>
+                                <p>{stateChange.state.fulfillment_status.pick_status}</p>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <p className="text-gray-400 text-sm font-bold">SET STATUS</p>
+                                
+                                <div className="flex flex-row flex-wrap gap-2">
+                                    {
+                                        ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
+                                            return <p 
+                                                key={JSON.stringify(k)}
+                                                className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
+                                                onClick={() => {
+                                                    if(k == stateChange.state.fulfillment_status.pick_status) setPendingStatus(null)
+                                                    else setPendingStatus(k.toLowerCase())
+                                                }}>{k}</p>
+                                        })
+                                    }
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <p className="text-gray-400 text-sm font-bold">STATUS HISTORY</p>
+
+                                <div className={`flex flex-col gap-2 ${pendingStatus != null ? "pb-[60px]" : ""}`}>
+                                    {
+                                        stateChange.state.fulfillment_status.pick_history.map(k => {
+                                            return (
+                                                <div key={JSON.stringify(k)} className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                                                    <div className="flex flex-col">
+                                                        <p className="font-bold">{k.item}</p>
+                                                        <p className="text-gray-400 text-sm">{k.reason}</p>
+                                                    </div>
+                                                    <p className="text-gray-400 text-sm text-end">{new Date(k.timestamp).toLocaleString()}</p>
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
+                            </div>
+                                
+                            { 
+                                pendingStatus != null ?
+                                <div className="fixed flex flex-row gap-4 bottom-[45px] min-w-[calc(100vw-30px)] bg-black">
+                                    <div
+                                        onClick={() => {
+                                            setPendingStatus(null)
+                                        }} 
+                                        className="bg-white text-black flex-1 text-center p-4 rounded-md">
+                                        <p>Discard</p>
+                                    </div>
+
+                                    <div
+                                        onClick={() => {
+                                            fetch(`${OPEN_STOCK_URL}/transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
+                                                method: "POST",
+                                                body: pendingStatus,
+                                                credentials: "include",
+                                                redirect: "follow"
+                                            }).then(async k => {
+                                                if(k.ok) {
+                                                    setPendingStatus(null)
+                                                    setStateChange(null)
+
+                                                    const data: Transaction = await k.json();
+                                                    let abn: Order[] = deliverables;
+
+                                                    data.products.map(b => {
+                                                        abn = deliverables.map(k => {
+                                                            return b.id == k.id ? b : k
+                                                        }) as Order[];
+
+                                                        // console.log("ABN", abn, b)
+                                                    })
+
+                                                    setDeliverables(abn)
+                                                    const categories = parseDeliverables(abn);
+                                                    setProductCategories(categories)
+
+                                                    categories.map(c => {
+                                                        c.items.map(k => {
+                                                            if(k.barcode == menuState?.barcode) {
+                                                                setMenuState({
+                                                                    instances: k.instances,
+                                                                    product: k.sku,
+                                                                    barcode: k.barcode
+                                                                })
+                                                            }
+                                                        }) 
+                                                    })
+                                                }
+                                            })
+                                        }} 
+                                        className="bg-blue-700 flex-1 text-center p-4 rounded-md">
+                                        <p>Save</p>
+                                    </div>
+                                    
+                                </div>
+                                :
+                                <></>
+                            }
                         </div>
                         :
                         <></>
@@ -485,124 +629,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
             }
 
             {
-                menuState != null ?
-                <div className="absolute overflow-y-scroll sm:w-[calc(100vw-62px)] sm:left-[62px] flex flex-col gap-4 z-40 bottom-0 sm:mb-0 mb-[40px] h-[440px] p-4 w-screen bg-black text-white h-80px rounded-t-md">
-                    {
-                        menuInformation ?
-                        <div className="flex flex-col">
-                            <p className="font-bold text-lg">{menuInformation?.name}</p>
-                            <p className="text-gray-400">{menuInformation?.description.substring(0, 40)}...</p>
-                        </div>
-                        :
-                        <div className="flex flex-col gap-[4px]">
-                            <Skeleton className="w-[100px] h-[26px] rounded-sm" />
-                            <Skeleton className="w-full h-[22px] rounded-sm" />
-                        </div>
-                    }
-
-                    <div className="flex flex-row items-start justify-between">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col">
-                                <p className="text-gray-400 text-sm font-bold">VARIANT</p>
-                                {
-                                    menuInformation?.variants ?
-                                        menuInformation?.variants
-                                        .filter(k => k.barcode == menuState.barcode)
-                                        .map(k => {
-                                            return (
-                                                <div key={JSON.stringify(k)} className="flex flex-row items-center gap-2 pr-4 ">
-                                                    <p className="font-semibold">{k.name}</p>
-                                                </div>
-                                            )
-                                        })
-                                    :
-                                        <Skeleton className="w-full h-[24px] rounded-sm" />
-                                }
-                            </div>
-                            
-                            <div className="flex flex-col">
-                                <p className="text-gray-400 text-sm font-bold">QUANTITY</p>
-                                {
-                                    menuInformation?.variants ?
-                                        <p>{menuState.instances.length}</p>
-                                    :
-                                        <Skeleton className="w-[25px] h-[24px] rounded-sm" />
-                                }
-                            </div>
-                        </div>
-                        
-                        {
-                            menuInformation?.images?.[0] ?
-                            <div className="pr-4">
-                                <Image src={menuInformation?.variants.find(k => k.barcode == menuState.barcode)?.images?.[0] ?? menuInformation.images?.[0]} className="rounded-md" height={150} width={150} alt={menuInformation?.name}></Image>
-                            </div>
-                            :
-                            <div className="pr-4">
-                                <Skeleton className="mr-4 w-[150px] h-[150px] rounded-sm" />
-                            </div>
-                        }
-                    </div>
-                    
-                    <div className="flex flex-col">
-                        <p className="text-gray-400 text-sm font-bold">INSTANCES</p>
-
-                        <div className="flex flex-col gap-2">
-                            {
-                                menuState?.instances.map(k => {
-                                    return (
-                                        <div key={JSON.stringify(k)} className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
-                                            <div className="flex flex-row items-center gap-2">
-                                                {(() => {
-                                                    switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {
-                                                        case "pending":
-                                                            return (
-                                                                <div className="bg-gray-400 h-3 w-3 rounded-full"></div>
-                                                            )
-                                                        case "picked":
-                                                            return (
-                                                                <div className="bg-green-600 h-3 w-3 rounded-full"></div>
-                                                            )
-                                                        case "failed":
-                                                            return (
-                                                                <div className="bg-red-600 h-3 w-3 rounded-full"></div>
-                                                            )
-                                                        case "uncertain":
-                                                            return (
-                                                                <div className="bg-blue-400 h-3 w-3 rounded-full"></div>
-                                                            )
-                                                        case "processing":
-                                                            return (
-                                                                <div className="bg-orange-400 h-3 w-3 rounded-full"></div>
-                                                            )
-                                                        default:
-                                                            return (
-                                                                <div className="bg-gray"></div>
-                                                            )
-                                                    }
-                                                })()}
-
-                                                <p>{k.state.fulfillment_status.pick_status}</p>
-                                            </div>
-                                            
-                                            <p className="font-bold text-gray-400">{k.transaction_id}</p>
-                                            <p 
-                                                onClick={() => {
-                                                    setStateChange(k)
-                                                }}
-                                                className="bg-gray-100 rounded-md text-gray-800 font-bold px-8">-{">"}</p>
-                                        </div>
-                                    )
-                                })
-                            }
-                        </div>
-                    </div>
-                </div>
-                :
-                <></>
-            }
-
-            {
-                ((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640) ?
+                menuState == null && stateChange == null && (((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640)) ?
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
                             activeOrder != null ? 
