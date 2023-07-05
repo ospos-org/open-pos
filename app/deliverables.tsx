@@ -561,7 +561,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                 
                             { 
                                 pendingStatus != null ?
-                                <div className="fixed flex flex-row gap-4 bottom-[45px] min-w-[calc(100vw-30px)] bg-black">
+                                <div className="sm:sticky bg-white bg-opacity-5 rounded-md p-4 backdrop-blur-lg backdrop-filter fixed flex flex-row gap-4 bottom-[45px] sm:w-full sm:min-w-0 sm:bottom-4 min-w-[calc(100vw-30px)]">
                                     <div
                                         onClick={() => {
                                             setPendingStatus(null)
