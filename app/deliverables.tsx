@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FulfillmentStatus, MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
+import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
 import { OPEN_STOCK_URL, useWindowSize } from "./helpers";
 import moment from "moment";
 import Image from "next/image";
@@ -44,6 +44,10 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
     }, [menuState])
 
     const [ activeOrder, setActiveOrder ] = useState<Order | null>(null);
+
+    useEffect(() => {
+        setDeliverables(deliverables => [ ...deliverables.map((order) => order.reference === activeOrder?.reference ? activeOrder : order) ])
+    }, [activeOrder])
 
     const parseDeliverables = (deliverables: Order[]) => {
         let categories: ProductCategory[] = [];
@@ -161,7 +165,9 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                         <div>
                                             {
                                                 deliverables.length <= 0 ?
-                                                <p className="text-gray-400">No Deliverables</p>
+                                                <div className="flex items-center justify-center h-full pt-4">
+                                                   <p className="text-gray-400">No Deliverables</p>
+                                                </div>
                                                 :
                                                 <div className="flex flex-col gap-4">
                                                     {
@@ -321,7 +327,9 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                         <div className="flex flex-col gap-2">
                                             {
                                                 deliverables.length <= 0 ?
-                                                <p className="text-gray-400">No Deliverables</p>
+                                                <div className="flex items-center justify-center h-full pt-4">
+                                                    <p className="text-gray-400">No Deliverables</p>
+                                                </div>
                                                 :
                                                 <div className="flex flex-col gap-4" style={{ gridTemplateColumns: "125px 150px 100px 100px" }}>
                                                     <div className="hidden sm:grid items-center justify-center text-left" style={{ gridTemplateColumns: `1fr 140px ${(windowSize?.width ?? 0) > 640 ? "100px" : ""}` }}>
@@ -633,7 +641,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
                             activeOrder != null ? 
-                                <OrderView activeOrder={activeOrder} /> 
+                                <OrderView activeOrder={activeOrder} setActiveOrder={setActiveOrder} master_state={master_state} /> 
                             : 
                                 <div className="h-full flex flex-col items-center justify-center flex-1">
                                     <p className="text-gray-400 text-center self-center">

@@ -19,8 +19,8 @@ export default function App() {
 	
 	const [ masterState, setMasterState ] = useState<MasterState>({
 		store_lut: [],
-		store_id: "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", // "628f74d7-de00-4956-a5b6-2031e0c72128",
-		store_code: "002",
+		store_id:  "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
+		store_code: "001",
 		store_contact: {
 			name: "Torpedo7",
 			mobile: {
@@ -417,7 +417,7 @@ export default function App() {
 								case 3:
 									return <Deliverables master_state={masterState} setLowModeCartOn={setLowModeCartOn} lowModeCartOn={lowModeCartOn} />
 								case 4:
-									return <Incomings />
+									return <Incomings master_state={masterState} setLowModeCartOn={setLowModeCartOn} lowModeCartOn={lowModeCartOn} />
 								case 5:
 									return <></>
 								default:

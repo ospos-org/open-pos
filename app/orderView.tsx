@@ -9,7 +9,7 @@ import Link from "next/link";
 import NotesMenu from "./notesMenu";
 import { getDate } from "./kiosk";
 
-export default function OrderView({ activeOrder }: { activeOrder: Order }) {
+export default function OrderView({ activeOrder, setActiveOrder, master_state }: { activeOrder: Order, setActiveOrder: Function, master_state: MasterState }) {
     const [ orderInfo, setOrderInfo ] = useState<Transaction | null>(null);
     const [ customerInfo, setCustomerInfo ] = useState<Customer | null>(null);
 
@@ -91,7 +91,8 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
             <div className="flex flex-row items-center text-white justify-between bg-gray-800 p-2 rounded-lg">
                 {/* Fulfill / Partially / Greyed Out Button */}
                 {
-                    completedPercentage === 0 ?
+                    //@ts-expect-error Using to check status of in-object defined state
+                    completedPercentage === 0 || (activeOrder.status.status.InStore || activeOrder.status.status.Fulfilled) ?
                     <div 
                         className="bg-green-600 cursor-not-allowed opacity-25 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 select-none">
                         <p>{activeOrder.order_type === "Pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
@@ -103,7 +104,7 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
                     completedPercentage === 100 ?
                     <div 
                         onClick={async () => {
-                            if (activeOrder.order_type === "Pickup") {
+                            if (!(activeOrder.order_type === "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
                                 const new_status: OrderStatusStatus = {
                                     InStore: getDate()
                                 }
@@ -116,23 +117,21 @@ export default function OrderView({ activeOrder }: { activeOrder: Order }) {
                                 })
                                 
                                 if (data.ok) {
-                                    const updated = await data.json();
-                                    console.log("New Status", updated)
+                                    const updated: Transaction = await data.json();
+                                    setActiveOrder({ ...updated.products.find((order) => order.reference === activeOrder.reference) })
                                 }
                             } else {
                                 console.log("CHANGE TO SCREEN TO SHOW PACKING")
                             }
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{activeOrder.order_type === "Pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{!(activeOrder.order_type === "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
                     </div>
                     :
                     <div 
-                        onClick={() => {
-                        }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
                         <p>{activeOrder.order_type === "Pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
                         <Image 
