@@ -31,6 +31,55 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fullcalendar/core@npm:^6.1.8":
+  version: 6.1.8
+  resolution: "@fullcalendar/core@npm:6.1.8"
+  dependencies:
+    preact: ~10.12.1
+  checksum: 66c13078c95573c4dc1c767c2a855c8f77608d1c0cee07eac4923fa1d967a64557640079b45e3da43a68cb8942873dd06523716544f25d98efa3641c0754045f
+  languageName: node
+  linkType: hard
+
+"@fullcalendar/daygrid@npm:^6.1.8, @fullcalendar/daygrid@npm:~6.1.8":
+  version: 6.1.8
+  resolution: "@fullcalendar/daygrid@npm:6.1.8"
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.8
+  checksum: a99441c81d8b2054cb03945a2cd4907ef569c759b68238d953d86fc96f739c75305219de182a61d82c77d54893041657bb4bc3f8a5a0779e57e294a614ae9677
+  languageName: node
+  linkType: hard
+
+"@fullcalendar/interaction@npm:^6.1.8":
+  version: 6.1.8
+  resolution: "@fullcalendar/interaction@npm:6.1.8"
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.8
+  checksum: 3ef0da6dca8aec2b8c3b2eb88594930a14d7111e2ed78890da328740d5c806b2314fd986046827deb6bc5c872aacd2d4edb5c52cda61d9d1f41422bba63254cf
+  languageName: node
+  linkType: hard
+
+"@fullcalendar/react@npm:^6.1.8":
+  version: 6.1.8
+  resolution: "@fullcalendar/react@npm:6.1.8"
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.8
+    react: ^16.7.0 || ^17 || ^18
+    react-dom: ^16.7.0 || ^17 || ^18
+  checksum: 8381ea73df16f84c8e69c97083aa99620daf3c7af6ccba47a0e0447ee4dd648163a9447360893e53ede65e017cf84f88f7b1a3c2cbb083cd7f9c54dfef1edf1e
+  languageName: node
+  linkType: hard
+
+"@fullcalendar/timegrid@npm:^6.1.8":
+  version: 6.1.8
+  resolution: "@fullcalendar/timegrid@npm:6.1.8"
+  dependencies:
+    "@fullcalendar/daygrid": ~6.1.8
+  peerDependencies:
+    "@fullcalendar/core": ~6.1.8
+  checksum: 122786fd402aca8152d534cd8bd5e2cba93adde5413a986963c9839438635a715bb15012daf3256174877ea1c5ee8fa6c2ce93b565c532d802db06a257ac028b
+  languageName: node
+  linkType: hard
+
 "@gar/promisify@npm:^1.1.3":
   version: 1.1.3
   resolution: "@gar/promisify@npm:1.1.3"
@@ -3015,6 +3064,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "open-pos@workspace:."
   dependencies:
+    "@fullcalendar/core": ^6.1.8
+    "@fullcalendar/daygrid": ^6.1.8
+    "@fullcalendar/interaction": ^6.1.8
+    "@fullcalendar/react": ^6.1.8
+    "@fullcalendar/timegrid": ^6.1.8
     "@tanstack/react-table": ^8.9.1
     "@types/lodash": ^4.14.191
     "@types/node": 18.11.10
@@ -3288,6 +3342,13 @@ __metadata:
     picocolors: ^1.0.0
     source-map-js: ^1.0.2
   checksum: e39ac60ccd1542d4f9d93d894048aac0d686b3bb38e927d8386005718e6793dbbb46930f0a523fe382f1bbd843c6d980aaea791252bf5e176180e5a4336d9679
+  languageName: node
+  linkType: hard
+
+"preact@npm:~10.12.1":
+  version: 10.12.1
+  resolution: "preact@npm:10.12.1"
+  checksum: 0de99f477563ab7f94a0f964952ad216375973c0dcd9eb49881f8eb5effc5ed6948da062548c87d5bb0d82f1a1e516b649020e760eab3a0503dfdd8e64d34a26
   languageName: node
   linkType: hard
 

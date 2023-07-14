@@ -79,6 +79,9 @@ html {
       --ring: 215 20.2% 65.1%;
    
       --radius: 0.5rem;
+
+      --fc-today-bg-color: rgb(36 58 78);
+      --fc-border-color: rgb(255 255 255 / 0.2)
     }
    
     .dark {
@@ -124,3 +127,17 @@ html {
       font-feature-settings: "rlig" 1, "calt" 1;
     }
   }
+
+.fc-toolbar-title {
+  color: #fff;
+  font-weight: 700;
+}
+
+.fc-col-header-cell-cushion {
+  color: #fff;
+  font-weight: 400;
+}
+
+.fc-daygrid-day-number, .fc-event-title, .fc-event-time {
+  color: #fff
+}

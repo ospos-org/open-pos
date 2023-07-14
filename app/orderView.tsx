@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Customer, FulfillmentStatus, MasterState, Order, OrderStatus, OrderStatusStatus, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "./stock-types";
-import { OPEN_STOCK_URL, useWindowSize } from "./helpers";
+import { Customer, MasterState, Order, OrderStatusStatus, Transaction } from "./stock-types";
+import { OPEN_STOCK_URL } from "./helpers";
 import moment from "moment";
 import Image from "next/image";
-import { NoteElement } from "./noteElement";
-import { applyDiscount, fromDbDiscount, toAbsoluteDiscount, toDbDiscount, findMaxDiscount } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount } from "./discount_helpers";
 import Link from "next/link";
 import NotesMenu from "./notesMenu";
 import { getDate } from "./kiosk";
@@ -12,8 +11,6 @@ import { getDate } from "./kiosk";
 export default function OrderView({ activeOrder, setActiveOrder, master_state }: { activeOrder: Order, setActiveOrder: Function, master_state: MasterState }) {
     const [ orderInfo, setOrderInfo ] = useState<Transaction | null>(null);
     const [ customerInfo, setCustomerInfo ] = useState<Customer | null>(null);
-
-    // console.log(activeOrder)
 
     useEffect(() => {
         fetch(`${OPEN_STOCK_URL}/transaction/ref/${activeOrder.reference}`, {
@@ -24,8 +21,6 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
             if(d.ok) {
                 const data: Transaction[] = await d.json();
                 setOrderInfo(data[0]);
-
-                // console.log("CUST", data);
 
                 fetch(`${OPEN_STOCK_URL}/customer/${data[0].customer.customer_id}`, {
                     method: "GET",
@@ -90,6 +85,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
 
             <div className="flex flex-row items-center text-white justify-between bg-gray-800 p-2 rounded-lg">
                 {/* Fulfill / Partially / Greyed Out Button */}
+                
                 {
                     //@ts-expect-error Using to check status of in-object defined state
                     completedPercentage === 0 || (activeOrder.status.status.InStore || activeOrder.status.status.Fulfilled) ?
