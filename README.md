@@ -4,7 +4,7 @@
 ### `OpenPOS`
 OpenPOS is an open source visual Point of Sale system built on [`open-stock`](https://github.com/bennjii/open-stock), it is completely free to host yourself, and is updated frequently. [This](https://medium.com/today-i-solved/how-to-deploy-next-js-on-aws-ec2-with-ssl-https-7980ec6fe8d3) guide may be of assistance when deploying a dockerized version of open-stock.
 
-> **`BETA`** OpenPOS is in beta. This means, the sofware **is not stable**. Do not rely on it in any critical mannor for your business. 
+> **`BETA`** OpenPOS is in beta. This means, the sofware **is not stable**. Do not rely on it in any critical form for your business. 
 
 ### Demo
 View a live demo [here](https://open-retail.bennjii.dev/). \
