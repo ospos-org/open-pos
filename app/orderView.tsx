@@ -121,7 +121,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                             }
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{!(activeOrder.order_type === "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{(activeOrder.order_type !== "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -258,6 +258,13 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                         )
                     })
                 }
+            </div>
+
+            <div>
+                <p className="text-gray-400">DESTINATION</p>
+                <p className="text-white font-bold">{activeOrder.destination?.contact.name}</p>
+                <p className="text-white">{activeOrder.destination?.contact.address.street}</p>
+                <p className="text-gray-400">{activeOrder.destination?.contact.address.street2} {activeOrder.destination?.contact.address.city} {activeOrder.destination?.contact.address.po_code}</p> 
             </div>
             
             <div className="flex flex-col gap-2">
