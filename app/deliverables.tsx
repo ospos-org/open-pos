@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import { Skeleton } from "@/components/ui/skeleton"
 import OrderView from "./orderView";
+import { Check } from "react-feather";
 
 
 export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
@@ -221,7 +222,10 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                         className="grid grid-flow-row gap-y-4 gap-x-2 items-center px-2" style={{ gridTemplateColumns: (windowSize?.width ?? 0) < 640 ? "1fr 1fr" : ".5fr 1fr 250px 117px" }}>
                                                                         <div className="flex flex-col gap-2">
                                                                             <div className="flex flex-row gap-2">
-                                                                                { 
+                                                                                {
+                                                                                    (b.status.status?.Transit !== undefined || b.status.status?.InStore !== undefined || b.status.status?.Fulfilled !== undefined) ?
+                                                                                        <p className="text-white font-mono font-bold px-2 bg-blue-600 rounded-md py-1"><Check color="white" size={18}/></p>
+                                                                                    :
                                                                                     completed === total_products ? 
                                                                                         <p className="text-white font-mono font-bold px-2 bg-green-600 rounded-md">{completed}/{total_products}</p>
                                                                                     :

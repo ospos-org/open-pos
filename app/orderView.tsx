@@ -100,7 +100,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 100 ?
                     <div 
                         onClick={async () => {
-                            if (!(activeOrder.order_type === "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
+                            if ((activeOrder.order_type !== "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
                                 const new_status: OrderStatusStatus = {
                                     InStore: getDate()
                                 }
