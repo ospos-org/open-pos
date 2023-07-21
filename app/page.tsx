@@ -19,7 +19,7 @@ export default function App() {
 	
 	const [ masterState, setMasterState ] = useState<MasterState>({
 		store_lut: [],
-		store_id:  "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
+		store_id: "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
 		store_code: "001",
 		store_contact: {
 			name: "Torpedo7",
@@ -44,8 +44,16 @@ export default function App() {
 			},
 		},
 		employee: user,
-		kiosk: "A"
+		kiosk_id: null, // "adbd48ab-f4ca-4204-9c88-3516f3133621",
+		kiosk: "NEW"
 	});
+
+	useEffect(() => {
+		setMasterState((oldState) => ({
+			...oldState,
+			kiosk_id: window.localStorage.getItem('openstock-kioskid')
+		}))
+	}, [])
 
 	useEffect(() => {
 		fetch(`${OPEN_STOCK_URL}/store/`, {
@@ -86,7 +94,8 @@ export default function App() {
 		fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
 			method: "POST",
 			body: JSON.stringify({
-				pass: pass
+				pass: pass,
+				kiosk_id: masterState.kiosk_id
 			}),
 			credentials: "include",
 			redirect: "follow"

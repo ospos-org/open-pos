@@ -449,10 +449,11 @@ export type Note = {
 }
 
 export type MasterState = {
-    store_id: string,
+    store_id: string | null,
     store_code: string,
     employee: Employee | null | undefined,
     store_contact: ContactInformation,
     store_lut: Store[],
-    kiosk: string
+    kiosk: string,
+    kiosk_id: string | null
 }
