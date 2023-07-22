@@ -129,6 +129,11 @@ type StoreStatus = {
     timestamp: string;
 }
 
+export interface Discount { 
+    Absolute?: number, 
+    Percentage?: number 
+}
+
 export type DbOrder = {
     id: string,
     destination: Move | null,
@@ -141,14 +146,14 @@ export type DbOrder = {
     order_notes: Note[],
     reference: string,
     creation_date: string,
-    discount: { Absolute?: number, Percentage?: number },
+    discount: Discount,
     order_type: "shipment" | "pickup" | "direct" | "quote"
 }
 
 export type Order = {
     id: string,
     destination: Move | null,
-    origin: Move,
+    origin: Move | null,
     products: ProductPurchase[],
     status: OrderStatus,
     previous_failed_fulfillment_attempts: (StoreStatus[])[],
@@ -218,7 +223,7 @@ export type ProductInstance = {
 }
 
 export type DbProductPurchase = {
-    discount: { Absolute?: number, Percentage?: number },
+    discount: Discount,
 
     product_cost: number,
     product_code: string,
@@ -310,11 +315,11 @@ export type PromotionBuy = {
 }
 
 export type PromotionGet = {
-    SoloThis?: { Absolute?: number, Percentage?: number },
-    This?: [number, { Absolute?: number, Percentage?: number }]
-    Specific?: [string, [number, { Absolute?: number, Percentage?: number }]],
-    Any?: [number, { Absolute?: number, Percentage?: number }],
-    Category?: [string, [number, { Absolute?: number, Percentage?: number }]],
+    SoloThis?: Discount,
+    This?: [number, Discount]
+    Specific?: [string, [number, Discount]],
+    Any?: [number, Discount],
+    Category?: [string, [number, Discount]],
 }
 
 export type VariantInformation = {

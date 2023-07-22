@@ -21,46 +21,15 @@ import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "../../
 import CustomerMenu from "./children/customer/customerMenu";
 import RelatedOrders from "./children/order/relatedMenu";
 import { PAD_MODES } from "../../utils/kiosk_types";
+import { useAtom } from "jotai";
+import { defaultKioskAtom, transactingOrderAtom } from "@/src/atoms/kiosk";
+import { ordersAtomsAtom } from "@/src/atoms/transaction";
+import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
 
 export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
-    const [ kioskState, setKioskState ] = useState<KioskState>({
-        customer: null,
-        transaction_type: "Out",
-        products: [],
-        order_total: null,
-        payment: [],
-        order_date: null,
-        order_notes: [],
-        salesperson: null,
-        till: null
-    });
-
-    const [ orderState, setOrderState ] = useState<Order[]>([{
-        id: v4(),
-        destination: null,
-        origin: {
-            store_code: master_state.store_code,
-            store_id: master_state.store_id ?? "",
-            contact: master_state.store_contact
-        },
-        products: [],
-        status: {
-            status: {
-                type: "queued",
-                value: getDate()
-            },
-            assigned_products: [],
-            timestamp: getDate()
-        },
-        previous_failed_fulfillment_attempts: [],
-        status_history: [],
-        order_history: [],
-        order_notes: [],
-        reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-        creation_date: getDate(),
-        discount: "a|0",
-        order_type: "direct"
-    }])
+    // const [ kioskState, setKioskState ] = useAtom(transactingOrderAtom)
+    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
+    const [ orderState, setOrderState ] = useAtom(ordersAtomsAtom)
 
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
@@ -311,7 +280,6 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
 
     return (
         <>
-            {/* <ReactKeyboardShortcuts></ReactKeyboardShortcuts> */}
             <ReactBarcodeReader
                 onScan={(e: any) => {
                     setSearchFocused(false);
@@ -495,17 +463,6 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                             }
                                         }];
 
-                                        // amount: {quantity: 115, currency: 'NZD'}
-                                        // delay_action: "Cancel"
-                                        // delay_duration: "PT12H"
-                                        // fulfillment_date: "2023-01-11T07:58:58.244506404Z"
-                                        // id: "dffc8e97-2c98-4deb-b2c3-e1f6350935e6"
-                                        // order_id: "5982da33-1582-4f2f-994d-2f151c148f0e"
-                                        // payment_method: "Card"
-                                        // processing_fee: {quantity: 0.1, currency: 'NZD'}
-                                        // processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'}
-                                        // status: "Unfulfilled"
-
                                         const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
 
                                         if(transaction) {
@@ -527,96 +484,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                             )
                         case "completed":
                             return (
-                                <div className="bg-gray-900 p-6 flex flex-col h-full gap-4" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div>
-                                        <p className="text-gray-600">{customerState?.name ?? "Guest"}</p>
-                                        <p className="text-white font-bold text-2xl">${kioskState.order_total}</p>
-
-                                        {kioskState.transaction_type == "Quote" ? <p>Quote</p>: <></>}
-                                    </div>
-
-                                    <div className="flex flex-col flex-1 gap-2">
-                                        {
-                                            orderState.map(n => {
-                                                return (
-                                                    <div key={`COMPLETE-${n.id}`}>
-                                                        {
-                                                            n.products?.map(e => {
-                                                                return (
-                                                                    <div key={`PRD${e.product_code}-${e.id}`} className="flex flex-row items-center gap-8">
-                                                                        <p className="text-white font-bold">{e.quantity}</p>
-                
-                                                                        <div className="flex flex-col gap-0 flex-1">
-                                                                            <p className="text-white">{e.product.name}</p>
-                                                                            <p className="text-gray-600">{e.variant_information.name}</p>
-                                                                        </div>
-                
-                                                                        <p className="text-white font-bold">${applyDiscount(e.variant_information.retail_price * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value)?.toFixed(2)}</p>
-                                                                    </div>
-                                                                )
-                                                            })
-                                                        }
-                                                    </div>
-                                                )
-                                            })
-                                        }
-                                    </div>
-                                    
-                                    {
-                                        kioskState.transaction_type != "Quote" ?
-                                        <>
-                                            <p className="text-gray-600">PAYMENT(S)</p>
-                                            <div className="flex flex-col gap-2 w-full">
-                                                {
-                                                    kioskState.payment.map(e => {
-                                                        return (
-                                                            <div key={`${e.amount}-${e.fulfillment_date}-${e.payment_method}`} className="flex flex-row justify-between items-center text-white gap-4 w-full flex-1">
-                                                                <p className="text-gray-300 font-bold">{typeof e.payment_method !== "string" ? e.payment_method.Other : e.payment_method}</p>
-                                                                <hr className="flex-1 border-gray-500 h-[3px] border-[2px] bg-gray-500 rounded-md" />
-                                                                <p>${e.amount?.quantity.toFixed(2)}</p>
-                                                            </div>
-                                                        )
-                                                    })
-                                                }
-                                            </div>
-                                        </>
-                                        :
-                                        <></>
-                                    }
-
-                                    <br />
-                                    
-                                    <p className="text-gray-600">RECEIPT OPTIONS</p>
-                                    <div className="flex flex-row items-center justify-between">
-                                        <p className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer">Print receipt</p>
-                                        
-                                        {
-                                            customerState?.contact.email ?
-                                            <p className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer">Email receipt</p>
-                                            :
-                                            <p className="bg-gray-800 text-gray-400 px-4 py-2 rounded-md select-none">Email receipt</p>
-                                        }
-
-                                        {
-                                            customerState?.contact.mobile ?
-                                            <p className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer">Text receipt</p>
-                                            :
-                                            <p className="bg-gray-800 text-gray-400 px-4 py-2 rounded-md select-none">Text receipt</p>
-                                        }
-                                        
-                                        <p className="bg-gray-700 text-white px-4 py-2 rounded-md cursor-pointer">Gift receipt</p>
-                                    </div>
-
-                                    <div className="flex flex-row items-center gap-4">
-                                        <div
-                                            onClick={() => {
-                                                resetOrder(setKioskState, setOrderState, setCustomerState, setPadState, master_state);
-                                            }} 
-                                            className={`${orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-white font-semibold ${""}`}>Complete</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <CompletedOrderMenu />
                             )
                         case "discount":
                             return (
