@@ -1,8 +1,8 @@
+import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
-import { FC, createRef } from "react";
+import { FC, createRef, useEffect } from "react";
 import { applyDiscount } from "./discount_helpers";
 import { VariantInformation } from "./stock-types";
-import useKey from "use-key";
 
 const DiscountMenu: FC<{ discountGroup: [{
         type: "absolute" | "percentage";
@@ -16,9 +16,11 @@ const DiscountMenu: FC<{ discountGroup: [{
     const [ discount, setDiscount ] = discountGroup;
     const click_ref = createRef<HTMLDivElement>();
 
-    useKey({
-        'Enter': () => click_ref.current?.click()
-    })
+    const onEnterPress = useKeyPress(['Enter'])
+
+    useEffect(() => {
+        click_ref.current?.click()
+    }, [onEnterPress])
     
     return (
         <>

@@ -1,6 +1,6 @@
 import moment from 'moment';
 import Image from 'next/image';
-import { KeyboardEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 import { Customer, Transaction } from './stock-types'
 import {OPEN_STOCK_URL, useWindowSize} from "./helpers";

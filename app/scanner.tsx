@@ -1,10 +1,10 @@
-import { KeyboardEvent, useState } from 'react'
+import { useCallback, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 
 export const ReactBarcodeReader = ({ onScan, onError }: { onScan: Function, onError: Function }) => {
 	const [str, setStr] = useState<string>('')
 
-	function handleReceive(scanData: KeyboardEvent<HTMLInputElement>) {
+	const handleReceive = useCallback((scanData: { key: string }) => {
 		const key = scanData.key
 
 		// if it's enter key then perform onScan
@@ -14,7 +14,7 @@ export const ReactBarcodeReader = ({ onScan, onError }: { onScan: Function, onEr
 		} else {
 			setStr(str + key)
 		}
-	}
+	}, [onScan, str])
   
     return (
 		<BarcodeReader

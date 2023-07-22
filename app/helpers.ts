@@ -27,7 +27,7 @@ export const fileTransaction = (
         return prev + (curr.amount.quantity ?? 0)
     }, 0);
 
-    if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "quote") {
+    if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "Quote") {
         setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
         setPadState("select-payment-method")
 
@@ -92,7 +92,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                         tags: k.tags
                     } as DbProductPurchase
                 }) as DbProductPurchase[],
-                status: (transaction_type == "Saved" || transaction_type == "quote" ? {   
+                status: (transaction_type == "Saved" || transaction_type == "Quote" ? {   
                     status: {
                         Fulfilled: date
                     },
@@ -107,7 +107,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     timestamp: date
                 }) as OrderStatus,
                 status_history: 
-                !(transaction_type == "Saved" || transaction_type == "quote") ? 
+                !(transaction_type == "Saved" || transaction_type == "Quote") ? 
 
                 [
                     ...e.status_history as StatusHistory[],

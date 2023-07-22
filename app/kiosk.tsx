@@ -532,7 +532,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                         <p className="text-gray-600">{customerState?.name ?? "Guest"}</p>
                                         <p className="text-white font-bold text-2xl">${kioskState.order_total}</p>
 
-                                        {kioskState.transaction_type == "quote" ? <p>Quote</p>: <></>}
+                                        {kioskState.transaction_type == "Quote" ? <p>Quote</p>: <></>}
                                     </div>
 
                                     <div className="flex flex-col flex-1 gap-2">
@@ -563,7 +563,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                     </div>
                                     
                                     {
-                                        kioskState.transaction_type != "quote" ?
+                                        kioskState.transaction_type != "Quote" ?
                                         <>
                                             <p className="text-gray-600">PAYMENT(S)</p>
                                             <div className="flex flex-col gap-2 w-full">

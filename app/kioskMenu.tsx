@@ -1,9 +1,9 @@
+import useKeyPress from "@/src/hooks/useKeyPress";
 import { filter, isEqual } from "lodash";
 import moment from "moment";
 import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
-import useKey from "use-key";
 import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
 import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "./helpers";
@@ -69,16 +69,15 @@ export default function KioskMenu({
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
     const window_size = useWindowSize();
 
-    useKey({
-        'Escape': () => { 
-            setActiveProduct(null)
-            setActiveProductVariant(null)
-            setActiveVariant(null)
-            // setCurrentViewedTransaction(null)
-            setActiveCustomer(null)
-            setSearchFocused(false)
-        }
-    })
+    const escapePressed = useKeyPress(['Escape'])
+
+    useEffect(() => {
+        setActiveProduct(null)
+        setActiveProductVariant(null)
+        setActiveVariant(null)
+        setActiveCustomer(null)
+        setSearchFocused(false)
+    }, [escapePressed]);
 
     useEffect(() => {
         if(activeCustomer) {

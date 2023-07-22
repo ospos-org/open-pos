@@ -10,7 +10,7 @@ export type KioskState = {
     till: string | null
 };
 
-export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "quote"
+export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "Quote"
 
 export type Transaction = {
     id: string,

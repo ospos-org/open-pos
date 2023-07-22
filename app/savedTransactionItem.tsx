@@ -1,6 +1,6 @@
 import moment from 'moment';
 import Image from 'next/image';
-import { KeyboardEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 import { fromDbDiscount } from './discount_helpers';
 import { getDate } from './kiosk';
@@ -32,17 +32,6 @@ export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, s
             })
         }
     }, [transactionState]);
-
-    // useEffect(() => {
-    //     let name = customer?.name;
-    //     let rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu');
-
-    //     let initials = [...name.matchAll(rgx)] || [];
-
-    //     initials = (
-    //     (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
-    //     ).toUpperCase();
-    // }, [customer])
 
     if(!transactionState) return (<></>);
     else return (

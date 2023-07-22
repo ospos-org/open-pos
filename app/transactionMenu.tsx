@@ -50,7 +50,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                         <p className="text-lg font-semibold text-white">{activeTransaction?.reference} - {activeTransaction?.order_type}</p>
                     </div>
 
-                    {transaction[0].transaction_type == "quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
+                    {transaction[0].transaction_type == "Quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
                 </div>
 
                 {

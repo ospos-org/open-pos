@@ -1,67 +1,72 @@
+import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
-import useKey from "use-key";
-import { applyDiscount, findMaxDiscount } from "./discount_helpers";
-import {computeOrder, fileTransaction, OPEN_STOCK_URL} from "./helpers";
+import {computeOrder, OPEN_STOCK_URL} from "./helpers";
 import { getDate } from "./kiosk";
 import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "./stock-types";
 
-const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, setKioskState: Function, ctp: [number | null, Function], master_state: MasterState, customerState: Customer | null }> = ({ setPadState, orderState, kioskState, setKioskState, ctp, master_state, customerState }) => {
+const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, setKioskState: (stateset: (oldState: KioskState) => KioskState) => void, ctp: [number | null, Function], master_state: MasterState, customerState: Customer | null }> = ({ setPadState, orderState, kioskState, setKioskState, ctp, master_state, customerState }) => {
     const [ editPrice, setEditPrice ] = useState(false);
     const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
 
-    useKey({
-        'F1': () => {
-            setKioskState({
-                ...kioskState,
-                transaction_type: "Out"
-            });
+    const f1Pressed = useKeyPress(['F1'])
 
-            setPadState("await-debit");
-        },
-        'F2': () => {
-            setPadState("await-cash");
-        },
-        'F6': () => {
-            const new_state = computeOrder("quote", orderState, master_state, customerState);
+    useEffect(() => {
+        setKioskState((oldState: KioskState) => ({
+            ...oldState,
+            transaction_type: "Out"
+        }));
 
-            const transaction = {
-                ...kioskState,
-                products: new_state,
-                customer: customerState ? {
-                    customer_id: customerState?.id,
-                    customer_type: "Individual"
-                } : {
-                    customer_id: master_state.store_id,
-                    customer_type: "Store"
-                },
-                order_total: 0.00,
-                transaction_type: "quote",
-                payment: [],
-                order_date: getDate(),
-                salesperson: master_state.employee?.id ?? "",
-                till: master_state.kiosk
-            } as TransactionInput;
+        setPadState("await-debit");
+    }, [f1Pressed, setPadState, setKioskState]);
 
-            if(transaction) {
-                fetch(`${OPEN_STOCK_URL}/transaction`, {
-                    method: "POST",
-                    body: JSON.stringify(transaction),
-                    credentials: "include",
-                    redirect: "follow"
-                }).then(async k => {
-                    console.log(k);
+    const f2Pressed = useKeyPress(['F2'])
 
-                    if(k.ok) {
-                        setPadState("completed");
-                    }else {
-                        alert("Something went horribly wrong")
-                    }
-                })
-            }
+    useEffect(() => {
+        setPadState("await-cash");
+    }, [f2Pressed, setPadState]);
+
+    const f6Pressed = useKeyPress(['F6'])
+
+    useEffect(() => {
+        const new_state = computeOrder("Quote", orderState, master_state, customerState);
+        
+        const transaction = {
+            ...kioskState,
+            products: new_state,
+            customer: customerState ? {
+                customer_id: customerState?.id,
+                customer_type: "Individual"
+            } : {
+                customer_id: master_state.store_id,
+                customer_type: "Store"
+            },
+            order_total: 0.00,
+            transaction_type: "Quote",
+            payment: [],
+            order_date: getDate(),
+            salesperson: master_state.employee?.id ?? "",
+            till: master_state.kiosk
+        } as TransactionInput;
+
+        if(transaction) {
+            fetch(`${OPEN_STOCK_URL}/transaction`, {
+                method: "POST",
+                body: JSON.stringify(transaction),
+                credentials: "include",
+                redirect: "follow"
+            }).then(async k => {
+                console.log(k);
+
+                if(k.ok) {
+                    setPadState("completed");
+                }else {
+                    alert("Something went horribly wrong")
+                }
+            })
         }
-    })
+    }, [f6Pressed, setPadState]);
 
     useEffect(() => {
         let has_negative_stocks = false;
@@ -200,10 +205,10 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     <div 
                         className="flex flex-row items-end gap-2 cursor-pointer"
                         onClick={() => {
-                            setKioskState({
-                                ...kioskState,
+                            setKioskState((oldState) => ({
+                                ...oldState,
                                 transaction_type: "Out"
-                            });
+                            }));
 
                             setPadState("await-debit");
                         }}>
@@ -235,7 +240,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     <div
                         onClick={() => {
                             // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "quote" }, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
-                            const new_state = computeOrder("quote", orderState, master_state, customerState);
+                            const new_state = computeOrder("Quote", orderState, master_state, customerState);
 
                             const transaction = {
                                 ...kioskState,
@@ -248,7 +253,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                     customer_type: "Store"
                                 },
                                 order_total: 0.00,
-                                transaction_type: "quote",
+                                transaction_type: "Quote",
                                 payment: [],
                                 order_date: getDate(),
                                 salesperson: master_state.employee?.id ?? "",
