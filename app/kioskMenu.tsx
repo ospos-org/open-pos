@@ -8,6 +8,7 @@ import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
 import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
+import { PAD_MODES } from "./kiosk_types";
 import PromotionList from "./promotionList";
 import { SavedTransactionItem } from "./savedTransactionItem";
 import { SearchFieldTransaction } from "./searchFieldTransaction";
@@ -44,15 +45,15 @@ export default function KioskMenu({
     setSearchType: Function, searchType: "customer" | "product" | "transaction",
     setSearchTermState: Function, searchTermState: string,
     setLowModeCartOn: Function, lowModeCartOn: boolean,
-    setCustomerState: Function, customerState: Customer | null,
+    setCustomerState: (customer: Customer | null) => void, customerState: Customer | null,
     setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
-    setOrderState: Function, orderState: Order[],
+    setOrderState: (orders: Order[]) => void, orderState: Order[],
     setActiveCustomer: Function, activeCustomer: Customer | null,
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
     setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null,
-    setKioskState: Function, kioskState: KioskState,
+    setKioskState: (kiosk_state: KioskState) => void, kioskState: KioskState,
     setActiveProductPromotions: Function, activeProductPromotions: Promotion[],
-    setPadState: Function, padState: string,
+    setPadState: (pad_state: PAD_MODES) => void, padState: string,
     setDiscount: Function,
     setPreviousPadState: Function,
     setTriggerRefresh: Function, triggerRefresh: string[],
@@ -544,13 +545,13 @@ export default function KioskMenu({
                                                                     <p>
                                                                         {(() => {
                                                                             switch(k.order_type) {
-                                                                                case "Direct":
+                                                                                case "direct":
                                                                                     return `${k.origin.contact.name} (${k.origin.store_code})`
-                                                                                case "Pickup":
+                                                                                case "pickup":
                                                                                     return `${k.origin.contact.name} (${k.origin.store_code})`
-                                                                                case "Quote":
+                                                                                case "quote":
                                                                                     return `By ${b.salesperson} at ${k.origin.contact.name} (${k.origin.store_code})`
-                                                                                case "Shipment":
+                                                                                case "shipment":
                                                                                     return `${k.origin.contact.name} (${k.origin.store_code}) -> ${k.destination?.store_code !== "000" ? k.destination?.store_code : k.destination?.contact.address.street} ${k.destination?.store_code !== "000" ? k.destination?.contact.name : k.destination?.contact.address.street2}`
                                                                                 default:
                                                                                     return ""
@@ -655,7 +656,7 @@ export default function KioskMenu({
                                                 className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
                                                 onClick={() => {
                                                     if(activeProductVariant) {
-                                                        let cOs = orderState.find(e => e.order_type == "Direct");
+                                                        let cOs = orderState.find(e => e.order_type == "direct");
 
                                                         if(!cOs?.products) {
                                                             const new_pdt_list = addToCart(activeProduct, activeProductPromotions, activeProductVariant, [])
@@ -665,13 +666,14 @@ export default function KioskMenu({
                                                                 destination: null,
                                                                 origin: {
                                                                     store_code: master_state.store_code,
-                                                                    store_id: master_state.store_id,
+                                                                    store_id: master_state.store_id ?? "",
                                                                     contact: master_state.store_contact
                                                                 },
                                                                 products: new_pdt_list,
                                                                 status: {
                                                                     status: {
-                                                                        Queued: getDate()
+                                                                        type: "queued",
+                                                                        value: getDate()
                                                                     },
                                                                     assigned_products: [],
                                                                     timestamp: getDate()
@@ -683,7 +685,7 @@ export default function KioskMenu({
                                                                 reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                                 creation_date: getDate(),
                                                                 discount: "a|0",
-                                                                order_type: "Direct"
+                                                                order_type: "direct"
                                                             };
 
                                                             setOrderState([...sortOrders([ ...orderState, cOs])])
@@ -856,7 +858,7 @@ export default function KioskMenu({
                                                     className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
                                                     onClick={() => {
                                                     if(activeProductVariant) {
-                                                        let cOs = orderState.find(e => e.order_type == "Direct");
+                                                        let cOs = orderState.find(e => e.order_type == "direct");
 
                                                         if(!cOs?.products) {
                                                             const new_pdt_list = addToCart(activeProduct, activeProductPromotions, activeProductVariant, [])
@@ -866,13 +868,14 @@ export default function KioskMenu({
                                                                 destination: null,
                                                                 origin: {
                                                                     store_code: master_state.store_code,
-                                                                    store_id: master_state.store_id,
+                                                                    store_id: master_state.store_id ?? "",
                                                                     contact: master_state.store_contact
                                                                 },
                                                                 products: new_pdt_list,
                                                                 status: {
                                                                     status: {
-                                                                        Queued: getDate()
+                                                                        type: "queued",
+                                                                        value: getDate()
                                                                     },
                                                                     assigned_products: [],
                                                                     timestamp: getDate()
@@ -884,7 +887,7 @@ export default function KioskMenu({
                                                                 reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                                 creation_date: getDate(),
                                                                 discount: "a|0",
-                                                                order_type: "Direct"
+                                                                order_type: "direct"
                                                             };
 
                                                             setOrderState([...sortOrders([ ...orderState, cOs])])
@@ -1058,7 +1061,13 @@ export default function KioskMenu({
         
                                 <div 
                                     onClick={() => {
-                                        parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
+                                        parkSale(
+                                            master_state, setPadState, 
+                                            orderState, setOrderState, 
+                                            triggerRefresh, setTriggerRefresh, 
+                                            customerState, setCustomerState, 
+                                            kioskState, setKioskState
+                                        )
                                     }}
                                     className={`flex flex-col justify-between gap-8 ${(orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1 ? "bg-[#2f4038] text-white" : "bg-[#101921] text-gray-500"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md  max-w-fit cursor-pointer`}>
                                     <Image className="select-none" width="25" height="25" src="/icons/save-01.svg" style={{ filter: ((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) ? "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>

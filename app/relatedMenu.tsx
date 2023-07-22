@@ -75,13 +75,13 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
                                                         <p className="text-gray-400">
                                                             {(() => {
                                                                 switch(k.order_type) {
-                                                                    case "Direct":
+                                                                    case "direct":
                                                                         return `${k.origin.contact.name} (${k.origin.store_code})`
-                                                                    case "Pickup":
+                                                                    case "pickup":
                                                                         return `${k.origin.contact.name} (${k.origin.store_code})`
-                                                                    case "Quote":
+                                                                    case "quote":
                                                                         return `By ${b.salesperson} at ${k.origin.contact.name} (${k.origin.store_code})`
-                                                                    case "Shipment":
+                                                                    case "shipment":
                                                                         return `${k.origin.contact.name} (${k.origin.store_code}) -> ${k.destination?.store_code !== "000" ? k.destination?.store_code : k.destination?.contact.address.street} ${k.destination?.store_code !== "000" ? k.destination?.contact.name : k.destination?.contact.address.street2}`
                                                                     default:
                                                                         return ""

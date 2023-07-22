@@ -24,7 +24,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             setPadState("await-cash");
         },
         'F6': () => {
-            const new_state = computeOrder("Quote", orderState, master_state, customerState);
+            const new_state = computeOrder("quote", orderState, master_state, customerState);
 
             const transaction = {
                 ...kioskState,
@@ -37,7 +37,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     customer_type: "Store"
                 },
                 order_total: 0.00,
-                transaction_type: "Quote",
+                transaction_type: "quote",
                 payment: [],
                 order_date: getDate(),
                 salesperson: master_state.employee?.id ?? "",
@@ -234,8 +234,8 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     </div>
                     <div
                         onClick={() => {
-                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "Quote" }, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
-                            const new_state = computeOrder("Quote", orderState, master_state, customerState);
+                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "quote" }, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
+                            const new_state = computeOrder("quote", orderState, master_state, customerState);
 
                             const transaction = {
                                 ...kioskState,
@@ -248,7 +248,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                     customer_type: "Store"
                                 },
                                 order_total: 0.00,
-                                transaction_type: "Quote",
+                                transaction_type: "quote",
                                 payment: [],
                                 order_date: getDate(),
                                 salesperson: master_state.employee?.id ?? "",

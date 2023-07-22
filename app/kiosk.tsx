@@ -20,6 +20,7 @@ import TransactionMenu from "./transactionMenu";
 import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./helpers";
 import CustomerMenu from "./customerMenu";
 import RelatedOrders from "./relatedMenu";
+import { PAD_MODES } from "./kiosk_types";
 
 export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({
@@ -38,14 +39,15 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
         id: v4(),
         destination: null,
         origin: {
-            store_code: master_state.store_id,
-            store_id: master_state.store_id,
+            store_code: master_state.store_code,
+            store_id: master_state.store_id ?? "",
             contact: master_state.store_contact
         },
         products: [],
         status: {
             status: {
-                Queued: getDate()
+                type: "queued",
+                value: getDate()
             },
             assigned_products: [],
             timestamp: getDate()
@@ -57,14 +59,14 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
         reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
         creation_date: getDate(),
         discount: "a|0",
-        order_type: "Direct"
+        order_type: "direct"
     }])
 
     const [ customerState, setCustomerState ] = useState<Customer | null>(null);
 
     const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<"cart" | "customer" | "related-orders" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
-    const [ previousPadState, setPreviousPadState ] = useState<"cart" | "customer" | "related-orders" | "customer-create" | "inv-transaction" | "select-payment-method" | "await-debit" | "await-cash" | "completed" | "discount" | "note" | "ship-to-customer" | "pickup-from-store">("cart");
+    const [ padState, setPadState ] = useState<PAD_MODES>("cart");
+    const [ previousPadState, setPreviousPadState ] = useState<PAD_MODES>("cart");
 
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
@@ -269,7 +271,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                 }
 
                 if(active_product_variant) {
-                    let cOs = orderState.find(e => e.order_type == "Direct");
+                    let cOs = orderState.find(e => e.order_type == "direct");
 
                     if(!cOs?.products) {
                         if(orderState[0].products) {
@@ -530,7 +532,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                         <p className="text-gray-600">{customerState?.name ?? "Guest"}</p>
                                         <p className="text-white font-bold text-2xl">${kioskState.order_total}</p>
 
-                                        {kioskState.transaction_type == "Quote" ? <p>Quote</p>: <></>}
+                                        {kioskState.transaction_type == "quote" ? <p>Quote</p>: <></>}
                                     </div>
 
                                     <div className="flex flex-col flex-1 gap-2">
@@ -561,7 +563,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                     </div>
                                     
                                     {
-                                        kioskState.transaction_type != "Quote" ?
+                                        kioskState.transaction_type != "quote" ?
                                         <>
                                             <p className="text-gray-600">PAYMENT(S)</p>
                                             <div className="flex flex-col gap-2 w-full">
@@ -922,7 +924,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                         case "pickup-from-store":
                             return (
                                 customerState ? 
-                                <PickupMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                <PickupMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id ?? ""} />
                                 :
                                 <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
@@ -961,7 +963,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                         case "ship-to-customer":
                             return (
                                 customerState ? 
-                                <DispatchMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id} />
+                                <DispatchMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id ?? ""} />
                                 :
                                 <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                                     <div className="flex flex-row justify-between cursor-pointer">
@@ -1007,11 +1009,11 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
 }
 
 export function sortOrders(orders: Order[]) {
-    return orders.sort((a, b) => a.order_type == "Direct" ? -1 : 0)
+    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
 }
 
 export function sortDbOrders(orders: DbOrder[]) {
-    return orders.sort((a, b) => a.order_type == "Direct" ? -1 : 0)
+    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
 }
 
 export function getDate(): string {

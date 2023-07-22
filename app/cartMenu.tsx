@@ -6,6 +6,7 @@ import { v4 } from "uuid";
 import { applyDiscount, applyDiscountsConsiderateOfQuantity, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
 import { determineOptimalPromotionPathway, parkSale } from "./helpers";
 import { getDate, sortOrders } from "./kiosk";
+import { PAD_MODES } from "./kiosk_types";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "./stock-types";
 
 export default function CartMenu({ 
@@ -27,19 +28,19 @@ export default function CartMenu({
     input_ref
 }: { 
     customerState: Customer | null, 
-    setCustomerState: Function, 
+    setCustomerState: (customer: Customer | null) => void, 
     setResult: Function, 
     setSearchType: Function, 
-    setOrderState: Function, 
+    setOrderState: (orders: Order[]) => void, 
     orderState: Order[], 
     setActiveProduct: Function, 
     setActiveProductPromotions: Function,
     setActiveProductVariant: Function, 
     master_state: MasterState,
     setTriggerRefresh: Function, triggerRefresh: string[],
-    setPadState: Function,
+    setPadState: (pad_state: PAD_MODES) => void,
     setDiscount: Function,
-    setKioskState: Function,
+    setKioskState: (kiosk: KioskState) => void,
     kioskState: KioskState,
     setCurrentTransactionPrice: Function,
     input_ref: RefObject<HTMLInputElement>
@@ -231,19 +232,20 @@ export default function CartMenu({
 
                     <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
                         <p className="text-white select-none" onClick={() => {
-                            // const reduced = orderInfo.state.filter(e => e.order_type == "direct");
-                            // const cleared = reduced.map(e => { return {...e, products: []} });
-
                             setOrderState([{
                                 id: v4(),
                                 destination: null,
                                 origin: {
-                                    code: master_state.store_id,
+                                    store_code: master_state.store_code,
+                                    store_id: master_state.store_id ?? "",
                                     contact: master_state.store_contact
                                 },
                                 products: [],
                                 status: {
-                                    status: "Queued",
+                                    status: {
+                                        type: "queued",
+                                        value: getDate()
+                                    },
                                     assigned_products: [],
                                     timestamp: getDate()
                                 },
@@ -254,10 +256,9 @@ export default function CartMenu({
                                 reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                 creation_date: getDate(),
                                 discount: "a|0",
-                                order_type: "Direct"
+                                order_type: "direct"
                             }])
                         }}>Clear Cart</p>
-                        {/* <Image style={{ filter: "invert(100%) sepia(12%) saturate(7454%) hue-rotate(282deg) brightness(112%) contrast(114%)" }} width="25" height="25" src="/icons/x-square.svg" alt={''}></Image> */}
                     </div>
                 </div>     
 
@@ -279,24 +280,24 @@ export default function CartMenu({
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex flex-row items-center gap-2 select-none">
                                                     {
-                                                        n.order_type == "Pickup" ?
+                                                        n.order_type == "pickup" ?
                                                         <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         :
-                                                        n.order_type == "Quote" ?
+                                                        n.order_type == "quote" ?
                                                         <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         :
-                                                        n.order_type == "Shipment" ?
+                                                        n.order_type == "shipment" ?
                                                         <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         :
                                                         <Image src="/icons/shopping-bag-01-filled.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                     }
 
                                                     <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                        { n.order_type == "Pickup" ? n.destination?.contact?.name : n.order_type == "Direct" ? "Instore Purchase" : n.origin.contact?.name} 
-                                                        {/* <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
+                                                        { n.order_type == "pickup" ? n.destination?.contact?.name : n.order_type == "direct" ? "Instore Purchase" : n.origin.contact?.name} 
+                                                        {/* <p className="text-gray-400">({ n.order_type == "pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
 
                                                         {
-                                                            n.order_type !== "Pickup" && n.order_type !== "Direct" && n.order_type !== "Quote" ?
+                                                            n.order_type !== "pickup" && n.order_type !== "direct" && n.order_type !== "quote" ?
                                                             <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p>
                                                             :
                                                             <></>
@@ -305,10 +306,10 @@ export default function CartMenu({
                                                 </div>
                                                 
                                                 { 
-                                                    n.order_type == "Pickup" ? 
+                                                    n.order_type == "pickup" ? 
                                                     <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
                                                     :
-                                                    n.order_type !== "Direct" && n.order_type !== "Quote" ?
+                                                    n.order_type !== "direct" && n.order_type !== "quote" ?
                                                     <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
                                                     :
                                                     <></>
@@ -316,28 +317,28 @@ export default function CartMenu({
                                             </div>
                                         </div>
                                     :
-                                        orderInfo.state[0].order_type !== "Direct" ?
+                                        orderInfo.state[0].order_type !== "direct" ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex flex-row items-center gap-2 select-none">
                                                         {
-                                                            n.order_type == "Pickup" ?
+                                                            n.order_type == "pickup" ?
                                                             <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                             :
-                                                            n.order_type == "Quote" ?
+                                                            n.order_type == "quote" ?
                                                             <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                             :
-                                                            n.order_type == "Shipment" ?
+                                                            n.order_type == "shipment" ?
                                                             <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                             :
                                                             <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         }
                                                         <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                            { n.order_type == "Pickup" ? n.destination?.contact?.name : n.origin.contact?.name} 
-                                                            {/* <p className="text-gray-400">({ n.order_type == "Pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
+                                                            { n.order_type == "pickup" ? n.destination?.contact?.name : n.origin.contact?.name} 
+                                                            {/* <p className="text-gray-400">({ n.order_type == "pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
                                                             
                                                             {
-                                                                n.order_type !== "Pickup" ?
+                                                                n.order_type !== "pickup" ?
                                                                 <p className="text-gray-400"> -&gt; {n.destination?.contact.address.street}</p>
                                                                 :
                                                                 <></>
@@ -346,7 +347,7 @@ export default function CartMenu({
                                                     </div>
                                                     
                                                     { 
-                                                        n.order_type == "Pickup" ? 
+                                                        n.order_type == "pickup" ? 
                                                         <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
                                                         :
                                                         <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
@@ -387,7 +388,7 @@ export default function CartMenu({
                                                             <Image height={60} width={60} quality={100} alt="" className="rounded-sm" src={e.variant_information.images[0]}></Image>
 
                                                             {
-                                                                n.order_type == "Direct" ?
+                                                                n.order_type == "direct" ?
                                                                     (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                     >
                                                                     (q_here?.quantity.quantity_sellable ?? 0)
@@ -516,7 +517,7 @@ export default function CartMenu({
                                                         <p className="text-sm text-gray-400">{e.variant_information.name}</p>
                                                         
                                                         {
-                                                            n.order_type == "Direct" ?
+                                                            n.order_type == "direct" ?
                                                                 (n.products.reduce((t, i) => t += (i.variant_information.barcode == e.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                                                                 > 
                                                                 (q_here?.quantity.quantity_sellable ?? 0)
@@ -629,7 +630,13 @@ export default function CartMenu({
                 <div className="flex flex-row items-center gap-4">
                     <div 
                         onClick={() => {
-                            parkSale(orderState, setTriggerRefresh, triggerRefresh, master_state, customerState, setKioskState, setOrderState, setCustomerState, setPadState, kioskState);
+                            parkSale(
+                                master_state, setPadState, 
+                                orderState, setOrderState, 
+                                triggerRefresh, setTriggerRefresh, 
+                                customerState, setCustomerState, 
+                                kioskState, setKioskState
+                            )
                         }}
                         className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
                         <p className="text-gray-800 font-semibold">Park Sale</p>

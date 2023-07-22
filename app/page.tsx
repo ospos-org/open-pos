@@ -8,7 +8,7 @@ import Job from './job';
 import Deliverables from './deliverables';
 import Incomings from './incomings';
 import { Employee, MasterState } from './stock-types';
-import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
+import {OPEN_STOCK_URL, retryPromise, useWindowSize} from "./helpers";
 
 const ICON_SIZE = 30
 
@@ -56,20 +56,28 @@ export default function App() {
 	}, [])
 
 	useEffect(() => {
-		fetch(`${OPEN_STOCK_URL}/store/`, {
-			method: "GET",
-			redirect: "follow",
-			credentials: "include"
-		}).then(async b => {
-			const data = await b.json();
+		retryPromise(
+			() => fetch(`${OPEN_STOCK_URL}/store/`, {
+				method: "GET",
+				redirect: "follow",
+				credentials: "include"
+			}),
+			{
+				retryIf: (response) => !response.ok,
+				retryCatchIf: (response) => !response.ok,
+				retries: 5
+			}
+		).then(async response => {
+			const data = await response.json();
+
 			setMasterState(m => {
 				return {
 					...m,
 					store_lut: data
 				}
-			})
+			});
 		})
-	}, []);
+	}, [user]);
 
 	useEffect(() => {
 		setMasterState(m => {

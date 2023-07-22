@@ -10,7 +10,7 @@ export type KioskState = {
     till: string | null
 };
 
-export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "Quote"
+export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "quote"
 
 export type Transaction = {
     id: string,
@@ -142,7 +142,7 @@ export type DbOrder = {
     reference: string,
     creation_date: string,
     discount: { Absolute?: number, Percentage?: number },
-    order_type: "Shipment" | "Pickup" | "Direct" | "Quote"
+    order_type: "shipment" | "pickup" | "direct" | "quote"
 }
 
 export type Order = {
@@ -158,7 +158,7 @@ export type Order = {
     reference: string,
     creation_date: string,
     discount: string,
-    order_type: "Shipment" | "Pickup" | "Direct" | "Quote"
+    order_type: "shipment" | "pickup" | "direct" | "quote"
 }
 
 export type StatusHistory = {
@@ -244,7 +244,25 @@ export type DiscountValue = {
     promotion?: Promotion
 }
 
-export type OrderStatusStatus = { Queued: string } | { Transit: TransitInformation } | { Processing: string } | { InStore: string} | { Fulfilled: string} | { Failed: string }
+export type OrderStatusStatus = {
+    type: "queued",
+    value: string
+} | { 
+    type: "transit",
+    value: TransitInformation 
+} | { 
+    type: "processing",
+    value: string 
+} | { 
+    type: "instore",
+    value: string 
+} | { 
+    type: "fulfilled",
+    value: string 
+} | { 
+    type: "failed",
+    value: string 
+}
 
 export type OrderStatus = {
     status: OrderStatusStatus,

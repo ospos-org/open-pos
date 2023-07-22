@@ -66,7 +66,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
 
                 <div className="bg-gray-800 rounded-md p-1">
                     {
-                        activeOrder.order_type === "Pickup" ?
+                        activeOrder.order_type === "pickup" ?
                         <Image 
                             className=""
                             height={40} width={40} src="/icons/building-02.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -91,7 +91,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 0 || (activeOrder.status.status.InStore || activeOrder.status.status.Fulfilled) ?
                     <div 
                         className="bg-green-600 cursor-not-allowed opacity-25 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 select-none">
-                        <p>{activeOrder.order_type === "Pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{activeOrder.order_type === "pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -100,9 +100,10 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 100 ?
                     <div 
                         onClick={async () => {
-                            if ((activeOrder.order_type !== "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
+                            if ((activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
                                 const new_status: OrderStatusStatus = {
-                                    InStore: getDate()
+                                    type: "instore",
+                                    value: getDate()
                                 }
                                 
                                 const data = await fetch(`${OPEN_STOCK_URL}/transaction/status/order/${activeOrder.reference}`, {
@@ -121,7 +122,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                             }
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{(activeOrder.order_type !== "Shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{(activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -129,7 +130,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     :
                     <div 
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{activeOrder.order_type === "Pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
+                        <p>{activeOrder.order_type === "pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -148,20 +149,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
             <div className="flex flex-col">
                 {
                     activeOrder?.status_history.map((k, indx) => {
-                        let type = "Queued";
-
-                        //@ts-ignore
-                        if(k.item.status?.Queued) type = "Queued"
-                        //@ts-ignore
-                        else if(k.item.status?.Transit) type = "Transit"
-                        //@ts-ignore
-                        else if(k.item.status?.Processing) type = "Processing"
-                        //@ts-ignore
-                        else if(k.item.status?.InStore) type = "InStore"
-                        //@ts-ignore
-                        else if(k.item.status?.Fulfilled) type = "Fulfilled"
-                        //@ts-ignore
-                        else if(k.item.status?.Failed) type = "Failed"
+                        const type = k.item.status.type;
 
                         return (
                             <div key={`${k.timestamp} ${k.item} ${k.reason}`}>
@@ -173,49 +161,49 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                                 
                                 <div className="flex flex-row items-center gap-4">
                                     <div className={`${
-                                            type == "Queued" ? 
+                                            type == "queued" ? 
                                                 "bg-gray-600" : 
-                                            type == "Processing" ? 
+                                            type == "processing" ? 
                                                 "bg-yellow-600" : 
-                                            (type == "Transit" || type == "InStore") ? 
+                                            (type == "transit" || type == "instore") ? 
                                                 "bg-blue-600" : 
-                                            type == "Failed" ? 
+                                            type == "failed" ? 
                                                 "bg-red-600" :
                                                 "bg-green-600"
                                             } h-11 w-11 flex items-center justify-center rounded-full`}>
                                         {(() => {
                                             switch(type) {
-                                                case "Queued":
+                                                case "queued":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/clock.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Transit":
+                                                case "transit":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/truck-01.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Processing":
+                                                case "processing":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/loading-01.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Fulfilled":
+                                                case "fulfilled":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/check-verified-02.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "InStore":
+                                                case "instore":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/building-02.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Failed":
+                                                case "failed":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/x-circle.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
@@ -239,9 +227,8 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                                         </div>
 
                                         {
-                                            type == "Transit" ?
-                                                // @ts-ignore
-                                                <Link target="_blank" rel="noopener noreferrer" className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer" href={k.item.status?.Transit?.query_url + k.item.status?.Transit?.tracking_code}>
+                                            type === "transit" ?
+                                                <Link target="_blank" rel="noopener noreferrer" className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer" href={k.item.status.value?.query_url + k.item.status.value?.tracking_code}>
                                                     <p className="text-white">Track</p>
                                                     <Image src="/icons/arrow-narrow-right.svg" alt="Redirect arrow" width={15} height={15} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                 </Link>

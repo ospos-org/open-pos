@@ -223,8 +223,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                                                                         <div className="flex flex-col gap-2">
                                                                             <div className="flex flex-row gap-2">
                                                                                 {
-                                                                                    //@ts-ignore
-                                                                                    (b.status.status?.Transit !== undefined || b.status.status?.InStore !== undefined || b.status.status?.Fulfilled !== undefined) ?
+                                                                                    (b.status.status?.type === "transit" || b.status.status?.type === "instore" || b.status.status.type === "fulfilled") ?
                                                                                         <p className="text-white font-mono font-bold px-2 bg-blue-600 rounded-md py-1"><Check color="white" size={18}/></p>
                                                                                     :
                                                                                     completed === total_products ? 

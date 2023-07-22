@@ -4,6 +4,7 @@ import { applyPromotion, discountFromPromotion, findMaxDiscount, toDbDiscount } 
 import { getDate, sortDbOrders } from "./kiosk";
 import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, OrderStatus, PaymentIntent, ProductPurchase, Promotion, StatusHistory, TransactionInput, TransactionType } from "./stock-types";
 import {useEffect, useState} from "react";
+import { PAD_MODES } from "./kiosk_types";
 
 // Change to ENV
 export const OPEN_STOCK_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -26,7 +27,7 @@ export const fileTransaction = (
         return prev + (curr.amount.quantity ?? 0)
     }, 0);
 
-    if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "Quote") {
+    if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "quote") {
         setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
         setPadState("select-payment-method")
 
@@ -63,13 +64,13 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
     const date = getDate();
 
     const new_state: DbOrder[] = orderState.map(e => {
-        if(e.order_type == "Direct") {
+        if(e.order_type == "direct") {
             return {
                 ...e,
                 discount: toDbDiscount(e.discount),
                 origin: {
                     store_code: master_state.store_code,
-                    store_id: master_state.store_id,
+                    store_id: master_state.store_id ?? "",
                     contact: master_state.store_contact
                 },
                 destination: {
@@ -91,7 +92,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                         tags: k.tags
                     } as DbProductPurchase
                 }) as DbProductPurchase[],
-                status: (transaction_type == "Saved" || transaction_type == "Quote" ? {   
+                status: (transaction_type == "Saved" || transaction_type == "quote" ? {   
                     status: {
                         Fulfilled: date
                     },
@@ -99,20 +100,22 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     timestamp: date
                 }  : {   
                     status: {
-                        Queued: date
+                        type: "queued",
+                        value: date
                     },
                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                     timestamp: date
                 }) as OrderStatus,
                 status_history: 
-                !(transaction_type == "Saved" || transaction_type == "Quote") ? 
+                !(transaction_type == "Saved" || transaction_type == "quote") ? 
 
                 [
                     ...e.status_history as StatusHistory[],
                     {
                         item: {   
                             status: {
-                                Queued: date
+                                type: "queued",
+                                value: date
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
@@ -123,7 +126,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     {
                         item: {   
                             status: {
-                                Fulfilled: date
+                                type: "fulfilled",
+                                value: date
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
@@ -140,7 +144,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     {
                         item: {   
                             status: {
-                                Queued: date
+                                type: "queued",
+                                value: date
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
@@ -156,7 +161,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 discount: toDbDiscount(e.discount),
                 status: {   
                     status: {
-                        Queued: date
+                        type: "queued",
+                        value: date
                     },
                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                     timestamp: date
@@ -179,7 +185,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     {
                         item: {   
                             status: {
-                                Queued: date
+                                type: "queued",
+                                value: date
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
@@ -195,7 +202,13 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
     return new_state;
 }
 
-export const resetOrder = (setKioskState: Function, setOrderState: Function, setCustomerState: Function, setPadState: Function, master_state: MasterState) => {
+export const resetOrder = (
+    setKioskState: (kiosk_state: KioskState) => void, 
+    setOrderState: (order: Order[]) => void, 
+    setCustomerState: (customer_state: Customer | null) => void, 
+    setPadState: (pad_state: PAD_MODES) => void, 
+    master_state: MasterState
+) => {
     setKioskState({
         customer: null,
         transaction_type: "Out",
@@ -213,12 +226,14 @@ export const resetOrder = (setKioskState: Function, setOrderState: Function, set
         destination: null,
         origin: {
             contact: master_state.store_contact,
-            code: master_state.store_id
+            store_code: master_state.store_code,
+            store_id: master_state.store_id ?? "",
         },
         products: [],
         status: {
             status: {
-                Queued: getDate()
+                type: "queued",
+                value: getDate()
             },
             assigned_products: [],
             timestamp: getDate()
@@ -229,7 +244,7 @@ export const resetOrder = (setKioskState: Function, setOrderState: Function, set
         reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
         creation_date: getDate(),
         discount: "a|0",
-        order_type: "Direct",
+        order_type: "direct",
         previous_failed_fulfillment_attempts: []
     }])
     
@@ -238,7 +253,13 @@ export const resetOrder = (setKioskState: Function, setOrderState: Function, set
     setPadState("cart")
 }
 
-export const parkSale = (orderState: Order[], setTriggerRefresh: Function, triggerRefresh: string[], master_state: MasterState, customerState: Customer | null, setKioskState: Function, setOrderState: Function, setCustomerState: Function, setPadState: Function, kioskState: KioskState) => {
+export const parkSale = (
+    master_state: MasterState, setPadState: (pad_state: PAD_MODES) => void,
+    orderState: Order[], setOrderState: (order: Order[]) => void,
+    triggerRefresh: string[], setTriggerRefresh: Function,  
+    customerState: Customer | null, setCustomerState: (customer_state: Customer | null) => void,
+    kioskState: KioskState, setKioskState: (kiosk_state: KioskState) => void, 
+) => {
     if((orderState?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
         const new_state = computeOrder("Saved", orderState, master_state, customerState);
 
@@ -277,8 +298,6 @@ export const parkSale = (orderState: Order[], setTriggerRefresh: Function, trigg
 }
 
 export function useWindowSize() {
-    // Initialize state with undefined width/height so server and client renders match
-    // Learn more here: https://joshwcomeau.com/react/the-perils-of-rehydration/
     const [windowSize, setWindowSize] = useState<{
         width: number | undefined,
         height: number | undefined
@@ -288,21 +307,20 @@ export function useWindowSize() {
     });
 
     useEffect(() => {
-        // Handler to call on window resize
         function handleResize() {
-            // Set window width/height to state
             setWindowSize({
                 width: window.innerWidth,
                 height: window.innerHeight,
             });
         }
-        // Add event listener
+
         window.addEventListener("resize", handleResize);
-        // Call handler right away so state gets updated with initial window size
         handleResize();
+
         // Remove event listener on cleanup
         return () => window.removeEventListener("resize", handleResize);
-        }, []); // Empty array ensures that effect is only run on mount
+    }, []);
+
     return windowSize;
 }
 
@@ -312,28 +330,24 @@ type ProductAnalysis = {
         barcode: string
     },
     chosen_promotion: {
-        external: boolean, // Is the promotion from an external source
+        // Is the promotion from an external source
+        external: boolean, 
         promotion: Promotion | null,
         saving: number
     } | null,
     promotion_list: Promotion[],
     promotion_sim: [Promotion, number][],
     tags: string[],
-    utilized: { // Is this product being used as a part of an external products promotion requirements?
+    // Is this product being used as a part of an external products promotion requirements?
+    utilized: { 
         utilizer: string,
         saving: number,
         promotion: Promotion
     } | null,
     is_joined: boolean,
-    // external_carrier: { // What is the external source, if any
-    //     origin: string, // ID of external source
-    //     saving: number,
-    //     promotion: Promotion
-    // } | null
 }
 
 export const determineOptimalPromotionPathway = (products: ProductPurchase[]) => {
-    // products[0].discount.push(...)
     const analysis_list: ProductAnalysis[] = [];
     const product_map = new Map<string, ProductPurchase>();
 
@@ -376,18 +390,11 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
     const product_queue = [...analysis_list.map(b => b.id)];
 
-    //console.log("---")
-    //console.log(product_queue, analysis_list);
-
     while(product_queue.length > 0) {
         const elem = product_queue.pop();
         const indx_of = analysis_list.findIndex(k => k.id == elem);
 
-        //console.log(product_queue, elem, indx_of);
-
         let point = analysis_list[indx_of];
-
-        //console.log("Investigating: ", { ...point });
 
         if(!point) continue;
 
@@ -542,10 +549,6 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 external: false // Is the external unit.
             };
             point.utilized = null;
-
-            //console.log("optimal: ", point);
-        }else {
-            //console.log("no optimal promotion?")
         }
         
         analysis_list[indx_of] = point;
@@ -554,4 +557,22 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
     //console.log("Analysis", [...analysis_list.map(k => k.chosen_promotion)]);
     return analysis_list;
+}
+
+interface retryPromiseOptions<T>  {
+    retryCatchIf?: (response:T) => boolean, 
+    retryIf?: (response:T) => boolean, 
+    retries?: number
+}
+
+export function retryPromise<T>(promise: () => Promise<T>, options: retryPromiseOptions<T>) {
+    const { retryIf = (_:T) => false, retryCatchIf = (_:T) => true, retries = 1 } = options
+    let _promise = promise();
+
+    for (var i = 1; i < retries; i++)
+        _promise = _promise
+            .catch((value) => retryCatchIf(value) ? promise() : Promise.reject(value))
+            .then((value) => retryIf(value) ? promise() : Promise.resolve(value));
+    
+    return _promise;
 }

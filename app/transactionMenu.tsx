@@ -50,7 +50,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                         <p className="text-lg font-semibold text-white">{activeTransaction?.reference} - {activeTransaction?.order_type}</p>
                     </div>
 
-                    {transaction[0].transaction_type == "Quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
+                    {transaction[0].transaction_type == "quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
                 </div>
 
                 {
@@ -87,20 +87,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
             <div className="flex flex-col">
                 {
                     activeTransaction?.status_history.map((k, indx) => {
-                        let type = "Queued";
-
-                        //@ts-ignore
-                        if(k.item.status?.Queued) type = "Queued"
-                        //@ts-ignore
-                        else if(k.item.status?.Transit) type = "Transit"
-                        //@ts-ignore
-                        else if(k.item.status?.Processing) type = "Processing"
-                        //@ts-ignore
-                        else if(k.item.status?.InStore) type = "InStore"
-                        //@ts-ignore
-                        else if(k.item.status?.Fulfilled) type = "Fulfilled"
-                        //@ts-ignore
-                        else if(k.item.status?.Failed) type = "Failed"
+                        const type = k.item.status.type;
 
                         return (
                             <div key={`${k.timestamp} ${k.item} ${k.reason}`}>
@@ -112,49 +99,49 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                                 
                                 <div className="flex flex-row items-center gap-4">
                                     <div className={`${
-                                            type == "Queued" ? 
+                                            type == "queued" ? 
                                                 "bg-gray-600" : 
-                                            type == "Processing" ? 
+                                            type == "processing" ? 
                                                 "bg-yellow-600" : 
-                                            (type == "Transit" || type == "InStore") ? 
+                                            (type == "transit" || type == "instore") ? 
                                                 "bg-blue-600" : 
-                                            type == "Failed" ? 
+                                            type == "failed" ? 
                                                 "bg-red-600" :
                                                 "bg-green-600"
                                             } h-11 w-11 flex items-center justify-center rounded-full`}>
                                         {(() => {
                                             switch(type) {
-                                                case "Queued":
+                                                case "queued":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/clock.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Transit":
+                                                case "transit":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/truck-01.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Processing":
+                                                case "processing":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/loading-01.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Fulfilled":
+                                                case "fulfilled":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/check-verified-02.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "InStore":
+                                                case "instore":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/building-02.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                         </div>
                                                     )
-                                                case "Failed":
+                                                case "failed":
                                                     return (
                                                         <div>
                                                             <Image src="/icons/x-circle.svg" alt="" height={22} width={22} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
@@ -178,9 +165,8 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                                         </div>
 
                                         {
-                                            type == "Transit" ?
-                                                // @ts-ignore
-                                                <Link target="_blank" rel="noopener noreferrer" className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer" href={k.item.status?.Transit?.query_url + k.item.status?.Transit?.tracking_code}>
+                                            type == "transit" ?
+                                                <Link target="_blank" rel="noopener noreferrer" className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer" href={k.item.status.value.query_url + k.item.status.value.tracking_code}>
                                                     <p className="text-white">Track</p>
                                                     <Image src="/icons/arrow-narrow-right.svg" alt="Redirect arrow" width={15} height={15} style={{ filter: "invert(99%) sepia(100%) saturate(0%) hue-rotate(124deg) brightness(104%) contrast(101%)" }} />
                                                 </Link>

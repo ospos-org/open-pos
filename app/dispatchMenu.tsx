@@ -277,19 +277,19 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "Direct" | "Shipment" }[] = [];
+                                                let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
 
                                                 generatedOrder.map(k => {
-                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "Shipment" : "Direct"));
+                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
 
                                                     if(found && k.item) {
-                                                        inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "Pickup" : "Direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                        inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "pickup" : "direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
                                                     } else if(k.item) {
                                                         inverse_order.push({
                                                             store: k.store,
                                                             store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
-                                                            type: k.ship ? "Shipment" : "Direct"
+                                                            type: k.ship ? "shipment" : "direct"
                                                         })
                                                     }
                                                 })
@@ -301,7 +301,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         redirect: "follow"
                                                     })).json();
 
-                                                    return await {
+                                                    return {
                                                         id: v4(),
                                                         destination: {
                                                             store_code: "000",
@@ -316,7 +316,8 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         products: k.items,
                                                         status: {
                                                             status: {
-                                                                Queued: getDate()
+                                                                type: "queued",
+                                                                value: getDate()
                                                             },
                                                             assigned_products: k.items.map(b => b.id),
                                                             timestamp: getDate()
@@ -332,7 +333,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     };
                                                 })).then((k) => {
                                                     let job = orderJob[0];
-                                                    job = job.filter(k => k.order_type != "Direct")
+                                                    job = job.filter(k => k.order_type != "direct")
                                                     k.map(b => job.push(b as Order));
                                                     
                                                     orderJob[1](job);
@@ -546,7 +547,7 @@ function generateProductMap(orders: Order[]) {
     let pdt_map: ProductPurchase[] = [];
 
     for(let i = 0; i < orders.length; i++) {
-        if(orders[i].order_type == "Direct") {
+        if(orders[i].order_type == "direct") {
             orders[i].products.map(e => {
                 pdt_map.push(e)
             })
