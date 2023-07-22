@@ -4,11 +4,11 @@ import Image from "next/image";
 import { createRef, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
-import {OPEN_STOCK_URL} from "./helpers";
+import { getDate } from "../../kiosk";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
+import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 
-const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
+const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
     const [ orderState, setOrderState ] = orderJob;
     const [ customerState, setCustomerState ] = customerJob;
 
@@ -18,12 +18,15 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
     const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
 
-    const [ suggestions, setSuggestions ] = useState<Address[]>([]);
+    const [ suggestions, setSuggestions ] = useState<Store[]>([]);
     const [ searching, setSearching ] = useState(false);
     const [ loading, setLoading ] = useState(false);
 
+    const [ pickupStores, setPickupStores ] = useState<Store[]>()
+    const [ pickupStore, setPickupStore ] = useState<Store>();
+
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -32,7 +35,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
         })
 
         return distance_data;
-    }, [customerState?.id]);
+    }, [currentStore]);
 
     useEffect(() => {
         fetchDistanceData().then(data => {
@@ -48,33 +51,29 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                 }
             }))
         });
-    }, [orderState, currentStore, fetchDistanceData])
+    }, [orderState, fetchDistanceData, currentStore])
 
     const debouncedResults = useMemo(() => {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await fetch(`${OPEN_STOCK_URL}/helpers/suggest/`, {
-                method: "POST",
-                credentials: "include",
-                redirect: "follow",
-                body: address
-            })?.then(async e => {
-                const data: Address[] = await e.json();
-    
-                return data;
-            });
+            const matches: Store[] = master_state.store_lut ? master_state.store_lut.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
 
-            setSuggestions(data);
+            setSuggestions(matches);
             setLoading(false);
-        }, 250);
-    }, []);
+        }, 25);
+    }, [master_state.store_lut]);
 
     useEffect(() => {
         return () => {
             debouncedResults.cancel();
         };
     });
+
+    useEffect(() => {
+        setPickupStores(master_state.store_lut)
+        setPickupStore(master_state?.store_lut?.find(k => k.id == master_state.store_id))
+    }, [currentStore, master_state.store_id, master_state.store_lut])
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -91,7 +90,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                     <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                     <p className="text-gray-400">Back</p>
                 </div>
-                <p className="text-gray-400">Ship Order to Customer</p>
+                <p className="text-gray-400">Pickup from another store</p>
             </div>
 
             <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
@@ -147,7 +146,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                             <div key={`PPURCH-SHIP-${k.item?.id}-${k.store}`} className="text-white grid items-center justify-center gap-4" style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}>
                                                                 <div onClick={() => {
                                                                     setGeneratedOrder(
-                                                                        generatedOrder.map(b => (b?.item?.id == k?.item?.id && b.store == k.store) ? { ...b, ship: !b.ship } : b)
+                                                                        generatedOrder.map(b => (b?.item?.id == k?.item?.id && b.store == k.store) ? { ...b, ship: !k.ship } : b)
                                                                     )
                                                                 }} className="cursor-pointer select-none">
                                                                     {
@@ -207,7 +206,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                             <div className="flex flex-1 flex-col gap-4">
                                                 <div className="flex flex-row items-center gap-2 text-gray-400">
-                                                    <p>SHIPPING DETAILS</p>
+                                                    <p>PICKUP DETAILS</p>
                                                     <Image 
                                                         onClick={() => setPageState("edit")}
                                                         src="/icons/edit-03.svg" alt="" width="16" height="16" style={{ filter: "invert(65%) sepia(9%) saturate(354%) hue-rotate(179deg) brightness(99%) contrast(92%)" }} />
@@ -219,16 +218,82 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     <p className="">{customerState?.contact.email.full}</p>
                                                     <p className="">{customerState?.contact.mobile.number}</p>
                                                     <br />
-                                                    <p className="font-semibold">{customerState?.contact.address.street}</p>
-                                                    <p>{customerState?.contact.address.street2}</p>
-                                                    <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
-                                                    <p className="text-gray-400">{customerState?.contact.address.country}</p>
+                                                    <p className="text-gray-400">Pickup from:</p>
+                                                    <p className="font-semibold">{pickupStore?.name} ({pickupStore?.code})</p>
+                                                    <p className="font-semibold">{pickupStore?.contact.address.street}</p>
+                                                    <p>{pickupStore?.contact.address.street2}</p>
+                                                    <p className="text-gray-400">{pickupStore?.contact.address.city} {pickupStore?.contact.address.po_code}</p>
+                                                    <p className="text-gray-400">{pickupStore?.contact.address.country}</p>
                                                 </div>
                                             </div>
 
                                             <div
-                                                onClick={() => {
-                                                    if(generatedOrder.length >= 1) setPageState("rate");
+                                                onClick={async () => {
+                                                    if(generatedOrder.length < 1) return 
+                                                    
+                                                    let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" | "pickup" }[] = [];
+
+                                                    generatedOrder.map(k => {
+                                                        const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct"));
+
+                                                        if(found && k.item) {
+                                                            inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                        } else if(k.item) {
+                                                            inverse_order.push({
+                                                                store: k.store,
+                                                                store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
+                                                                items: [ { ...k.item, quantity: k.quantity } ],
+                                                                type: k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct"
+                                                            })
+                                                        }
+                                                    })
+
+                                                    Promise.all(inverse_order.map(async k => {
+                                                        const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
+                                                            method: "GET",
+                                                            credentials: "include",
+                                                            redirect: "follow"
+                                                        })).json();
+
+                                                        return {
+                                                            id: v4(),
+                                                            destination: k.type == "pickup" ? {
+                                                                store_code: pickupStore?.code,
+                                                                store_id: pickupStore?.id,
+                                                                contact: pickupStore?.contact!
+                                                            } : { code: "000", contact: customerState?.contact },
+                                                            origin:  {
+                                                                store_code: k.store_code,
+                                                                store_id: k.store,
+                                                                contact: data.contact 
+                                                            },
+                                                            products: k.items,
+                                                            status: {
+                                                                status: {
+                                                                    type: "queued",
+                                                                    value: getDate()
+                                                                },
+                                                                assigned_products: k.items.map(b => b.id),
+                                                                timestamp: getDate()
+                                                            },
+                                                            previous_failed_fulfillment_attempts: [],
+                                                            status_history: [],
+                                                            order_history: [],
+                                                            order_notes: orderState.map(b => b.order_notes).flat(),
+                                                            reference: `PU${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                            creation_date: getDate(),
+                                                            discount: "a|0",
+                                                            order_type: k.type
+                                                        } as Order;
+                                                    })).then((k) => {
+                                                        let job: Order[] = orderJob[0];
+                                                        job = job.filter(k => k.order_type != "direct")
+                                                        k.map(b => job.push(b as Order));
+                                                        
+                                                        orderJob[1](job);
+                                                        setPadState("cart")
+                                                    });
+
                                                 }}
                                                 className={`${generatedOrder.length >= 1 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 cursor-not-allowed bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                                 <p className={`text-white font-semibold ${""}`}>Continue</p>
@@ -277,68 +342,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
-
-                                                generatedOrder.map(k => {
-                                                    const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
-
-                                                    if(found && k.item) {
-                                                        inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "pickup" : "direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
-                                                    } else if(k.item) {
-                                                        inverse_order.push({
-                                                            store: k.store,
-                                                            store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
-                                                            items: [ { ...k.item, quantity: k.quantity } ],
-                                                            type: k.ship ? "shipment" : "direct"
-                                                        })
-                                                    }
-                                                })
-
-                                                Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
-                                                        method: "GET",
-                                                        credentials: "include",
-                                                        redirect: "follow"
-                                                    })).json();
-
-                                                    return {
-                                                        id: v4(),
-                                                        destination: {
-                                                            store_code: "000",
-                                                            store_id: customerState?.id,
-                                                            contact: customerState?.contact!
-                                                        },
-                                                        origin: {
-                                                            store_code: k.store_code,
-                                                            store_id: k.store,
-                                                            contact: data.contact 
-                                                        },
-                                                        products: k.items,
-                                                        status: {
-                                                            status: {
-                                                                type: "queued",
-                                                                value: getDate()
-                                                            },
-                                                            assigned_products: k.items.map(b => b.id),
-                                                            timestamp: getDate()
-                                                        },
-                                                        previous_failed_fulfillment_attempts: [],
-                                                        status_history: [],
-                                                        order_history: [],
-                                                        order_notes: orderState.map(b => b.order_notes).flat(),
-                                                        reference: `DP${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-                                                        creation_date: getDate(),
-                                                        discount: "a|0",
-                                                        order_type: k.type
-                                                    };
-                                                })).then((k) => {
-                                                    let job = orderJob[0];
-                                                    job = job.filter(k => k.order_type != "direct")
-                                                    k.map(b => job.push(b as Order));
-                                                    
-                                                    orderJob[1](job);
-                                                    setPadState("cart")
-                                                });
+                                                
                                             }}
                                             className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                             <p className={`text-white font-semibold ${""}`}>Complete</p>
@@ -435,7 +439,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                         </div>
                                         
                                         <div className="flex flex-col flex-1 gap-2 rounded-md">
-                                            <p className="text-white font-semibold">Shipping Details</p>
+                                            <p className="text-white font-semibold">Pickup Details</p>
                                             
                                             <div className="flex-1 h-full">
                                                 <div className="flex flex-col gap-1">
@@ -443,7 +447,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         <input 
                                                             autoComplete="off"
                                                             ref={input_ref}
-                                                            placeholder="Address" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                                            placeholder="Address" defaultValue={""} className="bg-transparent focus:outline-none text-white flex-1" 
                                                             onChange={(e) => {
                                                                 debouncedResults(e.target.value);
                                                             }}
@@ -461,24 +465,20 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                 <p className="text-gray-400 self-center">Loading...</p>
                                                             </div>
                                                         :
-                                                            suggestions.map(k => {
+                                                            suggestions.map(b => {
+                                                                const k = b.contact.address
                                                                 return (
                                                                     <div
                                                                         onClick={() => {
                                                                             setSearching(false);
 
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState?.contact,
-                                                                                    address: k
-                                                                                }
-                                                                            })
+                                                                            setPickupStore(b)
 
                                                                             input_ref.current ? input_ref.current.value = "" : {}
                                                                         }} 
                                                                         className="px-4 py-2 cursor-pointer hover:bg-gray-700 rounded-md" key={`${k.city}-${k.country}-${k.po_code}-${k.street}-${k.street2}`}>
-                                                                        <p className="text-white font-semibold">{k.street.trim() == "0" ? "" : k.street} {k.street2} {k.po_code}</p>
+                                                                        <div className="text-white font-semibold inline-flex">{b.name}</div>
+                                                                        <p className="font-normal text-gray-400">{k.street.trim() == "0" ? "" : k.street} {k.street2} {k.po_code}</p>
                                                                         <p className="text-gray-400">{k.city} - {k.country}</p>
                                                                     </div>
                                                                 )
@@ -488,10 +488,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         <Image src="/icons/check-verified-02.svg" style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} className="mt-1" height={20} width={20} alt="Verified Address" />
 
                                                         <div className="text-white">
-                                                            <p className="font-semibold">{customerState?.contact.address.street}</p>
-                                                            <p>{customerState?.contact.address.street2}</p>
-                                                            <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
-                                                            <p className="text-gray-400">{customerState?.contact.address.country}</p>
+                                                            <p className="font-semibold">{pickupStore?.name}</p>
+                                                            <p className="font-semibold">{pickupStore?.contact.address.street}</p>
+                                                            <p>{pickupStore?.contact.address.street2}</p>
+                                                            <p className="text-gray-400">{pickupStore?.contact.address.city} {pickupStore?.contact.address.po_code}</p>
+                                                            <p className="text-gray-400">{pickupStore?.contact.address.country}</p>
                                                         </div>
                                                     </div>
                                                 }
@@ -501,33 +502,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
                                         <div
                                             onClick={() => {
-                                                if(!loading) {
-                                                    setLoading(true);
-
-                                                    fetch(`${OPEN_STOCK_URL}/customer/contact/${customerState?.id}`, {
-                                                        method: "POST",
-                                                        body: JSON.stringify(customerState?.contact),
-                                                        credentials: "include",
-                                                        redirect: "follow"
-                                                    })?.then(async e => {
-                                                        const data: Customer = await e.json();
-                                                        setCustomerState(data);
-        
-                                                        if(e.ok) {
-                                                            fetchDistanceData().then(data => {
-                                                                const ord = generateOrders(generateProductMap(orderState), data, currentStore);
-                                                                setGeneratedOrder(ord.assignment_sheet);
-                                                                setProductMap(ord.product_map);
-                                                                setLoading(false);
-                                                            });
-        
-                                                            setError(null);
-                                                            setPageState("origin");
-                                                        }else {
-                                                            setError("Malformed Street Address")
-                                                        }
-                                                    })
-                                                }
+                                                setPageState("origin")
                                             }}
                                             className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                                             
@@ -683,4 +658,4 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
     };
 }
 
-export default DispatchMenu;
+export default PickupMenu;

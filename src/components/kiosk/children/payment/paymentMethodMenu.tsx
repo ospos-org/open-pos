@@ -1,9 +1,9 @@
 import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
-import {computeOrder, OPEN_STOCK_URL} from "./helpers";
-import { getDate } from "./kiosk";
-import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "./stock-types";
+import {computeOrder, OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { getDate } from "../../kiosk";
+import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "../../../../utils/stock_types";
 
 const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, setKioskState: (stateset: (oldState: KioskState) => KioskState) => void, ctp: [number | null, Function], master_state: MasterState, customerState: Customer | null }> = ({ setPadState, orderState, kioskState, setKioskState, ctp, master_state, customerState }) => {
     const [ editPrice, setEditPrice ] = useState(false);

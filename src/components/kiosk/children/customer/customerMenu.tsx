@@ -4,9 +4,9 @@ import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "./stock-types";
-import {OPEN_STOCK_URL} from "./helpers";
+import { getDate } from "../../kiosk";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
+import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 
 const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCustomerState: Function, setPadState: Function, setActiveCustomer: Function, activeCustomer: Customer | null }> = ({ defaultValue, setCustomerState, setPadState, create, setActiveCustomer, activeCustomer }) => {
     const [ pageState, setPageState ] = useState("origin");

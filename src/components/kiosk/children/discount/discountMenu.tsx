@@ -1,8 +1,8 @@
 import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
 import { FC, createRef, useEffect } from "react";
-import { applyDiscount } from "./discount_helpers";
-import { VariantInformation } from "./stock-types";
+import { applyDiscount } from "../../../../utils/discount_helpers";
+import { VariantInformation } from "../../../../utils/stock_types";
 
 const DiscountMenu: FC<{ discountGroup: [{
         type: "absolute" | "percentage";

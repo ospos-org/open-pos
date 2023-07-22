@@ -1,8 +1,8 @@
 import { customAlphabet } from "nanoid";
 import { v4 } from "uuid";
 import { applyPromotion, discountFromPromotion, findMaxDiscount, toDbDiscount } from "./discount_helpers";
-import { getDate, sortDbOrders } from "./kiosk";
-import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, OrderStatus, PaymentIntent, ProductPurchase, Promotion, StatusHistory, TransactionInput, TransactionType } from "./stock-types";
+import { getDate, sortDbOrders } from "../components/kiosk/kiosk";
+import { Customer, DbOrder, DbProductPurchase, KioskState, MasterState, Order, OrderStatus, PaymentIntent, ProductPurchase, Promotion, StatusHistory, TransactionInput, TransactionType } from "./stock_types";
 import {useEffect, useState} from "react";
 import { PAD_MODES } from "./kiosk_types";
 

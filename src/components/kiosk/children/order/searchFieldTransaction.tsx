@@ -2,8 +2,8 @@ import moment from 'moment';
 import Image from 'next/image';
 import { useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
-import { Customer, Transaction } from './stock-types'
-import {OPEN_STOCK_URL, useWindowSize} from "./helpers";
+import { Customer, Transaction } from '../../../../utils/stock_types'
+import {OPEN_STOCK_URL, useWindowSize} from "../../../../utils/helpers";
 
 export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, setPadState, setCurrentViewedTransaction }: { transaction: Transaction, setCurrentViewedTransaction: Function, searchTermState: string, notEnd: boolean, setPadState: Function }) => {
     const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));

@@ -5,14 +5,14 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "./discount_helpers";
-import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "./helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "../../utils/discount_helpers";
+import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "../../utils/helpers";
 import { getDate, sortOrders } from "./kiosk";
-import { PAD_MODES } from "./kiosk_types";
-import PromotionList from "./promotionList";
-import { SavedTransactionItem } from "./savedTransactionItem";
-import { SearchFieldTransaction } from "./searchFieldTransaction";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, MasterState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
+import { PAD_MODES } from "../../utils/kiosk_types";
+import PromotionList from "./children/promotion/promotionList";
+import { SavedTransactionItem } from "./children/order/savedTransactionItem";
+import { SearchFieldTransaction } from "./children/order/searchFieldTransaction";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, MasterState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "../../utils/stock_types";
 
 const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
 

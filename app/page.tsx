@@ -1,14 +1,14 @@
 "use client";
 
-import Kiosk from './kiosk'
+import Kiosk from '../src/components/kiosk/kiosk'
 import { createRef, useEffect, useState } from 'react'
 import Image from "next/image"
-import Inventory from './inventory';
-import Job from './job';
-import Deliverables from './deliverables';
-import Incomings from './incomings';
-import { Employee, MasterState } from './stock-types';
-import {OPEN_STOCK_URL, retryPromise, useWindowSize} from "./helpers";
+import Inventory from '../src/components/inventory/inventory';
+import Job from '../src/components/job/job';
+import Deliverables from '../src/components/remote/deliverables';
+import Incomings from '../src/components/remote/recievables';
+import { Employee, MasterState } from '../src/utils/stock_types';
+import {OPEN_STOCK_URL, retryPromise, useWindowSize} from "../src/utils/helpers";
 
 const ICON_SIZE = 30
 

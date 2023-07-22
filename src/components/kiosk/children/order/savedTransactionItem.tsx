@@ -2,10 +2,10 @@ import moment from 'moment';
 import Image from 'next/image';
 import { useEffect, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
-import { fromDbDiscount } from './discount_helpers';
-import { getDate } from './kiosk';
-import { Customer, KioskState, Order, Product, ProductPurchase, Promotion, Transaction } from './stock-types'
-import {OPEN_STOCK_URL} from "./helpers";
+import { fromDbDiscount } from '../../../../utils/discount_helpers';
+import { getDate } from '../../kiosk';
+import { Customer, KioskState, Order, Product, ProductPurchase, Promotion, Transaction } from '../../../../utils/stock_types'
+import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 
 export const SavedTransactionItem = ({ transaction, kioskState, setKioskState, setOrderState, setCustomerState, setTriggerRefresh, triggerRefresh }: { transaction: Transaction, setTriggerRefresh: Function, triggerRefresh: string[], kioskState: KioskState, setKioskState: Function, setOrderState: Function, setCustomerState: Function }) => {
     const [ customer, setCustomer ] = useState<Customer | null>();

@@ -1,26 +1,26 @@
 import Image from "next/image";
 import { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { debounce, divide, isEqual, uniqueId, values } from "lodash";
-import { ReactBarcodeReader } from "./scanner";
+import { ReactBarcodeReader } from "../common/scanner";
 import BarcodeReader from 'react-barcode-reader'
-import CashSelect from "./cashSelect";
+import CashSelect from "./children/payment/cashSelect";
 import { v4 } from "uuid"
-import DiscountMenu from "./discountMenu";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, MasterState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "./stock-types";
-import NotesMenu from "./notesMenu";
-import { applyDiscount, findMaxDiscount, fromDbDiscount, isEquivalentDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "./discount_helpers";
-import PaymentMethod from "./paymentMethodMenu";
-import DispatchMenu from "./dispatchMenu";
-import PickupMenu from "./pickupMenu";
+import DiscountMenu from "./children/discount/discountMenu";
+import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, MasterState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "../../utils/stock_types";
+import NotesMenu from "../common/notesMenu";
+import { applyDiscount, findMaxDiscount, fromDbDiscount, isEquivalentDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "../../utils/discount_helpers";
+import PaymentMethod from "./children/payment/paymentMethodMenu";
+import DispatchMenu from "./children/foreign/dispatchMenu";
+import PickupMenu from "./children/foreign/pickupMenu";
 import { customAlphabet } from "nanoid";
-import CartMenu from "./cartMenu";
+import CartMenu from "./children/order/cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
-import TransactionMenu from "./transactionMenu";
-import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "./helpers";
-import CustomerMenu from "./customerMenu";
-import RelatedOrders from "./relatedMenu";
-import { PAD_MODES } from "./kiosk_types";
+import TransactionMenu from "./children/order/transactionMenu";
+import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "../../utils/helpers";
+import CustomerMenu from "./children/customer/customerMenu";
+import RelatedOrders from "./children/order/relatedMenu";
+import { PAD_MODES } from "../../utils/kiosk_types";
 
 export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
     const [ kioskState, setKioskState ] = useState<KioskState>({

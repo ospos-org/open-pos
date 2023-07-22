@@ -2,10 +2,10 @@ import moment from "moment";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { applyDiscount, findMaxDiscount, fromDbDiscount } from "./discount_helpers";
-import { NoteElement } from "./noteElement";
-import { Customer, DbOrder, Order, Transaction } from "./stock-types";
-import {OPEN_STOCK_URL} from "./helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount } from "../../../../utils/discount_helpers";
+import { NoteElement } from "../../../common/noteElement";
+import { Customer, DbOrder, Order, Transaction } from "../../../../utils/stock_types";
+import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 
 export default function TransactionMenu({ transaction }: { transaction: [Transaction, string] | null }) {
     const [ customer, setCustomer ] = useState<Customer | null>();

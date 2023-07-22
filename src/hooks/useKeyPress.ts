@@ -116,6 +116,7 @@ const useKeyPress = (keyCode: KeyCode | null = null, options: UseKeyPressOptions
         window.removeEventListener('blur', resetHandler);
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyCode, setKeyPressed]);
 
   return keyPressed;

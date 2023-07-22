@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { FC, createRef, useState, useEffect } from "react";
 import { NoteElement } from "./noteElement";
-import { Note, Order } from "./stock-types";
+import { Note, Order } from "../../utils/stock_types";
 
 const NotesMenu: FC<{ notes: Order[], callback: Function, autoFocus?: boolean }> = ({ notes, callback, autoFocus }) => {
     const input_ref = createRef<HTMLInputElement>();

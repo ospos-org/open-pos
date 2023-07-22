@@ -4,9 +4,9 @@ import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
-import { getDate } from "./kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, Transaction, VariantInformation } from "./stock-types";
-import {OPEN_STOCK_URL} from "./helpers";
+import { getDate } from "../../kiosk";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, Transaction, VariantInformation } from "../../../../utils/stock_types";
+import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 import moment from "moment";
 
 const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantInformation | null, setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null | undefined, setPreviousPadState: Function }> = ({ setPadState, activeProductVariant, setCurrentViewedTransaction, currentViewedTransaction, setPreviousPadState }) => {

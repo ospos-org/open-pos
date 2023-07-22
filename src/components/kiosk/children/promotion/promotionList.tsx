@@ -1,6 +1,6 @@
 import { useEffect } from "react"
-import { applyPromotion, fromDbDiscount, parseDiscount } from "./discount_helpers";
-import { Order, ProductPurchase, Promotion } from "./stock-types";
+import { applyPromotion, fromDbDiscount, parseDiscount } from "../../../../utils/discount_helpers";
+import { Order, ProductPurchase, Promotion } from "../../../../utils/stock_types";
 
 export default function PromotionList({
     promotions, cart

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Customer, MasterState, Order, OrderStatusStatus, Transaction } from "./stock-types";
-import { OPEN_STOCK_URL } from "./helpers";
+import { Customer, MasterState, Order, OrderStatusStatus, Transaction } from "../../utils/stock_types";
+import { OPEN_STOCK_URL } from "../../utils/helpers";
 import moment from "moment";
 import Image from "next/image";
-import { applyDiscount, findMaxDiscount } from "./discount_helpers";
+import { applyDiscount, findMaxDiscount } from "../../utils/discount_helpers";
 import Link from "next/link";
-import NotesMenu from "./notesMenu";
-import { getDate } from "./kiosk";
+import NotesMenu from "../common/notesMenu";
+import { getDate } from "../kiosk/kiosk";
 
 export default function OrderView({ activeOrder, setActiveOrder, master_state }: { activeOrder: Order, setActiveOrder: Function, master_state: MasterState }) {
     const [ orderInfo, setOrderInfo ] = useState<Transaction | null>(null);

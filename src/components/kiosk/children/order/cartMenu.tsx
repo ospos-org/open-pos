@@ -3,11 +3,11 @@ import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { RefObject, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { applyDiscount, applyDiscountsConsiderateOfQuantity, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "./discount_helpers";
-import { determineOptimalPromotionPathway, parkSale } from "./helpers";
-import { getDate, sortOrders } from "./kiosk";
-import { PAD_MODES } from "./kiosk_types";
-import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "./stock-types";
+import { applyDiscount, applyDiscountsConsiderateOfQuantity, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "../../../../utils/discount_helpers";
+import { determineOptimalPromotionPathway, parkSale } from "../../../../utils/helpers";
+import { getDate, sortOrders } from "../../kiosk";
+import { PAD_MODES } from "../../../../utils/kiosk_types";
+import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "../../../../utils/stock_types";
 
 export default function CartMenu({ 
     customerState, 
