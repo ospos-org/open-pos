@@ -1,6 +1,6 @@
 import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
-import { FC, createRef, useEffect } from "react";
+import { FC, createRef, useEffect, useRef } from "react";
 import { applyDiscount } from "../../../../utils/discount_helpers";
 import { VariantInformation } from "../../../../utils/stock_types";
 
@@ -18,7 +18,14 @@ const DiscountMenu: FC<{ discountGroup: [{
 
     const onEnterPress = useKeyPress(['Enter'])
 
+    const firstUpdate = useRef(0);
+
     useEffect(() => {
+        if (firstUpdate.current < 1) {
+            firstUpdate.current += 1;
+            return;
+        }
+
         click_ref.current?.click()
     }, [onEnterPress])
     

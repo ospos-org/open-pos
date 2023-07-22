@@ -447,7 +447,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                             }}
                                             className="flex flex-row items-center gap-2"
                                         >
-                                            <Image src="/icons/arrow-narrow-left (1).svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
+                                            <Image src="/icons/arrow-narrow-left-1.svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
                                             <p className="text-white">Cancel</p>
                                         </div>
                                         <p className="text-white">Awaiting Customer Payment</p>
@@ -812,7 +812,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                                             }}
                                             className="flex flex-row items-center gap-2"
                                         >
-                                            <Image src="/icons/arrow-narrow-left (1).svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
+                                            <Image src="/icons/arrow-narrow-left-1.svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
                                             <p className="text-white">Back</p>
                                         </div>
                                         <p className="text-white">Awaiting Customer Payment</p>

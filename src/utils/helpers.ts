@@ -94,7 +94,8 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                 }) as DbProductPurchase[],
                 status: (transaction_type == "Saved" || transaction_type == "Quote" ? {   
                     status: {
-                        Fulfilled: date
+                        type: "fulfilled",
+                        value: date
                     },
                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                     timestamp: date
@@ -105,7 +106,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     },
                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                     timestamp: date
-                }) as OrderStatus,
+                }),
                 status_history: 
                 !(transaction_type == "Saved" || transaction_type == "Quote") ? 
 
@@ -119,7 +120,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
-                        } as OrderStatus,
+                        },
                         reason: "Payment Intent Created",
                         timestamp: date
                     } as StatusHistory,
@@ -152,9 +153,9 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                         },
                         reason: "Queued Purchase",
                         timestamp: date
-                    } as StatusHistory
+                    }
                 ]
-            }
+            } as DbOrder
         }else {
             return {
                 ...e,
@@ -166,7 +167,7 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                     },
                     assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                     timestamp: date
-                } as OrderStatus,
+                },
                 products: e.products.map(k => { 
                     return { 
                         discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value), 
@@ -190,12 +191,12 @@ export const computeOrder = (transaction_type: TransactionType, orderState: Orde
                             },
                             assigned_products: e.products.map<string>(e => { return e.id }) as string[],
                             timestamp: date
-                        } as OrderStatus,
+                        },
                         reason: "Queued indirect purchase",
                         timestamp: date
-                    } as StatusHistory
+                    }
                 ]
-            }
+            } as DbOrder
         }
     });
 

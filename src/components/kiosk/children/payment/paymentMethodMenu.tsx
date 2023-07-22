@@ -1,6 +1,6 @@
 import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {computeOrder, OPEN_STOCK_URL} from "../../../../utils/helpers";
 import { getDate } from "../../kiosk";
 import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "../../../../utils/stock_types";
@@ -11,25 +11,43 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
 
     const f1Pressed = useKeyPress(['F1'])
+    const f1firstUpdate = useRef(0);
 
     useEffect(() => {
+        if (f1firstUpdate.current < 2) {
+            f1firstUpdate.current += 1;
+            return;
+        }
+
         setKioskState((oldState: KioskState) => ({
             ...oldState,
             transaction_type: "Out"
         }));
 
         setPadState("await-debit");
-    }, [f1Pressed, setPadState, setKioskState]);
+    }, [f1Pressed]);
 
     const f2Pressed = useKeyPress(['F2'])
+    const f2firstUpdate = useRef(0);
 
     useEffect(() => {
+        if (f2firstUpdate.current < 2) {
+            f2firstUpdate.current += 1;
+            return;
+        }
+
         setPadState("await-cash");
-    }, [f2Pressed, setPadState]);
+    }, [f2Pressed]);
 
-    const f6Pressed = useKeyPress(['F6'])
+    const f6Pressed = useKeyPress(['F6']);
+    const f6firstUpdate = useRef(0);
 
     useEffect(() => {
+        if (f6firstUpdate.current < 2) {
+            f6firstUpdate.current += 1;
+            return;
+        }
+
         const new_state = computeOrder("Quote", orderState, master_state, customerState);
         
         const transaction = {
@@ -66,7 +84,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                 }
             })
         }
-    }, [f6Pressed, setPadState]);
+    }, [f6Pressed]);
 
     useEffect(() => {
         let has_negative_stocks = false;
