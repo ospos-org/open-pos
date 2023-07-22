@@ -1,21 +1,21 @@
 import { debounce } from "lodash";
-import { customAlphabet } from "nanoid";
 import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
-import { json } from "stream/consumers";
-import { v4 } from "uuid";
-import { getDate } from "../../kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
+import { Address, ContactInformation, Customer } from "../../../../utils/stock_types";
 import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { useAtom, useSetAtom } from "jotai";
+import { customerAtom } from "@/src/atoms/customer";
+import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
 
-const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCustomerState: Function, setPadState: Function, setActiveCustomer: Function, activeCustomer: Customer | null }> = ({ defaultValue, setCustomerState, setPadState, create, setActiveCustomer, activeCustomer }) => {
-    const [ pageState, setPageState ] = useState("origin");
+function CustomerMenu() {
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const [ customerState, setCustomerState ] = useAtom(customerAtom)
+
     const [ loading, setLoading ] = useState(false);
     const [ searching, setSearching ] = useState(false);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
-    const [ error, setError ] = useState<string | null>(null);
 
-    const [ customerState, setCustomerStateInternal ] = useState<Customer | null>(defaultValue != null ? defaultValue : {
+    const [ customerStateInternal, setCustomerStateInternal ] = useState<Customer | null>(customerState != null ? customerState : {
         id: "",
         name: "",
         contact: {
@@ -81,27 +81,17 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
             <div className="flex flex-row justify-between cursor-pointer">
                 <div 
                     onClick={() => {
-                        setPadState("cart")
+                        setKioskPanel("cart")
                     }}
                     className="flex flex-row items-center gap-2"
                 >
                     <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                     <p className="text-gray-400">Back</p>
                 </div>
-                <p className="text-gray-400">{create ? "Create" : "Edit"} Customer</p>
+                <p className="text-gray-400">{customerState === null ? "Create" : "Edit"} Customer</p>
             </div>
 
-            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
-                // let sel = selectedItems.find(k => k.selected);
-                // if(sel) {
-                //     setSelectedItems(selectedItems.map(k => {
-                //         return {
-                //             ...k,
-                //             selected: false
-                //         }
-                //     }))
-                // }
-            }}>
+            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
                 <div className="flex flex-col gap-8 flex-1 overflow-auto">
                     <div className="flex flex-col gap-2">
                         <p className="text-white font-semibold">Contact Information</p>
@@ -110,23 +100,18 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                             <p className="text-gray-400 pb-0 mb-0">Customer Name</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Customer Name" defaultValue={customerState?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Customer Name" defaultValue={customerStateInternal?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
                                     onChange={(e) => {
-                                        if(customerState)
+                                        if(customerStateInternal)
                                             setCustomerStateInternal({
-                                                ...customerState,
+                                                ...customerStateInternal,
                                                 contact: {
-                                                    ...customerState.contact,
+                                                    ...customerStateInternal.contact,
                                                     name: e.target.value
                                                 }
                                             }) 
                                     }}
-                                    onFocus={(e) => {
-                                    }}
                                     tabIndex={0}
-                                    // onBlur={() => setSearchFocused(false)}
-                                    onKeyDown={(e) => {
-                                    }}
                                     />
                             </div>
                         </div>
@@ -135,13 +120,13 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                             <p className="text-gray-400">Phone Number</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Phone Number" defaultValue={customerState?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Phone Number" defaultValue={customerStateInternal?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
                                     onChange={(e) => {
-                                        if(customerState)
+                                        if(customerStateInternal)
                                             setCustomerStateInternal({
-                                                ...customerState,
+                                                ...customerStateInternal,
                                                 contact: {
-                                                    ...customerState.contact,
+                                                    ...customerStateInternal.contact,
                                                     mobile: {
                                                         valid: true,
                                                         number: e.target.value
@@ -149,12 +134,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                                 }
                                             }) 
                                     }}
-                                    onFocus={(e) => {
-                                    }}
                                     tabIndex={0}
-                                    // onBlur={() => setSearchFocused(false)}
-                                    onKeyDown={(e) => {
-                                    }}
                                     />
                             </div>
                         </div>
@@ -163,13 +143,13 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                             <p className="text-gray-400">Email Address</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Email Address" defaultValue={customerState?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Email Address" defaultValue={customerStateInternal?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
                                     onChange={(e) => {
-                                        if(customerState)
+                                        if(customerStateInternal)
                                             setCustomerStateInternal({
-                                                ...customerState,
+                                                ...customerStateInternal,
                                                 contact: {
-                                                    ...customerState.contact,
+                                                    ...customerStateInternal.contact,
                                                     email: {
                                                         root: e.target.value.split("@")[0],
                                                         domain: e.target.value.split("@")[1],
@@ -178,12 +158,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                                 }
                                             }) 
                                     }}
-                                    onFocus={(e) => {
-                                    }}
                                     tabIndex={0}
-                                    // onBlur={() => setSearchFocused(false)}
-                                    onKeyDown={(e) => {
-                                    }}
                                     />
                             </div>
                         </div>
@@ -198,7 +173,7 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                     <input 
                                         autoComplete="off"
                                         ref={input_ref}
-                                        placeholder="Address" defaultValue={customerState?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                        placeholder="Address" defaultValue={customerStateInternal?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
                                         onChange={(e) => {
                                             debouncedResults(e.target.value);
                                         }}
@@ -223,9 +198,9 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                                         setSearching(false);
 
                                                         setCustomerStateInternal({
-                                                            ...customerState as Customer,
+                                                            ...customerStateInternal as Customer,
                                                             contact: {
-                                                                ...customerState?.contact as ContactInformation,
+                                                                ...customerStateInternal?.contact as ContactInformation,
                                                                 address: k
                                                             }
                                                         })
@@ -243,10 +218,10 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                                     <Image src="/icons/check-verified-02.svg" style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} className="mt-1" height={20} width={20} alt="Verified Address" />
 
                                     <div className="text-white">
-                                        <p className="font-semibold">{customerState?.contact.address.street}</p>
-                                        <p>{customerState?.contact.address.street2}</p>
-                                        <p className="text-gray-400">{customerState?.contact.address.city} {customerState?.contact.address.po_code}</p>
-                                        <p className="text-gray-400">{customerState?.contact.address.country}</p>
+                                        <p className="font-semibold">{customerStateInternal?.contact.address.street}</p>
+                                        <p>{customerStateInternal?.contact.address.street2}</p>
+                                        <p className="text-gray-400">{customerStateInternal?.contact.address.city} {customerStateInternal?.contact.address.po_code}</p>
+                                        <p className="text-gray-400">{customerStateInternal?.contact.address.country}</p>
                                     </div>
                                 </div>
                             }
@@ -259,25 +234,21 @@ const CustomerMenu: FC<{ defaultValue: Customer | null, create: boolean, setCust
                             if(!loading) {
                                 setLoading(true);
 
-                                fetch(create ? `${OPEN_STOCK_URL}/customer` : `${OPEN_STOCK_URL}/customer/${customerState?.id}`, {
+                                fetch(customerState === null ? `${OPEN_STOCK_URL}/customer` : `${OPEN_STOCK_URL}/customer/${customerStateInternal?.id}`, {
                                     method: "POST",
-                                    body: JSON.stringify({ ...customerState, contact: customerState?.contact, name: customerState?.contact.name }),
+                                    body: JSON.stringify({ ...customerStateInternal, contact: customerStateInternal?.contact, name: customerStateInternal?.contact.name }),
                                     credentials: "include",
                                     redirect: "follow"
                                 })?.then(async e => {
                                     const data: Customer = await e.json();
-                                    // console.log(data);
+
                                     setCustomerState({ ...data });
-                                    setActiveCustomer({ ...data });
 
                                     if(e.ok) {
                                         setLoading(false);
-                                        setError(null);
-                                        setPageState("origin");
-                                        setPadState("cart")
+                                        setKioskPanel("cart")
                                     }else {
                                         setLoading(false);
-                                        setError("Malformed Street Address")
                                     }
                                 })
                             }

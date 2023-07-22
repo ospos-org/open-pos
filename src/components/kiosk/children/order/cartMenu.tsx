@@ -8,171 +8,37 @@ import { determineOptimalPromotionPathway, parkSale } from "../../../../utils/he
 import { getDate, sortOrders } from "../../kiosk";
 import { PAD_MODES } from "../../../../utils/kiosk_types";
 import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "../../../../utils/stock_types";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { priceAtom, probingPricePayableAtom } from "@/src/atoms/payment";
+import { customerAtom } from "@/src/atoms/customer";
+import { ordersAtom } from "@/src/atoms/transaction";
+import { searchResultsAtomic, searchTypeAtom } from "@/src/atoms/search";
+import { masterStateAtom } from "@/src/atoms/openpos";
+import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { useResetAtom } from "jotai/utils";
 
 export default function CartMenu({ 
-    customerState, 
-    setCustomerState, 
-    orderState, 
-    setOrderState, 
-    setResult, 
-    setSearchType, 
-    master_state, 
     setActiveProduct, setActiveProductVariant,
     setActiveProductPromotions,
-    setPadState,
-    setTriggerRefresh, triggerRefresh,
-    setDiscount,
-    setKioskState,
-    kioskState,
-    setCurrentTransactionPrice,
     input_ref
 }: { 
-    customerState: Customer | null, 
-    setCustomerState: (customer: Customer | null) => void, 
-    setResult: Function, 
-    setSearchType: Function, 
-    setOrderState: (orders: Order[]) => void, 
-    orderState: Order[], 
     setActiveProduct: Function, 
     setActiveProductPromotions: Function,
     setActiveProductVariant: Function, 
-    master_state: MasterState,
-    setTriggerRefresh: Function, triggerRefresh: string[],
-    setPadState: (pad_state: PAD_MODES) => void,
-    setDiscount: Function,
-    setKioskState: (kiosk: KioskState) => void,
-    kioskState: KioskState,
-    setCurrentTransactionPrice: Function,
     input_ref: RefObject<HTMLInputElement>
 }) {
-    const [ orderInfo, setOrderInfo ] = useState<{
-        total: number,
-        sub_total: number,
-        tax: number,
-        non_discounted_sub_total: number,
-        promotions: {
-            promotion_id: string,
-            affected_products: string[],
-            name: string,
-            discount_value: { Absolute?: number, Percentage?: number }
-        }[],
-        state: Order[]
-    }>();
+    const orderInfo = useAtomValue(priceAtom)
+    const currentStore = useAtomValue(masterStateAtom)
 
-    useEffect(() => {  
-        const applied_promos: {
-            promotion_id: string,
-            affected_products: string[],
-            name: string,
-            discount_value: { Absolute?: number, Percentage?: number }
-        }[] = [];
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setSearchType = useSetAtom(searchTypeAtom)
+    const setProbePrice = useSetAtom(probingPricePayableAtom)
 
-        const deferred_promotions: {
-            promotion_id: string,
-            affected_products: string[],
-            name: string,
-            discount_value: { Absolute?: number, Percentage?: number }
-        }[] = [];
+    const resetCart = useResetAtom(defaultKioskAtom)
 
-        let flat_products = orderState.map(k => k.products).flatMap(k => k);
-
-        const optimal_pdts = determineOptimalPromotionPathway(flat_products);
-        let optimal_queue = optimal_pdts.filter(b => b.chosen_promotion?.promotion != null && b.chosen_promotion != null);
-
-        // console.log(JSON.parse(JSON.stringify( optimal_queue )));
-
-        const applied_promotions = orderState.map(b => {
-            return { ...b, products: b.products.map(k => {
-                const dim = [];
-
-                for(let i = 0; i < k.quantity; i++) {
-                    // Find relevant in optimal list
-                    const exists = optimal_queue.findIndex(n => n.reference_field.barcode == k.variant_information.barcode);
-
-                    // console.log("::index::", exists, optimal_queue[exists]);
-
-                    if(exists !== -1 && optimal_queue[exists].chosen_promotion != null && optimal_queue[exists].chosen_promotion?.promotion != null) {
-                        // Apply discount
-                        const di =  {
-                            source: "promotion",
-                            value: fromDbDiscount(discountFromPromotion(optimal_queue[exists].chosen_promotion!.promotion!)),
-                            promotion: optimal_queue[exists].chosen_promotion!.promotion,
-                            applicable_quantity: 1
-                        } as DiscountValue;
-
-                        // console.log("applying, di: ", di);
-                        dim.push(di);
-
-                        // Remove from queue
-                        optimal_queue.splice(exists, 1);
-                    }
-                }
-
-                return {
-                    ...k,
-                    discount: [...k.discount.filter(b => b.source !== "promotion"), ...dim]
-                }
-            })}
-        });
-
-        // console.log(JSON.parse(JSON.stringify( applied_promotions )));
-        
-        // Order state has been changed. Regenerate values
-        let non_discounted_sub_total = applied_promotions.reduce(
-            (p,c) => 
-                p + applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + (curr.variant_information.retail_price * curr.quantity)
-                    }, 0)
-                , c.discount)
-            , 0);
-
-        let sub_total = applied_promotions.reduce(
-            (p,c) => 
-                p + applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        return prev + (
-                            // applyDiscount(
-                            //     curr.variant_information.retail_price, 
-                            //     findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState))[0].value
-                            // ) * curr.quantity
-                            ((curr.variant_information.retail_price) * curr.quantity) - applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price, !(!customerState))
-                        )
-                    }, 0)
-                , c.discount)
-            , 0)
-
-        let total = applied_promotions.reduce(
-            (p,c) => 
-                p += applyDiscount(
-                    c.products.reduce(function (prev, curr) {
-                        // console.log(((curr.variant_information.retail_price * 1.15) * curr.quantity), " - ", applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price * 1.15, !(!customerState)))
-                        
-                        return prev + (
-                            // applyDiscount(
-                            //     curr.variant_information.retail_price * 1.15, 
-                            //     findMaxDiscount(curr.discount, curr.variant_information.retail_price, !(!customerState)).value
-                            // ) * curr.quantity
-                            ((curr.variant_information.retail_price * 1.15) * curr.quantity) - applyDiscountsConsiderateOfQuantity(curr.quantity, curr.discount, curr.variant_information.retail_price * 1.15, !(!customerState))
-                        )
-                    }, 0) 
-                , c.discount) 
-            , 0);
-        
-        let tax = total-sub_total;
-
-        // DANGER: Loop
-        // setOrderState(applied_promotions);
-
-        setOrderInfo({
-            sub_total,
-            total,
-            tax,
-            non_discounted_sub_total,
-            promotions: applied_promos,
-            state: applied_promotions
-        })
-    }, [orderState, customerState])
+    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
+    const [ customerState, setCustomerState ] = useAtom(customerAtom)
 
     return (
         <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
@@ -188,24 +54,13 @@ export default function CartMenu({
                                 <Image
                                     onClick={() => {
                                         setCustomerState(null)
-
-                                        // setOrderState({
-                                        //     ...orderState,
-                                        //     products: orderState.products.map(e => {
-                                        //         return {
-                                        //             ...e,
-                                        //             discount: e.discount.filter(e => e.source !== "loyalty")
-                                        //         }
-                                        //     })
-                                        // })
                                     }} 
                                     className="cursor-pointer" height={15} width={15} src="/icons/x-2.svg" alt="" style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
                             </div>
                             :
                             <div 
                                 onClick={() => {
-                                    setResult([]); 
-                                    setSearchType("customer");
+                                    setSearchType("customers")
 
                                     input_ref.current?.value ? input_ref.current.value = "" : {};
                                     input_ref.current?.focus()
@@ -219,12 +74,12 @@ export default function CartMenu({
                         }
                         <div className="text-sm text-gray-400">
                             {
-                                orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
+                                orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
                                 ? 
                                 "Cart Empty" 
                                 : 
                                 <p>
-                                    {orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{((orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 1 ? "s" : "")}
+                                    {orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{((orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 1 ? "s" : "")}
                                 </p>
                             }
                         </div>
@@ -232,32 +87,7 @@ export default function CartMenu({
 
                     <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
                         <p className="text-white select-none" onClick={() => {
-                            setOrderState([{
-                                id: v4(),
-                                destination: null,
-                                origin: {
-                                    store_code: master_state.store_code,
-                                    store_id: master_state.store_id ?? "",
-                                    contact: master_state.store_contact
-                                },
-                                products: [],
-                                status: {
-                                    status: {
-                                        type: "queued",
-                                        value: getDate()
-                                    },
-                                    assigned_products: [],
-                                    timestamp: getDate()
-                                },
-                                status_history: [],
-                                order_history: [],
-                                previous_failed_fulfillment_attempts: [],
-                                order_notes: [],
-                                reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-                                creation_date: getDate(),
-                                discount: "a|0",
-                                order_type: "direct"
-                            }])
+                            resetCart()
                         }}>Clear Cart</p>
                     </div>
                 </div>     
@@ -266,16 +96,16 @@ export default function CartMenu({
                 
                 <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full py-2">
                 {
-                    (orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) <= 0 ?
+                    (orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) <= 0 ?
                     <div className="flex flex-col items-center w-full">
                         <p className="text-sm text-gray-400 py-4 select-none">No products in cart</p>
                     </div>
                     :
-                    sortOrders(orderInfo?.state ?? []).map((n, indx) => {
+                    sortOrders(orderState ?? []).map((n, indx) => {
                         return (
                             <div key={n.id} className="flex flex-col gap-4">
                                 {
-                                    orderInfo?.state.length !== 1 ?
+                                    orderState.length !== 1 ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex flex-row items-center gap-2 select-none">
@@ -293,7 +123,7 @@ export default function CartMenu({
                                                     }
 
                                                     <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                        { n.order_type == "pickup" ? n.destination?.contact?.name : n.order_type == "direct" ? "Instore Purchase" : n.origin.contact?.name} 
+                                                        { n.order_type == "pickup" ? n.destination?.contact?.name : n.order_type == "direct" ? "Instore Purchase" : n?.origin?.contact?.name} 
                                                         {/* <p className="text-gray-400">({ n.order_type == "pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
 
                                                         {
@@ -310,14 +140,14 @@ export default function CartMenu({
                                                     <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
                                                     :
                                                     n.order_type !== "direct" && n.order_type !== "quote" ?
-                                                    <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                    <p className="text-gray-400">{n.origin?.contact.address.street}, {n.origin?.contact.address.street2}, {n.origin?.contact.address.po_code}</p>
                                                     :
                                                     <></>
                                                 }
                                             </div>
                                         </div>
                                     :
-                                        orderInfo.state[0].order_type !== "direct" ?
+                                        orderState[0].order_type !== "direct" ?
                                         <div className={`flex select-none flex-row w-full justify-between gap-2 ${indx == 0 ? "" : "mt-4"}`}>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex flex-row items-center gap-2 select-none">
@@ -334,7 +164,7 @@ export default function CartMenu({
                                                             <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
                                                         }
                                                         <div className="text-white font-semibold flex flex-row items-center gap-2">
-                                                            { n.order_type == "pickup" ? n.destination?.contact?.name : n.origin.contact?.name} 
+                                                            { n.order_type == "pickup" ? n.destination?.contact?.name : n.origin?.contact?.name} 
                                                             {/* <p className="text-gray-400">({ n.order_type == "pickup" ? n.destination?.store_code : n.origin?.store_code})</p>  */}
                                                             
                                                             {
@@ -350,7 +180,7 @@ export default function CartMenu({
                                                         n.order_type == "pickup" ? 
                                                         <p className="text-gray-400">{n.destination?.contact.address.street}, {n.destination?.contact.address.street2}, {n.destination?.contact.address.po_code}</p>
                                                         :
-                                                        <p className="text-gray-400">{n.origin.contact.address.street}, {n.origin.contact.address.street2}, {n.origin.contact.address.po_code}</p>
+                                                        <p className="text-gray-400">{n.origin?.contact.address.street}, {n.origin?.contact.address.street2}, {n.origin?.contact.address.po_code}</p>
                                                     } 
                                                 </div>
                                             </div>
@@ -377,7 +207,7 @@ export default function CartMenu({
                                             return prev += (curr.quantity.quantity_sellable) 
                                         }, 0)
 
-                                        const q_here = e.variant_information.stock.find(e => e.store.store_id == master_state.store_id);
+                                        const q_here = e.variant_information.stock.find(e => e.store.store_id == currentStore.store_id);
 
                                         return (
                                             <div
@@ -426,7 +256,7 @@ export default function CartMenu({
                                                                             products: product_list_clone
                                                                         }
 
-                                                                        const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                        const new_order = orderState.map(e => e.id == n.id ? new_state : e)
 
                                                                         setOrderState(sortOrders(new_order ?? []))
                                                                     }
@@ -480,10 +310,10 @@ export default function CartMenu({
                                                                     // If no products exist anymore.
 
                                                                     if(new_state.products.length <= 0) {
-                                                                        const new_order: Order[] = orderInfo?.state.map(e => e.id == n.id ? null : e)?.filter(b => b) as any as Order[];
+                                                                        const new_order: Order[] = orderState.map(e => e.id == n.id ? null : e)?.filter(b => b) as any as Order[];
                                                                         setOrderState(sortOrders(new_order ?? []))
                                                                     }else {
-                                                                        const new_order = orderInfo?.state.map(e => e.id == n.id ? new_state : e)
+                                                                        const new_order = orderState.map(e => e.id == n.id ? new_state : e)
                                                                         setOrderState(sortOrders(new_order ?? []))
                                                                     }
                                                                 }} 
@@ -534,13 +364,13 @@ export default function CartMenu({
                                                         <div className="flex flex-row items-center gap-2">
                                                             <Image 
                                                                 onClick={() => {
-                                                                    setPadState("discount");
-                                                                    setDiscount({
-                                                                        ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false)[0].value),
-                                                                        product: e.variant_information,
-                                                                        for: "product",
-                                                                        exclusive: false
-                                                                    })
+                                                                    // setKioskPanel("discount");
+                                                                    // setDiscount({
+                                                                    //     ...stringValueToObj(findMaxDiscount(e.discount, e.product_cost, false)[0].value),
+                                                                    //     product: e.variant_information,
+                                                                    //     for: "product",
+                                                                    //     exclusive: false
+                                                                    // })
                                                                 }}
                                                                 style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }} height={20} width={20} alt="Discount" className="select-none rounded-sm hover:cursor-pointer" src="/icons/sale-03.svg" 
                                                                 onMouseOver={(e) => {
@@ -586,11 +416,9 @@ export default function CartMenu({
                 }
                 </div>
 
-                {/* <hr className="border-gray-400 opacity-25"/> */}
-                
-                <div className="flex flex-col gap-1 text-white justify-between px-2">
+                {/* <div className="flex flex-col gap-1 text-white justify-between px-2">
                     {
-                        orderInfo?.promotions.map((k, indx) => {
+                        [].map((k, indx) => {
                             return (
                                 <div className="flex flex-row items-center gap-2" key={k.promotion_id}>
                                     <div className="bg-blue-600 h-5 w-5 rounded-full flex items-center justify-center text-xs">{indx+1}</div>
@@ -599,7 +427,7 @@ export default function CartMenu({
                             )
                         })
                     }
-                </div>
+                </div> */}
 
                 <hr className="border-gray-400 opacity-25"/>
                 
@@ -630,32 +458,25 @@ export default function CartMenu({
                 <div className="flex flex-row items-center gap-4">
                     <div 
                         onClick={() => {
-                            parkSale(
-                                master_state, setPadState, 
-                                orderState, setOrderState, 
-                                triggerRefresh, setTriggerRefresh, 
-                                customerState, setCustomerState, 
-                                kioskState, setKioskState
-                            )
+                            // parkSale(
+                            //     master_state, setPadState, 
+                            //     orderState, setOrderState, 
+                            //     triggerRefresh, setTriggerRefresh, 
+                            //     customerState, setCustomerState, 
+                            //     kioskState, setKioskState
+                            // )
                         }}
-                        className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
+                        className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
                         <p className="text-gray-800 font-semibold">Park Sale</p>
                     </div>
 
                     <div
                         onClick={() => {
-                            setPadState("select-payment-method");
+                            setKioskPanel("select-payment-method");
 
-                            const price = (orderInfo?.total ?? 0).toFixed(2);
-
-                            setKioskState({
-                                ...kioskState,
-                                order_total: parseFloat(price)
-                            })
-
-                            setCurrentTransactionPrice(parseFloat(price));
+                            setProbePrice(orderInfo?.total);
                         }} 
-                        className={`${(orderInfo?.state.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
+                        className={`${(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
                         <p className={`text-white font-semibold ${""}`}>Checkout</p>
                     </div>
                 </div>

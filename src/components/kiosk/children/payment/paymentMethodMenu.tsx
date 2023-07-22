@@ -4,11 +4,25 @@ import { FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {computeOrder, OPEN_STOCK_URL} from "../../../../utils/helpers";
 import { getDate } from "../../kiosk";
 import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "../../../../utils/stock_types";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { probingPricePayableAtom } from "@/src/atoms/payment";
+import { masterStateAtom } from "@/src/atoms/openpos";
+import { ordersAtom } from "@/src/atoms/transaction";
+import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { customerAtom } from "@/src/atoms/customer";
 
-const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState: KioskState, setKioskState: (stateset: (oldState: KioskState) => KioskState) => void, ctp: [number | null, Function], master_state: MasterState, customerState: Customer | null }> = ({ setPadState, orderState, kioskState, setKioskState, ctp, master_state, customerState }) => {
-    const [ editPrice, setEditPrice ] = useState(false);
-    const [ currentTransactionPrice, setCurrentTransactionPrice ] = ctp;
+export function PaymentMethod() {
+    const currentStore = useAtomValue(masterStateAtom)
+    const customerState = useAtomValue(customerAtom)
+    const orderState = useAtomValue(ordersAtom)
+
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+
+    const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
+    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
+    
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
+    const [ editPrice, setEditPrice ] = useState(false);
 
     const f1Pressed = useKeyPress(['F1'])
     const f1firstUpdate = useRef(0);
@@ -24,7 +38,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             transaction_type: "Out"
         }));
 
-        setPadState("await-debit");
+        setKioskPanel("await-debit");
     }, [f1Pressed]);
 
     const f2Pressed = useKeyPress(['F2'])
@@ -36,7 +50,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             return;
         }
 
-        setPadState("await-cash");
+        setKioskPanel("await-cash");
     }, [f2Pressed]);
 
     const f6Pressed = useKeyPress(['F6']);
@@ -48,7 +62,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
             return;
         }
 
-        const new_state = computeOrder("Quote", orderState, master_state, customerState);
+        const new_state = computeOrder("Quote", orderState, currentStore, customerState);
         
         const transaction = {
             ...kioskState,
@@ -57,15 +71,15 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                 customer_id: customerState?.id,
                 customer_type: "Individual"
             } : {
-                customer_id: master_state.store_id,
+                customer_id: currentStore.store_id,
                 customer_type: "Store"
             },
             order_total: 0.00,
             transaction_type: "Quote",
             payment: [],
             order_date: getDate(),
-            salesperson: master_state.employee?.id ?? "",
-            till: master_state.kiosk
+            salesperson: currentStore.employee?.id ?? "",
+            till: currentStore.kiosk
         } as TransactionInput;
 
         if(transaction) {
@@ -78,7 +92,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                 console.log(k);
 
                 if(k.ok) {
-                    setPadState("completed");
+                    setKioskPanel("completed");
                 }else {
                     alert("Something went horribly wrong")
                 }
@@ -94,7 +108,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                 // All variants
                 p.product.variants.map(n => {
                     if(p.product_code == n.barcode) {
-                        const store_id = b.origin.store_id;
+                        const store_id = b?.origin?.store_id ?? "";
                         const stock_level = n.stock.reduce((p, c) => p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0), 0);
 
                         console.log(store_id, stock_level, n.stock);
@@ -116,7 +130,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     <div className="flex flex-row justify-between cursor-pointer">
                         <div 
                             onClick={() => {
-                                setPadState("cart")
+                                setKioskPanel("cart")
                             }}
                             className="flex flex-row items-center gap-2"
                         >
@@ -155,16 +169,16 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                             } onBlur={(e) => {
                                 if(e.currentTarget.value == "") {
                                     setEditPrice(false)
-                                    setCurrentTransactionPrice(kioskState.order_total)
+                                    setProbingPrice(kioskState.order_total)
                                 }else {
                                     let p = parseFloat(e.currentTarget.value);
 
                                     if(p < (kioskState.order_total ?? 0)) {
-                                        setCurrentTransactionPrice(p)
+                                        setProbingPrice(p)
                                         setEditPrice(false)
                                     } else if (p == kioskState.order_total) {
                                         setEditPrice(false)
-                                        setCurrentTransactionPrice(kioskState.order_total)
+                                        setProbingPrice(kioskState.order_total)
                                     }
                                 }
                             }}
@@ -172,34 +186,34 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                 if(e.key == "Enter") {
                                     if(e.currentTarget.value == "") {
                                         setEditPrice(false)
-                                        setCurrentTransactionPrice(kioskState.order_total)
+                                        setProbingPrice(kioskState.order_total)
                                     } else { 
                                         let p = parseFloat(e.currentTarget.value);
 
                                         if(p < (kioskState.order_total ?? 0)) {
-                                            setCurrentTransactionPrice(p)
+                                            setProbingPrice(p)
                                             setEditPrice(false)
                                         } else if (p == kioskState.order_total) {
                                             setEditPrice(false)
-                                            setCurrentTransactionPrice(kioskState.order_total)
+                                            setProbingPrice(kioskState.order_total)
                                         }
                                     }
                                 }
                             }}
                             ></input>
                         :
-                            <p className="font-semibold text-3xl text-white">${currentTransactionPrice?.toFixed(2)}</p>
+                            <p className="font-semibold text-3xl text-white">${probingPrice?.toFixed(2)}</p>
                     }
 
                     {
-                        (currentTransactionPrice ?? kioskState?.order_total ?? 0) < ((kioskState.order_total ?? 0)
+                        (probingPrice ?? kioskState?.order_total ?? 0) < ((kioskState.order_total ?? 0)
                         - 
                             (
                                 kioskState.payment.reduce(function (prev, curr) {
                                     return prev + (curr.amount.quantity ?? 0)
                                 }, 0)
                             ) ) ?
-                        <p className="text-gray-500">${(kioskState.order_total! - (currentTransactionPrice! + kioskState.payment.reduce(function (prev, curr) {
+                        <p className="text-gray-500">${(kioskState.order_total! - (probingPrice! + kioskState.payment.reduce(function (prev, curr) {
                             return prev + (curr.amount.quantity ?? 0)
                         }, 0))).toFixed(2)} remains</p>
                         :
@@ -228,7 +242,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                 transaction_type: "Out"
                             }));
 
-                            setPadState("await-debit");
+                            setKioskPanel("await-debit");
                         }}>
                         <p className="text-white font-semibold text-2xl">Eftpos</p>
                         <p className="text-sm text-gray-400">F1</p>
@@ -236,7 +250,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     <div 
                         className="flex flex-row items-end gap-2 cursor-pointer"
                         onClick={() => {
-                            setPadState("await-cash");
+                            setKioskPanel("await-cash");
                         }}>
                         <p className="text-white font-semibold text-2xl">Cash</p>
                         <p className="text-sm text-gray-400">F2</p>
@@ -257,8 +271,8 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                     </div>
                     <div
                         onClick={() => {
-                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "quote" }, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
-                            const new_state = computeOrder("Quote", orderState, master_state, customerState);
+                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "quote" }, setProbingPrice, setPadState, orderState, master_state, customerState);
+                            const new_state = computeOrder("Quote", orderState, currentStore, customerState);
 
                             const transaction = {
                                 ...kioskState,
@@ -267,15 +281,15 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                     customer_id: customerState?.id,
                                     customer_type: "Individual"
                                 } : {
-                                    customer_id: master_state.store_id,
+                                    customer_id: currentStore.store_id,
                                     customer_type: "Store"
                                 },
                                 order_total: 0.00,
                                 transaction_type: "Quote",
                                 payment: [],
                                 order_date: getDate(),
-                                salesperson: master_state.employee?.id ?? "",
-                                till: master_state.kiosk
+                                salesperson: currentStore.employee?.id ?? "",
+                                till: currentStore.kiosk
                             } as TransactionInput;
 
                             if(transaction) {
@@ -288,7 +302,7 @@ const PaymentMethod: FC<{ setPadState: Function, orderState: Order[], kioskState
                                     console.log(k);
 
                                     if(k.ok) {
-                                        setPadState("completed");
+                                        setKioskPanel("completed");
                                     }else {
                                         alert("Something went horribly wrong")
                                     }

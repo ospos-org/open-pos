@@ -8,65 +8,61 @@ import { v4 } from "uuid";
 import { applyDiscount, findMaxDiscount, fromDbDiscount, isValidVariant, toDbDiscount } from "../../utils/discount_helpers";
 import {computeOrder, OPEN_STOCK_URL, parkSale, resetOrder, useWindowSize} from "../../utils/helpers";
 import { getDate, sortOrders } from "./kiosk";
-import { PAD_MODES } from "../../utils/kiosk_types";
 import PromotionList from "./children/promotion/promotionList";
 import { SavedTransactionItem } from "./children/order/savedTransactionItem";
 import { SearchFieldTransaction } from "./children/order/searchFieldTransaction";
 import { ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, KioskState, MasterState, Order, OrderStatus, Product, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "../../utils/stock_types";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTypeAtom } from "@/src/atoms/search";
+import { useResetAtom } from "jotai/utils";
+import { activeDiscountAtom, defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { masterStateAtom } from "@/src/atoms/openpos";
+import { inspectingTransactionAtom, ordersAtom } from "@/src/atoms/transaction";
+import { customerAtom } from "@/src/atoms/customer";
 
 const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
+const MINUTE_MS = 5_000;
 
 export default function KioskMenu({
-    setSearchFocused, searchFocused,
     setActiveProduct, activeProduct,
-    setPreviousPadState,
-    setSearchType, searchType,
-    setCustomerState, customerState,
-    setOrderState, orderState,
     setSearchTermState, searchTermState,
     setActiveProductPromotions, activeProductPromotions,
     setActiveVariantPossibilities, activeVariantPossibilities,
     setActiveVariant, activeVariant,
-    setLowModeCartOn, lowModeCartOn,
-    setKioskState, kioskState,
-    setCurrentViewedTransaction, currentViewedTransaction,
     setTriggerRefresh, triggerRefresh,
-    setPadState, padState,
-    setDiscount,
     setActiveProductVariant, activeProductVariant,
-    setActiveCustomer, activeCustomer,
-    setResult, result,
-    input_ref, master_state,
+    input_ref,
     addToCart,
     debouncedResults
 }: {
-    setSearchFocused: Function, searchFocused: boolean
     setActiveProduct: Function, activeProduct: Product | null,
-    setSearchType: Function, searchType: "customer" | "product" | "transaction",
     setSearchTermState: Function, searchTermState: string,
-    setLowModeCartOn: Function, lowModeCartOn: boolean,
-    setCustomerState: (customer: Customer | null) => void, customerState: Customer | null,
-    setResult: Function, result: { product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[],
-    setOrderState: (orders: Order[]) => void, orderState: Order[],
-    setActiveCustomer: Function, activeCustomer: Customer | null,
     setActiveVariantPossibilities: Function, activeVariantPossibilities: (StrictVariantCategory[] | null)[] | null,
-    setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null,
-    setKioskState: (kiosk_state: KioskState) => void, kioskState: KioskState,
     setActiveProductPromotions: Function, activeProductPromotions: Promotion[],
-    setPadState: (pad_state: PAD_MODES) => void, padState: string,
-    setDiscount: Function,
-    setPreviousPadState: Function,
     setTriggerRefresh: Function, triggerRefresh: string[],
     setActiveVariant: Function, activeVariant: StrictVariantCategory[] | null,
     setActiveProductVariant: Function, activeProductVariant: VariantInformation | null
     input_ref: RefObject<HTMLInputElement>,
-    master_state: MasterState,
     addToCart: Function,
     debouncedResults: Function
 }) {
-   
+    const clearSearchResults = useResetAtom(searchResultsAtom)
+    const searchResults = useAtomValue(searchResultsAtomic)
+    const currentStore = useAtomValue(masterStateAtom)
+
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
+    const setDiscount = useSetAtom(activeDiscountAtom)
+
+    const [ searchType, setSearchType ] = useAtom(searchTypeAtom)
+    const [ searchFocused, setSearchFocused ] = useAtom(searchFocusedAtom)
+    const [ activeCustomer, setActiveCustomer ] = useAtom(customerAtom)
+    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
+
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
+
     const window_size = useWindowSize();
 
     const escapePressed = useKeyPress(['Escape'])
@@ -95,7 +91,6 @@ export default function KioskMenu({
         }
     }, [activeCustomer]);
 
-    const MINUTE_MS = 5_000;
     const windowSize = useWindowSize();
 
     useEffect(() => {
@@ -169,26 +164,26 @@ export default function KioskMenu({
 
                         <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0 select-none">
                             <Image draggable={false} onClick={() => {
-                                setResult([]);
-                                setSearchType("product");
+                                clearSearchResults()
+                                setSearchType("products");
 
                                 input_ref.current?.value ? input_ref.current.value = "" : {};
                                 input_ref.current?.focus()
-                            }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "product" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "products" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
-                                setResult([]);
-                                setSearchType("customer");
+                                clearSearchResults()
+                                setSearchType("customers");
 
                                 input_ref.current?.value ? input_ref.current.value = "" : {};
                                 input_ref.current?.focus()
-                            }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customer" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customers" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
-                                setResult([]);
-                                setSearchType("transaction");
+                                clearSearchResults()
+                                setSearchType("transactions");
 
                                 input_ref.current?.value ? input_ref.current.value = "" : {};
                                 input_ref.current?.focus()
-                            }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transaction" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
+                            }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transactions" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                         </div>
 
                         {
@@ -209,12 +204,13 @@ export default function KioskMenu({
                             {
                                 (() => {
                                     switch(searchType) {
-                                        case "product":
+                                        case "products":
                                             return (
-                                                    result.length == 0 ?
+                                                searchResults.length == 0 ?
                                                     <p className="self-center text-gray-400 py-6">No products with this name</p>
                                                     :
-                                                    (result as { product: Product, promotions: Promotion[]}[]).map((b: { product: Product, promotions: Promotion[]}, indx) => {
+                                                    (searchResults as { product: Product, promotions: Promotion[]}[]).map((b: { product: Product, promotions: Promotion[]}, indx) => {
+                                                        console.log(b)
                                                         const e = b.product;
 
                                                         return (
@@ -291,7 +287,7 @@ export default function KioskMenu({
                                                                                     return k.stock.map(b => {
                                                                                         let total = 0;
 
-                                                                                        if(b.store.store_id == master_state.store_id) {
+                                                                                        if(b.store.store_id == currentStore.store_id) {
                                                                                             total += (b.quantity.quantity_sellable);
                                                                                         }
 
@@ -344,25 +340,25 @@ export default function KioskMenu({
                                                                     </div>
 
                                                                     {
-                                                                        (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
+                                                                        (indx == searchResults.length-1) ? <></> : <hr className="border-gray-500" />
                                                                     }
                                                                 </div>
                                                                 )
                                                     })
                                             )
-                                        case "customer":
+                                        case "customers":
                                             return (
-                                                    !result || result.length == 0 ?
+                                                    !searchResults || searchResults.length == 0 ?
                                                     <>
                                                         <p className="self-center text-gray-400 pt-6">No customers with this name</p>
                                                         <p 
                                                             onClick={() => {
-                                                                setPadState("customer-create")
+                                                                setKioskPanel("customer-create")
                                                             }}
                                                             className="self-center text-white pb-6 cursor-pointer">Create customer</p>
                                                     </>
                                                     :
-                                                    (result as Customer[])?.map((e: Customer, indx) => {
+                                                    (searchResults as Customer[])?.map((e: Customer, indx) => {
                                                         return (
                                                                 <div
                                                                     key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
@@ -404,10 +400,10 @@ export default function KioskMenu({
                                                                                 onClick={(v) => {
                                                                                 v.preventDefault();
 
-                                                                                setCustomerState(e);
+                                                                                setActiveCustomer(e);
                                                                                 setSearchFocused(false);
-                                                                                setSearchType("product");
-                                                                                setResult([]);
+                                                                                setSearchType("products");
+                                                                                clearSearchResults()
 
                                                                                 input_ref.current?.value ? input_ref.current.value = "" : {};
                                                                             }}
@@ -418,21 +414,21 @@ export default function KioskMenu({
                                                                     </div>
 
                                                                     {
-                                                                    (indx == result.length-1) ? <></> : <hr className="border-gray-500" />
+                                                                    (indx == searchResults.length-1) ? <></> : <hr className="border-gray-500" />
                                                                 }
                                                                 </div>
                                                                 )
                                                     })
                                             )
-                                        case "transaction":
+                                        case "transactions":
                                             return (
-                                                    result.length == 0 ?
+                                                    searchResults.length == 0 ?
                                                     <p className="self-center text-gray-400 py-6">No transactions with this reference</p>
                                                     :
-                                                    (result as Transaction[]).map((e: Transaction, indx) => {
+                                                    (searchResults as Transaction[]).map((e: Transaction, indx) => {
                                                         return (
                                                             <>
-                                                                <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setCurrentViewedTransaction} setPadState={setPadState} transaction={e} searchTermState={searchTermState} notEnd={indx == result.length-1 || result.length == 1} />
+                                                                <SearchFieldTransaction key={`TRANSACTION-${e.id}`} setCurrentViewedTransaction={setInspectingTransaction} setPadState={setKioskPanel} transaction={e} searchTermState={searchTermState} notEnd={indx == searchResults.length-1 || searchResults.length == 1} />
                                                             </>
                                                             
                                                         )
@@ -457,8 +453,7 @@ export default function KioskMenu({
                                             <p className="text-xl font-semibold text-white">{activeCustomer.name}</p>
                                             <div 
                                                 onClick={() => { 
-                                                    setCustomerState(activeCustomer)
-                                                    setPadState("customer")
+                                                    setKioskPanel("customer")
                                                 }}
                                                 className="px-2 bg-gray-100 bg-opacity-10 cursor-pointer rounded-md">Edit</div>
                                         </div>
@@ -488,10 +483,10 @@ export default function KioskMenu({
                                     <div className={`flex 2xl:flex-row flex-row items-center 2xl:gap-4 gap-2`}>
                                         <div>
                                             {
-                                                customerState ? 
+                                                activeCustomer ? 
                                                 <div className={`flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
-                                                        setCustomerState(null)
+                                                        setActiveCustomer(null)
                                                     }}
                                                 >
                                                     <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
@@ -500,10 +495,9 @@ export default function KioskMenu({
                                                 :
                                                 <div className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                                     onClick={() => { 
-                                                        setCustomerState(activeCustomer);
                                                         setSearchFocused(false);
-                                                        setSearchType("product");
-                                                        setResult([]);
+                                                        setSearchType("products");
+                                                        clearSearchResults()
 
                                                         input_ref.current?.value ? input_ref.current.value = "" : {};
                                                     }}
@@ -528,9 +522,8 @@ export default function KioskMenu({
                                                         <p className="font-semibold">{moment(b.order_date).format("DD/MM/YY hh:ss")}</p>
                                                         <p className="font-semibold">${b.order_total}</p>
                                                         <p onClick={() => {
-                                                            setPreviousPadState("related-orders")
-                                                            setPadState("inv-transaction")
-                                                            setCurrentViewedTransaction([b, b.products[0].id]);
+                                                            setKioskPanel("inv-transaction")
+                                                            setInspectingTransaction({ item: b, identifier: b.products[0].id });
                                                         }} className="bg-gray-600 px-2 rounded-md cursor-pointer">View Details</p>
                                                     </div>
                                                     
@@ -617,14 +610,14 @@ export default function KioskMenu({
                                                 <div>
                                                     <div className="flex flex-col items-start md:items-end 2xl:flex-row 2xl:items-center gap-2">
                                                         {
-                                                            ((activeProductVariant?.stock.find(e => e.store.store_id == master_state.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
+                                                            ((activeProductVariant?.stock.find(e => e.store.store_id == currentStore.store_id)?.quantity?.quantity_sellable ?? 0)) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Out of stock</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">In stock</p>
                                                         } 
 
                                                         {
-                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.store_id !== master_state.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
+                                                            (activeProductVariant?.stock.reduce((p, c) => p += c.store.store_id !== currentStore.store_id ? c.quantity.quantity_sellable : 0, 0) ?? 0) <= 0 ? 
                                                             <p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Cannot ship</p>
                                                             :
                                                             <p className="text-green-200 bg-green-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">Available to ship</p>
@@ -664,9 +657,9 @@ export default function KioskMenu({
                                                                 id: v4(),
                                                                 destination: null,
                                                                 origin: {
-                                                                    store_code: master_state.store_code,
-                                                                    store_id: master_state.store_id ?? "",
-                                                                    contact: master_state.store_contact
+                                                                    store_code: currentStore.store_code,
+                                                                    store_id: currentStore.store_id ?? "",
+                                                                    contact: currentStore.store_contact
                                                                 },
                                                                 products: new_pdt_list,
                                                                 status: {
@@ -866,9 +859,9 @@ export default function KioskMenu({
                                                                 id: v4(),
                                                                 destination: null,
                                                                 origin: {
-                                                                    store_code: master_state.store_code,
-                                                                    store_id: master_state.store_id ?? "",
-                                                                    contact: master_state.store_contact
+                                                                    store_code: currentStore.store_code,
+                                                                    store_id: currentStore.store_id ?? "",
+                                                                    contact: currentStore.store_contact
                                                                 },
                                                                 products: new_pdt_list,
                                                                 status: {
@@ -905,7 +898,7 @@ export default function KioskMenu({
 
                                                 <div 
                                                     onClick={() => {
-                                                        setPadState("related-orders")
+                                                        setKioskPanel("related-orders")
                                                     }}
                                                     className={`select-none flex flex-col cursor-pointer justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}>
                                                     <Image width="25" height="25" src="/icons/search-sm.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
@@ -921,7 +914,7 @@ export default function KioskMenu({
                                                 {
                                                     activeProduct.variants.map((e, indx) => {
                                                         const active = activeProductVariant?.barcode == e.barcode;
-                                                        const qua = e.stock.find(e => e.store.store_id == master_state.store_id);
+                                                        const qua = e.stock.find(e => e.store.store_id == currentStore.store_id);
 
                                                         return (
                                                             <div key={`PRODUCT_VARIANT_BARCODE:${e.barcode.toString()}`} >
@@ -939,7 +932,7 @@ export default function KioskMenu({
                                                                         <p className="text-gray-300">{((qua?.quantity.quantity_sellable ?? 0)) ?? 0} Here</p>
                                                                         <p className="text-gray-300">
                                                                             {
-                                                                                e.stock.map(e => (e.store.store_id == master_state.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
+                                                                                e.stock.map(e => (e.store.store_id == currentStore.store_id) ? 0 : (e.quantity.quantity_sellable)).reduce(function (prev, curr) { return prev + curr }, 0)
                                                                             } In other stores
                                                                         </p>
                                                                     </div>
@@ -963,10 +956,10 @@ export default function KioskMenu({
                             <div className="flex flex-1 flex-row flex-wrap sm:gap-4 gap-1">
                                 {/* Tiles */}
                                 {
-                                    customerState ? 
+                                    activeCustomer ? 
                                     <div className={`flex flex-col justify-between gap-8 bg-[#4c2f2d] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                         onClick={() => { 
-                                            setCustomerState(null)
+                                            setActiveCustomer(null)
                                         }}
                                     >
                                         <Image className="select-none" width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)" }} alt={''}></Image>
@@ -975,8 +968,8 @@ export default function KioskMenu({
                                     :
                                     <div className={`flex flex-col justify-between gap-8 bg-[#2f4038] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
                                         onClick={() => { 
-                                            setResult([]);
-                                            setSearchType("customer");
+                                            clearSearchResults()
+                                            setSearchType("customers");
 
                                             input_ref.current?.value ? input_ref.current.value = "" : {};
                                             input_ref.current?.focus()
@@ -989,11 +982,14 @@ export default function KioskMenu({
 
                                 <div
                                     onClick={() => {
-                                        setPadState("discount")
+                                        setKioskPanel("discount")
                                         setDiscount({
                                             type: "absolute",
                                             for: "cart",
+                                            orderId: "",
+                                            source: "user",
                                             product: {
+                                                id: "",
                                                 name: "",
                                                 stock: [],
                                                 images: [],
@@ -1013,7 +1009,8 @@ export default function KioskMenu({
                                                     max_volume: 'string',
                                                     back_order: false,
                                                     discontinued: false,
-                                                    non_diminishing: false
+                                                    non_diminishing: false,
+                                                    shippable: true
                                                 },
                                                 loyalty_discount: {
                                                     Absolute: 0
@@ -1033,16 +1030,16 @@ export default function KioskMenu({
         
                                 <div 
                                     onClick={() => {
-                                        setPadState("ship-to-customer")
+                                        setKioskPanel("ship-to-customer")
                                     }}
-                                    className={`flex flex-col justify-between gap-8  ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image className="select-none" width="25" height="25" src="/icons/globe-05.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className={`select-none ${customerState ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
+                                    className={`flex flex-col justify-between gap-8  ${activeCustomer ? "bg-[#243a4e]" : "bg-[#101921]"} backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
+                                    <Image className="select-none" width="25" height="25" src="/icons/globe-05.svg" style={{ filter: activeCustomer ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                    <p className={`select-none ${activeCustomer ? "text-white" : "text-gray-500"} font-medium`}>Ship to Customer</p>
                                 </div>
         
                                 <div 
                                     onClick={() => {
-                                        setPadState("note")
+                                        setKioskPanel("note")
                                     }}
                                     className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
                                     <Image className="select-none" width="25" height="25" src="/icons/file-plus-02.svg" style={{ filter: "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" }} alt={''}></Image>
@@ -1051,20 +1048,20 @@ export default function KioskMenu({
         
                                 <div 
                                     onClick={() => {
-                                        setPadState("pickup-from-store")
+                                        setKioskPanel("pickup-from-store")
                                     }}
-                                    className={`flex flex-col justify-between gap-8 ${customerState ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
-                                    <Image className="select-none" width="25" height="25" src="/icons/building-02.svg" style={{ filter: customerState ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
-                                    <p className={`select-none ${customerState ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
+                                    className={`flex flex-col justify-between gap-8 ${activeCustomer ? "bg-[#243a4e]" : "bg-[#101921]"}  backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}>
+                                    <Image className="select-none" width="25" height="25" src="/icons/building-02.svg" style={{ filter: activeCustomer ? "invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)" : "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)" }} alt={''}></Image>
+                                    <p className={`select-none ${activeCustomer ? "text-white" : "text-gray-500"} font-medium`}>Pickup from Store</p>
                                 </div>
         
                                 <div 
                                     onClick={() => {
                                         parkSale(
-                                            master_state, setPadState, 
+                                            currentStore, setKioskPanel, 
                                             orderState, setOrderState, 
                                             triggerRefresh, setTriggerRefresh, 
-                                            customerState, setCustomerState, 
+                                            activeCustomer, setActiveCustomer, 
                                             kioskState, setKioskState
                                         )
                                     }}
@@ -1082,15 +1079,11 @@ export default function KioskMenu({
                 {
                     activeTransactions?.map(k => {
                         return (
-                            <SavedTransactionItem setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh} transaction={k} key={k.id} setCustomerState={setCustomerState} kioskState={kioskState} setKioskState={setKioskState} setOrderState={setOrderState} />
+                            <SavedTransactionItem setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh} transaction={k} key={k.id} setCustomerState={setActiveCustomer} kioskState={kioskState} setKioskState={setKioskState} setOrderState={setOrderState} />
                         )
                     })
                 }
             </div>
-
-            {/* <div className="md:hidden flex flex-row bg-black p-2 w-screen text-white">
-                <p onClick={() => setLowModeCartOn(true)}>OC</p>
-            </div> */}
         </div>
     )
 }

@@ -1,19 +1,13 @@
+import { activeDiscountAtom } from "@/src/atoms/kiosk";
 import useKeyPress from "@/src/hooks/useKeyPress";
+import { useAtom } from "jotai";
 import Image from "next/image";
 import { FC, createRef, useEffect, useRef } from "react";
 import { applyDiscount } from "../../../../utils/discount_helpers";
 import { VariantInformation } from "../../../../utils/stock_types";
 
-const DiscountMenu: FC<{ discountGroup: [{
-        type: "absolute" | "percentage";
-        product: VariantInformation | null;
-        value: number;
-        for: "cart" | "product";
-        exclusive: boolean
-        orderId: string
-    }, Function], callback: Function, multiple: boolean }> = ({ discountGroup, callback, multiple }) => {
-    
-    const [ discount, setDiscount ] = discountGroup;
+const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback, multiple }) => {
+    const [ discount, setDiscount ] = useAtom(activeDiscountAtom);
     const click_ref = createRef<HTMLDivElement>();
 
     const onEnterPress = useKeyPress(['Enter'])
@@ -27,8 +21,9 @@ const DiscountMenu: FC<{ discountGroup: [{
         }
 
         click_ref.current?.click()
-    }, [onEnterPress])
+    }, [onEnterPress, click_ref])
     
+    if (!discount) return <></>
     return (
         <>
             <div className="flex flex-col h-full gap-12 justify-center">
@@ -38,7 +33,7 @@ const DiscountMenu: FC<{ discountGroup: [{
                     <div className={`flex flex-row items-center ${(applyDiscount((discount.product?.retail_price ?? 1), `${discount.type == "absolute" ? "a" : "p"}|${discount.value}`) * 1.15) < 0 ? "text-red-400" : "text-white"}  text-white`}>
                         <p className="text-2xl font-semibold">-{discount.type == "absolute" ? "$" : ""}</p>
                         <input 
-                        style={{ width: ((discountGroup[0].value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discountGroup[0].value !== 0) ? (discountGroup[0].value).toFixed(2) : ""} placeholder={discountGroup[0].value.toFixed(2)}
+                        style={{ width: ((discount.value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discount.value !== 0) ? (discount.value).toFixed(2) : ""} placeholder={discount.value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
 

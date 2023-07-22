@@ -1,71 +1,47 @@
 import Image from "next/image";
-import { createRef, useEffect, useMemo, useRef, useState } from "react";
-import { debounce, divide, isEqual, uniqueId, values } from "lodash";
+import { createRef, useEffect, useMemo, useState } from "react";
+import { debounce } from "lodash";
 import { ReactBarcodeReader } from "../common/scanner";
-import BarcodeReader from 'react-barcode-reader'
-import CashSelect from "./children/payment/cashSelect";
 import { v4 } from "uuid"
-import DiscountMenu from "./children/discount/discountMenu";
-import { ContactInformation, Customer, DbOrder, DbProductPurchase, DiscountValue, Employee, KioskState, MasterState, Note, Order, OrderStatus, PaymentIntent, Product, ProductPurchase, Promotion, StatusHistory, StrictVariantCategory, Transaction, TransactionInput, VariantInformation } from "../../utils/stock_types";
-import NotesMenu from "../common/notesMenu";
-import { applyDiscount, findMaxDiscount, fromDbDiscount, isEquivalentDiscount, isValidVariant, parseDiscount, stringValueToObj, toAbsoluteDiscount, toDbDiscount } from "../../utils/discount_helpers";
+import { DbOrder, MasterState, Order, Product, ProductPurchase, Promotion, StrictVariantCategory, VariantInformation } from "../../utils/stock_types";
+import { fromDbDiscount } from "../../utils/discount_helpers";
 import PaymentMethod from "./children/payment/paymentMethodMenu";
 import DispatchMenu from "./children/foreign/dispatchMenu";
 import PickupMenu from "./children/foreign/pickupMenu";
-import { customAlphabet } from "nanoid";
 import CartMenu from "./children/order/cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
-import TransactionMenu from "./children/order/transactionMenu";
-import {fileTransaction, OPEN_STOCK_URL, resetOrder, useWindowSize} from "../../utils/helpers";
+import {OPEN_STOCK_URL, useWindowSize} from "../../utils/helpers";
 import CustomerMenu from "./children/customer/customerMenu";
 import RelatedOrders from "./children/order/relatedMenu";
 import { PAD_MODES } from "../../utils/kiosk_types";
-import { useAtom } from "jotai";
-import { defaultKioskAtom, transactingOrderAtom } from "@/src/atoms/kiosk";
-import { ordersAtomsAtom } from "@/src/atoms/transaction";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { ordersAtom } from "@/src/atoms/transaction";
 import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
+import { DiscountScreen } from "./children/discount/discountScreen";
+import { NotesScreen } from "./children/notesScreen";
+import { DispatchHandler } from "./children/foreign/dispatchHandler";
+import { CashPayment } from "./children/payment/cashPayment";
+import { TransactionScreen } from "./children/order/transactionScreen";
+import { TerminalPayment } from "./children/payment/terminalPayment";
+import { searchResultsAtom, searchResultsAtomic } from "@/src/atoms/search";
+import { activeDiscountAtom, kioskPanelAtom } from "@/src/atoms/kiosk";
 
 export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
-    // const [ kioskState, setKioskState ] = useAtom(transactingOrderAtom)
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
-    const [ orderState, setOrderState ] = useAtom(ordersAtomsAtom)
+    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    const [ kioskPanel, setKioskPanel ] = useAtom(kioskPanelAtom) 
 
-    const [ customerState, setCustomerState ] = useState<Customer | null>(null);
+    const discount = useAtomValue(activeDiscountAtom)
+    const setSearchResults = useSetAtom(searchResultsAtomic)
 
-    const [ searchType, setSearchType ] = useState<"customer" | "product" | "transaction">("product");
-    const [ padState, setPadState ] = useState<PAD_MODES>("cart");
-    const [ previousPadState, setPreviousPadState ] = useState<PAD_MODES>("cart");
-
+    /// --- REPLACE THESE ---
     const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
     const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
     const [ activeProductVariant, setActiveProductVariant ] = useState<VariantInformation | null>(null);
     const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
-    const [ activeCustomer, setActiveCustomer ] = useState<Customer | null>(null);
+    /// --- REPLACE THESE ---
 
     const [ searchTermState, setSearchTermState ] = useState("");
-    const [ result, setResult ] = useState<{ product: Product, promotions: Promotion[]}[] | Customer[] | Transaction[]>([]);
-    const [ searchFocused, setSearchFocused ] = useState(false); 
-
-    const [ discount, setDiscount ] = useState<{
-        type: "absolute" | "percentage",
-        product: VariantInformation | null,
-        value: number,
-        for: "cart" | "product",
-        exclusive: boolean,
-        orderId: string
-    }>({
-        type: "absolute",
-        for: "product",
-        product: null,
-        value: 0.00,
-        exclusive: false,
-        orderId: ""
-    })
-
-    const [ currentTransactionPrice, setCurrentTransactionPrice ] = useState<number | null>(null);
-    const [ cashContinuable, setCashContinuable ] = useState(false);
-    const [ currentViewedTransaction, setCurrentViewedTransaction ] = useState<[Transaction, string] | null>(); 
     const [ activeProductPromotions, setActiveProductPromotions ] = useState<Promotion[]>();
 
     const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
@@ -73,14 +49,6 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
         let new_order_products_state = [];
 
         if(existing_product) {
-            // Editing the quantity of an existing product in the order.
-            // if(e.product_code == product.sku && isEqual(e.variant, variant?.variant_code)) {
-                    // if(findMaxDiscount(e.discount, e.variant_information.retail_price, true) !== findMaxDiscount([ { source: "loyalty", value: fromDbDiscount(variant.loyalty_discount) } ], e.variant_information.retail_price, true)) {
-                        // return e;
-                    // }else {
-                    // }
-                // }
-
             const matching_product = orderProducts.find(e => e.product_code == variant.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
             
             if(matching_product) {
@@ -143,47 +111,47 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
             new_order_products_state = [ ...orderProducts, po ]
         }
 
-        if(padState == "cart" && discount.product?.barcode == "CART") {
-            setPadState("cart")
-            setDiscount({
-                type: "absolute",
-                for: "cart",
-                product: {
-                    name: "",
-                    stock: [],
-                    images: [],
-                    /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
-                    variant_code: [],
-                    order_history: [],
-                    /// impl! Implement this type!
-                    stock_information: {
-                        stock_group: "string",
-                        sales_group: 'string',
-                        value_stream: 'string',
-                        brand: 'string',
-                        unit: 'string',
-                        tax_code: 'string',
-                        weight: 'string',
-                        volume: 'string',
-                        max_volume: 'string',
-                        back_order: false,
-                        discontinued: false,
-                        non_diminishing: false,
-                        shippable: true
-                    },
-                    loyalty_discount: {
-                        Absolute: 0
-                    },
-                    id: "",
-                    barcode: "CART",
-                    marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
-                    retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
-                },
-                value: 0,
-                exclusive: false,
-                orderId: ""
-            })
-        }
+        // if(kioskPanel == "cart" && discount.product?.barcode == "CART") {
+        //     setKioskPanel("cart")
+        //     // setDiscount({
+        //     //     type: "absolute",
+        //     //     for: "cart",
+        //     //     product: {
+        //     //         name: "",
+        //     //         stock: [],
+        //     //         images: [],
+        //     //         /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
+        //     //         variant_code: [],
+        //     //         order_history: [],
+        //     //         /// impl! Implement this type!
+        //     //         stock_information: {
+        //     //             stock_group: "string",
+        //     //             sales_group: 'string',
+        //     //             value_stream: 'string',
+        //     //             brand: 'string',
+        //     //             unit: 'string',
+        //     //             tax_code: 'string',
+        //     //             weight: 'string',
+        //     //             volume: 'string',
+        //     //             max_volume: 'string',
+        //     //             back_order: false,
+        //     //             discontinued: false,
+        //     //             non_diminishing: false,
+        //     //             shippable: true
+        //     //         },
+        //     //         loyalty_discount: {
+        //     //             Absolute: 0
+        //     //         },
+        //     //         id: "",
+        //     //         barcode: "CART",
+        //     //         marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
+        //     //         retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
+        //     //     },
+        //     //     value: 0,
+        //     //     exclusive: false,
+        //     //     orderId: ""
+        //     // })
+        // }
 
         return new_order_products_state;
     }
@@ -200,7 +168,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
     
             setSearchTermState(searchTerm);
     
-            const fetchResult = await fetch(`${OPEN_STOCK_URL}/${searchType}/${searchType == "transaction" ? "ref" : searchType == "product" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
+            const fetchResult = await fetch(`${OPEN_STOCK_URL}/${searchType.substring(0, searchType.length-1)}/${searchType == "transactions" ? "ref" : searchType == "products" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
                 method: "GET",
                 headers: myHeaders,
                 redirect: "follow",
@@ -262,15 +230,15 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                 }
             }
     
-            setResult(data);
+            setSearchResults(data);
         }, 50);
     }, [orderState, discount]);
 
     const input_ref = createRef<HTMLInputElement>();
-    const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
-
     const window_size = useWindowSize();
-    
+
+
+    const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
 
     useEffect(() => {
         return () => {
@@ -281,596 +249,103 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
     return (
         <>
             <ReactBarcodeReader
+                inputRef={input_ref}
                 onScan={(e: any) => {
-                    setSearchFocused(false);
-                    input_ref.current?.value ? input_ref.current.value = e : {};
-
-                    setSearchType("product");
                     debouncedResults(e, "product");
                 }}
-                onError={() => {}}
             />
 
             {
-                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) < 640 && padState !== "cart") ?
+                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) < 640 && kioskPanel !== "cart") ?
                     <></>
                     :
                     <KioskMenu
-                        setSearchFocused={setSearchFocused} searchFocused={searchFocused}
                         setActiveProduct={setActiveProduct} activeProduct={activeProduct}
-                        setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
-                        setSearchType={setSearchType} searchType={searchType}
-                        setCustomerState={setCustomerState} customerState={customerState}
-                        setOrderState={setOrderState} orderState={orderState}
                         setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
                         setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
                         setSearchTermState={setSearchTermState} searchTermState={searchTermState}
                         setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
                         setActiveVariant={setActiveVariant} activeVariant={activeVariant}
-                        setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction ?? null}
-                        setKioskState={setKioskState} kioskState={kioskState}
-                        setPadState={setPadState} padState={padState}
-                        setPreviousPadState={setPreviousPadState}
-                        setDiscount={setDiscount}
                         setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
-                        lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn}
-                        setResult={setResult} result={result}
-                        input_ref={input_ref} master_state={master_state}
+                        input_ref={input_ref}
                         addToCart={addToCart}
                         debouncedResults={debouncedResults}
                     />
             }
 
             {
-                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) >= 640) || (padState !== "cart") ?
-                (() => {
-                    switch(padState) {
-                        case "cart":
-                            return (
-                                <CartMenu
-                                    setActiveProductPromotions={setActiveProductPromotions}
-                                    customerState={customerState}
-                                    setCustomerState={setCustomerState} 
-                                    orderState={orderState}
-                                    setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
-                                    setOrderState={setOrderState}
-                                    setResult={setResult} 
-                                    setSearchType={setSearchType} 
-                                    master_state={master_state}
-                                    setActiveProduct={setActiveProduct} 
-                                    setActiveProductVariant={setActiveProductVariant}
-                                    setPadState={setPadState}
-                                    setDiscount={setDiscount}
-                                    setKioskState={setKioskState}
-                                    kioskState={kioskState}
-                                    setCurrentTransactionPrice={setCurrentTransactionPrice}
-                                    input_ref={input_ref}
-                                />
-                            )
-                        case "customer":
-                            return (
-                                <CustomerMenu 
-                                    defaultValue={customerState} setCustomerState={setCustomerState}
-                                    setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
-                                    setPadState={setPadState} 
-                                    create={false}
+                ((window_size.width ?? 0) < 640 && lowModeCartOn) || ((window_size.width ?? 0) >= 640) || (kioskPanel !== "cart") ?
+                    (() => {
+                        switch(kioskPanel) {
+                            case "cart":
+                                return (
+                                    <CartMenu
+                                        setActiveProductPromotions={setActiveProductPromotions}
+                                        setActiveProduct={setActiveProduct} 
+                                        setActiveProductVariant={setActiveProductVariant}
+                                        input_ref={input_ref}
                                     />
-                            )
-                        case "customer-create":
-                            return (
-                                <CustomerMenu 
-                                    defaultValue={null} setCustomerState={setCustomerState}
-                                    setActiveCustomer={setActiveCustomer} activeCustomer={activeCustomer}
-                                    setPadState={setPadState} 
-                                    create={true}
-                                    />
-                            )
-                        case "related-orders":
-                            return (
-                                <RelatedOrders
-                                    setPadState={setPadState} setPreviousPadState={setPreviousPadState} 
-                                    activeProductVariant={activeProductVariant}
-                                    setCurrentViewedTransaction={setCurrentViewedTransaction} currentViewedTransaction={currentViewedTransaction}
-                                    />
-                            )
-                        case "select-payment-method":
-                            return (
-                                <PaymentMethod 
-                                    customerState={customerState} 
-                                    setPadState={setPadState} 
-                                    orderState={orderState} 
-                                    master_state={master_state}
-                                    kioskState={kioskState} setKioskState={setKioskState}
-                                    ctp={[ currentTransactionPrice, setCurrentTransactionPrice ]} 
-                                    />
-                            )
-                        case "inv-transaction":
-                            return (
-                                <div className="bg-gray-900 p-6 flex flex-col h-full gap-4" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer">
-                                        <div 
-                                            onClick={() => {
-                                                if(previousPadState == "related-orders") setPadState("related-orders")
-                                                else setPadState("cart")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
-                                        </div>
-                                        <p className="text-gray-400">Transaction</p>
-                                    </div>
-
-                                    <TransactionMenu transaction={currentViewedTransaction ?? null} />
-                                </div>
-                            )
-                        case "await-debit":
-                            // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
-                            return (
-                                <div className="bg-blue-500 p-6 flex flex-col h-full items-center" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer w-full">
-                                        <div 
-                                            onClick={() => {
-                                                setPadState("select-payment-method")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left-1.svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
-                                            <p className="text-white">Cancel</p>
-                                        </div>
-                                        <p className="text-white">Awaiting Customer Payment</p>
-                                    </div>
-                                    
-                                    <div className="flex-1 flex flex-col items-center justify-center">
-                                        <p className="text-white text-3xl font-bold">${currentTransactionPrice?.toFixed(2)}</p>
-                                        <p className="text-gray-200">Tap, Insert or Swipe</p>
-                                    </div>
-
-                                    <p onClick={() => {
-                                        const new_payment: PaymentIntent[] = [ ...kioskState.payment, {
-                                            amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
-                                            delay_action: "Cancel",
-                                            delay_duration: "PT12H",
-                                            fulfillment_date: getDate(),
-                                            id: v4(),
-                                            order_ids: ["?"],
-                                            payment_method: "Card",
-                                            processing_fee: {quantity: 0.1, currency: 'NZD'},
-                                            processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
-                                            status: {
-                                                Complete: {
-                                                    CardDetails: {
-                                                        card_brand: "VISA",
-                                                        last_4: "4025",
-                                                        exp_month: "03",
-                                                        exp_year: "2023",
-                                                        fingerprint: "a20@jA928ajsf9a9828",
-                                                        card_type: "DEBIT",
-                                                        prepaid_type: "NULL",
-                                                        bin: "",
-
-                                                        entry_method: "PIN",
-                                                        cvv_accepted: "TRUE",
-                                                        avs_accepted: "TRUE",
-                                                        auth_result_code: "YES",
-                                                        statement_description: "DEBIT ACCEPTED",
-                                                        card_payment_timeline: {
-                                                            authorized_at: "",
-                                                            captured_at: ""
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }];
-
-                                        const transaction = fileTransaction(new_payment, setKioskState, kioskState, setCurrentTransactionPrice, setPadState, orderState, master_state, customerState);
-
-                                        if(transaction) {
-                                            fetch(`${OPEN_STOCK_URL}/transaction`, {
-                                                method: "POST",
-                                                body: JSON.stringify(transaction),
-                                                credentials: "include",
-                                                redirect: "follow"
-                                            }).then(async k => {
-                                                if(k.ok) {
-                                                    setPadState("completed");
-                                                }else {
-                                                    alert("Something went horribly wrong")
-                                                }
-                                            })
-                                        }
-                                    }}>skip to completion</p>
-                                </div>
-                            )
-                        case "completed":
-                            return (
-                                <CompletedOrderMenu />
-                            )
-                        case "discount":
-                            return (
-                                <div className="bg-gray-900 p-6 flex flex-col h-full justify-between flex-1" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer">
-                                        <div 
-                                            onClick={() => {
-                                                 setPadState("cart")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
-                                        </div>
-                                        <p className="text-gray-400">Select Discount</p>
-                                    </div>
-
-                                    <DiscountMenu discountGroup={[ discount, setDiscount ]} callback={(dcnt: {
-                                        type: "absolute" | "percentage",
-                                        product: VariantInformation | null,
-                                        value: number,
-                                        for: "cart" | "product",
-                                        exclusive: boolean,
-                                        order_id: string
-                                    }) => {
-                                        setPadState("cart")
-
-                                        if(dcnt.for == "product") {
-                                            if(dcnt.exclusive) {
-                                                let overflow_quantity = 0;
-                                                let overflow_product: (ProductPurchase | null) = null;
-
-                                                const new_state = orderState.map(n => {
-                                                    //?? impl! Add option to only apply to a product in a SINGLE order, as opposed to the same item mirrored across multiple orders...?
-                                                    let new_products = n.products.map(e => {
-                                                        if(e.variant_information.barcode == dcnt.product?.barcode) {
-                                                            if(e.quantity > 1) {
-                                                                overflow_quantity = e.quantity - 1
-                                                                overflow_product = e
-                                                            }
-    
-                                                            return {
-                                                                ...e,
-                                                                quantity: 1,
-                                                                discount: [
-                                                                    // Will replace any currently imposed discounts
-                                                                    ...e.discount.filter(e => {
-                                                                        return e.source !== "user"
-                                                                    }),
-                                                                    {
-                                                                        source: "user",
-                                                                        value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                                    } as DiscountValue
-                                                                ]
-                                                            };
-                                                        } else return e;
-                                                    });
-
-                                                    // Merge any new duplicate products with the same discount.
-                                                    const merged = new_products.map((p, i) => {
-                                                        // console.log(`${p.product_name}: Product Match? `);
-
-                                                        const indx = new_products.findIndex(a => 
-                                                            a.variant_information.barcode == p.variant_information.barcode
-                                                            && isEquivalentDiscount(
-                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null)[0], 
-                                                                findMaxDiscount(p.discount, p.product_cost, customerState != null)[0],
-                                                                p.product_cost
-                                                            )
-                                                        );
-
-                                                        if(
-                                                            indx != -1 && indx != i
-                                                        ) {
-                                                            //... Merge the values!
-                                                            return {
-                                                                ...p,
-                                                                quantity: p.quantity + new_products[indx].quantity
-                                                            };
-                                                        }else {
-                                                            return p;
-                                                        }
-                                                    });
-
-                                                    if(overflow_product !== null) {
-                                                        // !impl check and compare discount values so quantity does not increase for non-similar product 
-                                                        const indx = new_products.findIndex(a => 
-                                                            a.variant_information.barcode == overflow_product?.variant_information.barcode
-                                                            && isEquivalentDiscount(
-                                                                findMaxDiscount(a.discount, a.product_cost, customerState != null)[0], 
-                                                                findMaxDiscount(overflow_product.discount, overflow_product.product_cost, customerState != null)[0],
-                                                                overflow_product.product_cost
-                                                            )
-                                                        );
-
-                                                        // console.log("Dealing with overflow value, ", indx);
-                                                        
-                                                        // If overflow product already exists (in exact kind), increase quantity - otherwise ...
-                                                        if(indx != -1) {
-                                                            merged[indx].quantity += overflow_quantity;
-                                                        }else {
-                                                            merged.push({
-                                                                ...overflow_product as ProductPurchase,
-                                                                quantity: overflow_quantity,
-                                                                id: v4()
-                                                            })
-                                                        }
-                                                    }
-
-                                                    return {
-                                                        ...n,
-                                                        products: merged.filter(b => b !== null) as ProductPurchase[]
-                                                    }
-                                                })
-
-                                                setOrderState(sortOrders(new_state))
-                                            }else {
-                                                const new_state = orderState.map(n => {
-                                                    let clone = [...n.products] as ProductPurchase[];
-
-                                                    for(let i = 0; i < clone.length; i++) {
-                                                        let e = clone[i];
-                                                        if(e == null) continue;
-
-                                                        const indx = clone.findIndex((a, ind) => 
-                                                            a != null && i != ind &&
-                                                            a.variant_information.barcode == e?.variant_information.barcode
-                                                            && isEquivalentDiscount(
-                                                                findMaxDiscount([{
-                                                                    source: "user",
-                                                                    value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                                } as DiscountValue], a.product_cost, customerState != null)[0], 
-                                                                findMaxDiscount(e.discount, e.product_cost, customerState != null)[0],
-                                                                e.product_cost
-                                                            )
-                                                        );
-
-                                                        // console.log(`Value at ${i}, has index ${indx}, name ${e.product_name}`);
-                                                        
-                                                        if(indx != -1) {
-                                                            clone[indx].quantity += e.quantity;
-                                                            //@ts-ignore
-                                                            clone[i] = null;
-                                                            continue;
-                                                        }
-
-                                                        if(e.variant_information.barcode == dcnt.product?.barcode) {
-                                                            clone[i] = {
-                                                                ...e,
-                                                                discount: [
-                                                                    // Will replace any currently imposed discounts
-                                                                    ...e.discount.filter(e => {
-                                                                        return e.source !== "user"
-                                                                    }),
-                                                                    {
-                                                                        source: "user",
-                                                                        value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
-                                                                    } as DiscountValue
-                                                                ]
-                                                            };
-                                                        }
-                                                    }
-
-                                                    return {
-                                                        ...n,
-                                                        products: clone.filter(b => b != null) as ProductPurchase[]
-                                                    }
-                                                });
-
-                                                setOrderState(sortOrders(new_state))
-                                            }
-                                        }else {
-                                            const new_state = orderState.map(n => {
-                                                return {
-                                                    ...n,
-                                                    discount: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`
-                                                }
-                                            });
-
-                                            setOrderState(sortOrders(new_state))
-                                        }
-                                    }} multiple={orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) > 0} />
-                                </div>
-                            )
-                        case "await-cash":
-                            // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
-                            return (
-                                <div className="bg-blue-500 p-6 flex flex-col h-full items-center" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer w-full">
-                                        <div 
-                                            onClick={() => {
-                                                setPadState("select-payment-method")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left-1.svg" height={20} width={20} alt="" style={{ filter: "invert(100%) sepia(99%) saturate(0%) hue-rotate(119deg) brightness(110%) contrast(101%)" }} />
-                                            <p className="text-white">Back</p>
-                                        </div>
-                                        <p className="text-white">Awaiting Customer Payment</p>
-                                    </div>
-                                    
-                                    <CashSelect totalCost={currentTransactionPrice ?? 0} changeCallback={(_val: number, deg: number) => {
-                                        setCashContinuable(deg >= 0)
-                                    }} />
-
-                                    <div className="flex w-full flex-row items-center gap-4 cursor-pointer">
-                                        <div
-                                            className={`${cashContinuable ? "bg-white" : "bg-blue-400"} w-full rounded-md p-4 flex items-center justify-center`}
-                                            onClick={() => {
-                                                // const new_payment = [ ...kioskState.payment, {
-                                                //     payment_method: "cash",
-                                                //     fulfillment_date: new Date().toString(),
-                                                //     amount: currentTransactionPrice
-                                                // }];
-
-                                                const new_payment: PaymentIntent[] = [ ...kioskState.payment, {
-                                                    amount: {quantity: currentTransactionPrice ?? 0, currency: 'NZD'},
-                                                    delay_action: "Cancel",
-                                                    delay_duration: "PT12H",
-                                                    fulfillment_date: getDate(),
-                                                    id: v4(),
-                                                    order_ids: ["?"],
-                                                    payment_method: "Cash",
-                                                    processing_fee: {quantity: 0.1, currency: 'NZD'},
-                                                    processor: {location: '001', employee: 'EMPLOYEE_ID', software_version: 'k0.5.2', token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'},
-                                                    status: { 
-                                                        Complete: {
-                                                            CardDetails: {
-                                                                card_brand: "VISA",
-                                                                last_4: "4025",
-                                                                exp_month: "03",
-                                                                exp_year: "2023",
-                                                                fingerprint: "a20@jA928ajsf9a9828",
-                                                                card_type: "DEBIT",
-                                                                prepaid_type: "NULL",
-                                                                bin: "",
-            
-                                                                entry_method: "PIN",
-                                                                cvv_accepted: "TRUE",
-                                                                avs_accepted: "TRUE",
-                                                                auth_result_code: "YES",
-                                                                statement_description: "DEBIT ACCEPTED",
-                                                                card_payment_timeline: {
-                                                                    authorized_at: "",
-                                                                    captured_at: ""
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }];
-        
-                                                setKioskState({
-                                                    ...kioskState,
-                                                    payment: new_payment
-                                                });
-        
-                                                const qua = new_payment.reduce(function (prev, curr) {
-                                                    return prev + (curr.amount.quantity ?? 0)
-                                                }, 0);
-        
-                                                if(qua < (kioskState.order_total ?? 0)) {
-                                                    setCurrentTransactionPrice((kioskState.order_total ?? 0) - qua)
-                                                    setPadState("select-payment-method")
-                                                }else {
-                                                    setPadState("completed")
-                                                }
-                                            }}
-                                            >
-                                            <p className={`${cashContinuable ? "text-blue-600" : "text-blue-500"} font-semibold ${""}`}>Complete</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        case "note":
-                            return (
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer">
-                                        <div 
-                                            onClick={() => {
-                                                setPadState("cart")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
-                                        </div>
-                                        <p className="text-gray-400">Add Note</p>
-                                    </div>
-                                    
-                                    
-                                    <NotesMenu notes={orderState} callback={(active_order: string, note: string) => {
-                                        if(master_state?.employee) {
-                                            const note_obj: Note = {
-                                                message: note,
-                                                timestamp: getDate(),
-                                                author: master_state?.employee.id ?? ""
-                                            }
-
-                                            const new_order_state = orderState.map(e => e.id == active_order ? { ...e, order_notes: [...e.order_notes, note_obj] } : e)
-                                            setOrderState(sortOrders(new_order_state))
-                                        }
-                                    }} />
-                                </div>
-                            )
-                        case "pickup-from-store":
-                            return (
-                                customerState ? 
-                                <PickupMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id ?? ""} />
-                                :
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer">
-                                        <div 
-                                            onClick={() => {
-                                                setPadState("cart")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
-                                        </div>
-                                        <p className="text-gray-400">Pickup from Store</p>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-center flex-1 gap-8 flex-col">
-                                        <p className="text-gray-400">Must have an assigned customer to pickup products.</p>
-
-                                        <div 
-                                            onClick={() => {
-                                                setResult([]); 
-                                                setSearchType("customer");    
-
-                                                input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                input_ref.current?.focus()
-                                            }}
-                                            className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
-                                            <p>Select Customer</p>
-                                            <Image 
-                                                className=""
-                                                height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        case "ship-to-customer":
-                            return (
-                                customerState ? 
-                                <DispatchMenu master_state={master_state} orderJob={[ orderState, setOrderState ]} customerJob={[ customerState, setCustomerState ]} setPadState={setPadState} currentStore={master_state.store_id ?? ""} />
-                                :
-                                <div className="bg-gray-900 max-h-[calc(100vh - 18px)] p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-                                    <div className="flex flex-row justify-between cursor-pointer">
-                                        <div 
-                                            onClick={() => {
-                                                setPadState("cart")
-                                            }}
-                                            className="flex flex-row items-center gap-2"
-                                        >
-                                            <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
-                                            <p className="text-gray-400">Back</p>
-                                        </div>
-                                        <p className="text-gray-400">Ship order to customer</p>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-center flex-1 gap-8 flex-col">
-                                        <p className="text-gray-400">Must have an assigned customer to send products.</p>
-
-                                        <div 
-                                            onClick={() => {
-                                                setResult([]); 
-                                                setSearchType("customer");    
-
-                                                input_ref.current?.value ? input_ref.current.value = "" : {};
-                                                input_ref.current?.focus()
-                                            }}
-                                            className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
-                                            <p>Select Customer</p>
-                                            <Image 
-                                                className=""
-                                                height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                    }
-                })()
+                                )
+                            case "customer":
+                                return (
+                                    <CustomerMenu />
+                                )
+                            case "customer-create":
+                                return (
+                                    <CustomerMenu />
+                                )
+                            case "related-orders":
+                                return (
+                                    <RelatedOrders
+                                        activeProductVariant={activeProductVariant}
+                                        />
+                                )
+                            case "select-payment-method":
+                                return (
+                                    <PaymentMethod />
+                                )
+                            case "inv-transaction":
+                                return (
+                                    <TransactionScreen />
+                                )
+                            case "await-debit":
+                                // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
+                                return (
+                                    <TerminalPayment />
+                                )
+                            case "completed":
+                                return (
+                                    <CompletedOrderMenu />
+                                )
+                            case "discount":
+                                return (
+                                    <DiscountScreen />
+                                )
+                            case "await-cash":
+                                // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
+                                return (
+                                    <CashPayment />
+                                )
+                            case "note":
+                                return (
+                                    <NotesScreen />
+                                )
+                            case "pickup-from-store":
+                                return (
+                                    <DispatchHandler inputRef={input_ref} title="Pickup from Store">
+                                        <PickupMenu />
+                                    </DispatchHandler>
+                                )
+                            case "ship-to-customer":
+                                return (
+                                    <DispatchHandler inputRef={input_ref} title="Ship order to customer">
+                                        <DispatchMenu />
+                                    </DispatchHandler>
+                                )
+                        }
+                    })()
                 :
-                <></>
+                    <></>
             }
         </>
     )
@@ -885,8 +360,9 @@ export function sortDbOrders(orders: DbOrder[]) {
 }
 
 export function getDate(): string {
+    return ""
     // return new Date().toString()
-    return moment(new Date(), 'DD/MM/YYYY', true).format()
+    // return moment(new Date(), 'DD/MM/YYYY', true).format()
 }
 
 function unite(...data: any[]) {

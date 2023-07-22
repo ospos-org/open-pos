@@ -114,13 +114,14 @@ const selectionAtom = atom<KioskSelections>({
     transaction: null
 })
 
-interface ActiveDiscountApplication {
+export interface ActiveDiscountApplication {
     type: "absolute" | "percentage",
     product: VariantInformation | null,
     value: number,
     for: "cart" | "product",
     exclusive: boolean,
-    orderId: string
+    orderId: string,
+    source: "user"
 }
 
 const activeDiscountAtom = atom<ActiveDiscountApplication | null>(null)

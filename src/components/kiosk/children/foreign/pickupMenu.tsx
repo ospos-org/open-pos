@@ -7,12 +7,16 @@ import { v4 } from "uuid";
 import { getDate } from "../../kiosk";
 import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
 import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { ordersAtom } from "@/src/atoms/transaction";
+import { customerAtom } from "@/src/atoms/customer";
+import { masterStateAtom } from "@/src/atoms/openpos";
+import { kioskPanelAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
 
-const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
-    const [ orderState, setOrderState ] = orderJob;
-    const [ customerState, setCustomerState ] = customerJob;
+export function PickupMenu() {
+    const [ orderState, setOrderState ] = useAtom(ordersAtom);
+    const [ customerState, setCustomerState ] = useAtom(customerAtom);
 
-    const [ error, setError ] = useState<string | null>(null);
     const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
@@ -25,8 +29,11 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     const [ pickupStores, setPickupStores ] = useState<Store[]>()
     const [ pickupStore, setPickupStore ] = useState<Store>();
 
+    const currentStore = useAtomValue(masterStateAtom)
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -39,7 +46,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
 
     useEffect(() => {
         fetchDistanceData().then(data => {
-            const ord = generateOrders(generateProductMap(orderState), data, currentStore);
+            const ord = generateOrders(generateProductMap(orderState), data, currentStore.store_id ?? "");
 
             setGeneratedOrder(ord.assignment_sheet);
             setProductMap(ord.product_map);
@@ -57,12 +64,12 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const matches: Store[] = master_state.store_lut ? master_state.store_lut.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
+            const matches: Store[] = currentStore.store_lut ? currentStore.store_lut.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
 
             setSuggestions(matches);
             setLoading(false);
         }, 25);
-    }, [master_state.store_lut]);
+    }, [currentStore.store_lut]);
 
     useEffect(() => {
         return () => {
@@ -71,9 +78,9 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
     });
 
     useEffect(() => {
-        setPickupStores(master_state.store_lut)
-        setPickupStore(master_state?.store_lut?.find(k => k.id == master_state.store_id))
-    }, [currentStore, master_state.store_id, master_state.store_lut])
+        setPickupStores(currentStore.store_lut)
+        setPickupStore(currentStore?.store_lut?.find(k => k.id == currentStore.store_id))
+    }, [currentStore])
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -83,7 +90,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                 <div 
                     onClick={() => {
                         if(pageState !== "origin") setPageState("origin")
-                        else setPadState("cart")
+                        else setKioskPanel("cart")
                     }}
                     className="flex flex-row items-center gap-2"
                 >
@@ -93,29 +100,13 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                 <p className="text-gray-400">Pickup from another store</p>
             </div>
 
-            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
-                // let sel = selectedItems.find(k => k.selected);
-                // if(sel) {
-                //     setSelectedItems(selectedItems.map(k => {
-                //         return {
-                //             ...k,
-                //             selected: false
-                //         }
-                //     }))
-                // }
-            }}>
+            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
                 {
                     (() => {
                         switch(pageState) {
                             case "origin":
                                 return (
                                     <>
-                                        {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                                            <p className="">Overview</p>
-                                            <hr className="flex-1 border-gray-800 h-[3px] border-[2px] bg-gray-800 rounded-md" />
-                                            <p className="text-gray-600">Shipping Rate</p>
-                                        </div> */}
-
                                         <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full pr-2">
                                             <div className="flex flex-1 flex-col gap-4">
                                                 <div className="flex flex-row items-center gap-2 text-gray-400">
@@ -172,7 +163,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                         const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
                                                                         setSelectedItems(sel_items)
                                                                     }}
-                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
+                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{currentStore.store_lut?.length > 0 ? currentStore.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
                                                                     <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                         {
                                                                             k.alt_stores.map(n => {
@@ -191,11 +182,6 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                                 )
                                                                             })
                                                                         }
-
-                                                                        {/* <div 
-                                                                            className={`bg-white text-gray-700 cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
-                                                                            {k.store}
-                                                                        </div> */}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -234,16 +220,16 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                     let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" | "pickup" }[] = [];
 
                                                     generatedOrder.map(k => {
-                                                        const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct"));
+                                                        const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore.store_id ? "shipment" : "direct"));
 
                                                         if(found && k.item) {
-                                                            inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
+                                                            inverse_order = inverse_order.map(e => (e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore.store_id ? "shipment" : "direct")) ? { ...e, items: [ ...e.items, { ...k.item!, quantity: k.quantity } ] } : e)
                                                         } else if(k.item) {
                                                             inverse_order.push({
                                                                 store: k.store,
-                                                                store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
+                                                                store_code: currentStore.store_lut?.length > 0 ? currentStore.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
                                                                 items: [ { ...k.item, quantity: k.quantity } ],
-                                                                type: k.ship ? "pickup" : k.ship && k.store != currentStore ? "shipment" : "direct"
+                                                                type: k.ship ? "pickup" : k.ship && k.store != currentStore.store_id ? "shipment" : "direct"
                                                             })
                                                         }
                                                     })
@@ -286,12 +272,11 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                             order_type: k.type
                                                         } as Order;
                                                     })).then((k) => {
-                                                        let job: Order[] = orderJob[0];
-                                                        job = job.filter(k => k.order_type != "direct")
+                                                        const job = orderState.filter(k => k.order_type != "direct")
                                                         k.map(b => job.push(b as Order));
                                                         
-                                                        orderJob[1](job);
-                                                        setPadState("cart")
+                                                        setOrderState(job);
+                                                        setKioskPanel("cart")
                                                     });
 
                                                 }}
@@ -305,11 +290,6 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                 return (
                                     <>
                                         <p className="cursor-pointer font-semibold text-white">Shipping Rate</p>
-                                        {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                                            <p className="cursor-pointer" onClick={() => setPageState("origin")}>Overview</p>
-                                            <hr className="flex-1 border-gray-400 h-[3px] border-[2px] bg-gray-400 rounded-md" />
-                                            <p>Shipping Rate</p>
-                                        </div> */}
 
                                         <div className="flex-col flex gap-2 flex-1 overflow-y-scroll max-h-full pr-2">
                                             <div className=" flex flex-row items-center justify-between bg-gray-200 text-gray-900 px-4 py-2 rounded-sm cursor-pointer">
@@ -370,12 +350,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>
@@ -398,12 +373,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>
@@ -427,12 +397,7 @@ const PickupMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer 
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>

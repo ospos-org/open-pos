@@ -1,21 +1,23 @@
-import { debounce } from "lodash";
-import { customAlphabet } from "nanoid";
 import Image from "next/image";
-import { createRef, FC, useEffect, useMemo, useState } from "react";
-import { json } from "stream/consumers";
-import { v4 } from "uuid";
-import { getDate } from "../../kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, Order, ProductPurchase, StockInfo, Store, Transaction, VariantInformation } from "../../../../utils/stock_types";
+import { FC, useEffect, useState } from "react";
+import { Transaction, VariantInformation } from "../../../../utils/stock_types";
 import {OPEN_STOCK_URL} from "../../../../utils/helpers";
 import moment from "moment";
+import { useSetAtom } from "jotai";
+import { inspectingTransactionAtom } from "@/src/atoms/transaction";
+import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
 
-const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantInformation | null, setCurrentViewedTransaction: Function, currentViewedTransaction: [Transaction, string] | null | undefined, setPreviousPadState: Function }> = ({ setPadState, activeProductVariant, setCurrentViewedTransaction, currentViewedTransaction, setPreviousPadState }) => {
+interface RelatedOrdersProps {
+    activeProductVariant: VariantInformation | null
+}
+
+export function RelatedOrders({ activeProductVariant }: RelatedOrdersProps) {
+    const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+
     const [ suggestions, setSuggestions ] = useState<Transaction[]>([]);
-    const [ loading, setLoading ] = useState(true);
 
     useEffect(() => {
-        setLoading(true);
-
         const data = fetch(`${OPEN_STOCK_URL}/transaction/product/${activeProductVariant?.barcode}`, {
             method: "GET",
             credentials: "include",
@@ -23,7 +25,6 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
         })?.then(async e => {
             const data: Transaction[] = await e.json();
             setSuggestions(data);
-            setLoading(false);
         });
     }, [activeProductVariant]);
 
@@ -32,7 +33,7 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
             <div className="flex flex-row justify-between cursor-pointer">
                 <div 
                     onClick={() => {
-                        setPadState("cart")
+                        setKioskPanel("cart")
                     }}
                     className="flex flex-row items-center gap-2"
                 >
@@ -59,9 +60,8 @@ const RelatedOrders: FC<{ setPadState: Function, activeProductVariant: VariantIn
                                             <p className="font-semibold">{moment(b.order_date).format("DD/MM/YY hh:ss")}</p>
                                             <p className="font-semibold">${b.order_total}</p>
                                             <p onClick={() => {
-                                                setPreviousPadState("related-orders")
-                                                setPadState("inv-transaction")
-                                                setCurrentViewedTransaction([b, b.products[0].id]);
+                                                setKioskPanel("inv-transaction")
+                                                setInspectingTransaction({ item: b, identifier: b.products[0].id });
                                             }} className="bg-gray-600 px-2 rounded-md cursor-pointer">View Details</p>
                                         </div>
                                         

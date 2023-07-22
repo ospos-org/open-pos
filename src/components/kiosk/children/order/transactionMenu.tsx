@@ -6,20 +6,24 @@ import { applyDiscount, findMaxDiscount, fromDbDiscount } from "../../../../util
 import { NoteElement } from "../../../common/noteElement";
 import { Customer, DbOrder, Order, Transaction } from "../../../../utils/stock_types";
 import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { useAtomValue } from "jotai";
+import { inspectingTransactionAtom } from "@/src/atoms/transaction";
 
-export default function TransactionMenu({ transaction }: { transaction: [Transaction, string] | null }) {
+export default function TransactionMenu() {
+    const transaction = useAtomValue(inspectingTransactionAtom)
+
     const [ customer, setCustomer ] = useState<Customer | null>();
-    const [ activeTransaction, setActiveTransaction ] = useState<DbOrder | null>(transaction?.[0]?.products.find(k => k.id == transaction?.[1]) ?? null);
-    const [ refChoices, setRefChoices ] = useState(transaction?.[0].products);
+    const [ activeTransaction, setActiveTransaction ] = useState<DbOrder | null>(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
+    const [ refChoices, setRefChoices ] = useState(transaction?.item.products);
     const [ selectorOpen, setSelectorOpen ] = useState(false);
     
     useEffect(() => {
-        setActiveTransaction(transaction?.[0]?.products.find(k => k.id == transaction?.[1]) ?? null);
-        // refChoices?.find(b => b.reference.includes(transaction?.[1]))
-        setRefChoices(transaction?.[0].products)
+        setActiveTransaction(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
+        // refChoices?.find(b => b.reference.includes(transaction?.identifier))
+        setRefChoices(transaction?.item.products)
 
-        if(transaction?.[0]?.customer.customer_type != "Store") {
-            fetch(`${OPEN_STOCK_URL}/customer/${transaction?.[0]?.customer.customer_id}`, {
+        if(transaction?.item?.customer.customer_type != "Store") {
+            fetch(`${OPEN_STOCK_URL}/customer/${transaction?.item?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -28,7 +32,7 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                 setCustomer(n);
             })
         }else {
-            fetch(`${OPEN_STOCK_URL}/store/code/${transaction?.[0]?.customer.customer_id}`, {
+            fetch(`${OPEN_STOCK_URL}/store/code/${transaction?.item?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -50,11 +54,11 @@ export default function TransactionMenu({ transaction }: { transaction: [Transac
                         <p className="text-lg font-semibold text-white">{activeTransaction?.reference} - {activeTransaction?.order_type}</p>
                     </div>
 
-                    {transaction[0].transaction_type == "Quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
+                    {transaction.item.transaction_type == "Quote" ? <p className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer text-white">Quote</p> : <></>}
                 </div>
 
                 {
-                    transaction[0].products.length > 1 ?
+                    transaction.item.products.length > 1 ?
                     <div className="relative inline-block w-fit float-right flex-grow flex-shrink-0">
                         <p className="text-gray-400 text-sm">Transaction contains multiple orders</p>
                         <div className={`bg-gray-800 w-full select-none text-white flex flex-row justify-between gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {

@@ -2,25 +2,34 @@ import Image from "next/image";
 import { FC, createRef, useState, useEffect } from "react";
 import { NoteElement } from "./noteElement";
 import { Note, Order } from "../../utils/stock_types";
+import { useAtom, useAtomValue } from "jotai";
+import { ordersAtomsAtom } from "@/src/atoms/transaction";
+import { NoteOrderItem } from "./noteOrderItem";
+import { nanoid } from "nanoid";
 
-const NotesMenu: FC<{ notes: Order[], callback: Function, autoFocus?: boolean }> = ({ notes, callback, autoFocus }) => {
+const NotesMenu: FC<{ callback: (activeOrder: string, noteContent: string) => void, autoFocus?: boolean }> = ({ callback, autoFocus }) => {
     const input_ref = createRef<HTMLInputElement>();
-    const [ activeOrder, setActiveOrder ] = useState<Order>(notes[0]);
+
+    const orderState = useAtomValue(ordersAtomsAtom)
+
+    const [ activeOrderAtom, setActiveOrderAtom ] = useState(orderState[0])
+    const [ activeOrder ] = useAtom(activeOrderAtom);
+
     const [ selectorOpen, setSelectorOpen ] = useState(false);
 
     useEffect(() => {
-        setActiveOrder(notes.find(k => k.id == activeOrder.id) ?? notes[0])
-    }, [notes])
+        setActiveOrderAtom(orderState.find(k => k.debugLabel == activeOrder.id) ?? orderState[0])
+    }, [orderState, activeOrder.id])
 
     return (
         <div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
             <div className="relative inline-block w-fit">
                 {
-                    notes.length != 1 ?
+                    orderState.length != 1 ?
                     <div className={`bg-gray-800 select-none text-white flex flex-row w-fit gap-4 cursor-pointer px-4 py-2 ${selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"}`} onClick={() => {
                         setSelectorOpen(!selectorOpen)
                     }}>
-                        <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder.origin.store_code}</p>
+                        <p className="font-semibold">{activeOrder.order_type.toUpperCase()} - {activeOrder?.origin?.store_code}</p>
                         <Image src={!selectorOpen ? "/icons/chevron-down.svg" : "/icons/chevron-up.svg"} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} alt="" height={18} width={18}></Image>
                     </div>
                     :
@@ -29,16 +38,12 @@ const NotesMenu: FC<{ notes: Order[], callback: Function, autoFocus?: boolean }>
 
                 <div className={`${selectorOpen ? "absolute flex flex-col items-center w-full text-white justify-center bg-gray-700 overflow-hidden z-50 rounded-t-none rounded-b-md" : "hidden absolute"}`}>
                     {
-                        notes.map(k => {
-                            return (
-                                <div key={k.id} className="hover:bg-gray-600 cursor-pointer px-4 py-2 w-full text-center" onClick={() => {
-                                    setActiveOrder(k)
-                                    setSelectorOpen(false)
-                                }}>
-                                    {k.order_type.toUpperCase()} - {k.origin.store_code}
-                                </div>
-                            )
-                        })
+                        orderState.map((orderAtom) => 
+                            <NoteOrderItem key={nanoid()} activeAtom={orderAtom} callback={(orderAtom) => {
+                                setActiveOrderAtom(orderAtom)
+                                setSelectorOpen(false)
+                            }} />
+                        )
                     }
                 </div>
             </div>

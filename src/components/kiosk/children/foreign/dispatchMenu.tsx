@@ -7,20 +7,28 @@ import { v4 } from "uuid";
 import { getDate } from "../../kiosk";
 import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
 import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { ordersAtom } from "@/src/atoms/transaction";
+import { customerAtom } from "@/src/atoms/customer";
+import { masterStateAtom } from "@/src/atoms/openpos";
+import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
 
-const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Customer | null, Function ], setPadState: Function, currentStore: string, master_state: MasterState }> = ({ orderJob, customerJob, setPadState, currentStore, master_state }) => {
-    const [ orderState, setOrderState ] = orderJob;
-    const [ customerState, setCustomerState ] = customerJob;
+export function DispatchMenu() {
+    const [ orderState, setOrderState ] = useAtom(ordersAtom);
+    const [ customerState, setCustomerState ] = useAtom(customerAtom);
 
-    const [ error, setError ] = useState<string | null>(null);
     const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
     const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
 
+    const [ error, setError ] = useState<string | null>(null);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
     const [ searching, setSearching ] = useState(false);
     const [ loading, setLoading ] = useState(false);
+
+    const currentStore = useAtomValue(masterStateAtom)
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const fetchDistanceData = useCallback(async () => {
         const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
@@ -36,7 +44,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
 
     useEffect(() => {
         fetchDistanceData().then(data => {
-            const ord = generateOrders(generateProductMap(orderState), data, currentStore);
+            const ord = generateOrders(generateProductMap(orderState), data, currentStore.kiosk_id ?? "");
 
             setGeneratedOrder(ord.assignment_sheet);
             setProductMap(ord.product_map);
@@ -84,7 +92,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                 <div 
                     onClick={() => {
                         if(pageState !== "origin") setPageState("origin")
-                        else setPadState("cart")
+                        else setKioskPanel("cart")
                     }}
                     className="flex flex-row items-center gap-2"
                 >
@@ -173,7 +181,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                         const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
                                                                         setSelectedItems(sel_items)
                                                                     }}
-                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
+                                                                    className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{currentStore.store_lut?.length > 0 ? currentStore.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
                                                                     <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
                                                                         {
                                                                             k.alt_stores.map(n => {
@@ -287,7 +295,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                     } else if(k.item) {
                                                         inverse_order.push({
                                                             store: k.store,
-                                                            store_code: master_state.store_lut?.length > 0 ? master_state.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
+                                                            store_code: currentStore.store_lut?.length > 0 ? currentStore.store_lut?.find((b: Store) => k.store == b.id)?.code ?? k.store : k.store,
                                                             items: [ { ...k.item, quantity: k.quantity } ],
                                                             type: k.ship ? "shipment" : "direct"
                                                         })
@@ -332,12 +340,11 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                         order_type: k.type
                                                     };
                                                 })).then((k) => {
-                                                    let job = orderJob[0];
-                                                    job = job.filter(k => k.order_type != "direct")
+                                                    const job = orderState.filter(k => k.order_type != "direct")
                                                     k.map(b => job.push(b as Order));
                                                     
-                                                    orderJob[1](job);
-                                                    setPadState("cart")
+                                                    setOrderState(job);
+                                                    setKioskPanel("cart")
                                                 });
                                             }}
                                             className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
@@ -467,13 +474,15 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
                                                                         onClick={() => {
                                                                             setSearching(false);
 
-                                                                            setCustomerState({
-                                                                                ...customerState,
-                                                                                contact: {
-                                                                                    ...customerState?.contact,
-                                                                                    address: k
-                                                                                }
-                                                                            })
+                                                                            if (customerState) {
+                                                                                setCustomerState({
+                                                                                    ...customerState,
+                                                                                    contact: {
+                                                                                        ...customerState.contact,
+                                                                                        address: k,
+                                                                                    }
+                                                                                })
+                                                                            }
 
                                                                             input_ref.current ? input_ref.current.value = "" : {}
                                                                         }} 
@@ -515,7 +524,7 @@ const DispatchMenu: FC<{ orderJob: [ Order[], Function ], customerJob: [ Custome
         
                                                         if(e.ok) {
                                                             fetchDistanceData().then(data => {
-                                                                const ord = generateOrders(generateProductMap(orderState), data, currentStore);
+                                                                const ord = generateOrders(generateProductMap(orderState), data, currentStore.store_id ?? "");
                                                                 setGeneratedOrder(ord.assignment_sheet);
                                                                 setProductMap(ord.product_map);
                                                                 setLoading(false);

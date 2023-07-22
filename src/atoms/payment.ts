@@ -76,4 +76,7 @@ const priceAtom = atom(
     }
 )
 
-export { priceAtom }
+/// The amount the user is trying to pay in the current instance.
+const probingPricePayableAtom = atom<number | null>(null)
+
+export { priceAtom, probingPricePayableAtom }
