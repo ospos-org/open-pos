@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { DebouncedFunc, isEqual } from "lodash"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { debounce, isEqual } from "lodash"
 import { customAlphabet } from "nanoid"
 import { useResetAtom } from "jotai/utils"
 import Image from "next/image"
@@ -14,8 +14,8 @@ import { OPEN_STOCK_URL } from "@utils/environment"
 import { useWindowSize } from "@hooks/useWindowSize"
 import useKeyPress from "@hooks/useKeyPress"
 
-import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeAtom } from "@atoms/search"
-import { activeDiscountAtom, kioskPanelLogAtom, parkSaleAtom, searchInputRefAtom } from "@atoms/kiosk"
+import { querySearchTerm, searchFocusedAtom, searchInputRefAtom, searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeHandlerAtom } from "@atoms/search"
+import { activeDiscountAtom, kioskPanelLogAtom, parkSaleAtom } from "@atoms/kiosk"
 import { inspectingTransactionAtom, ordersAtom } from "@atoms/transaction"
 import { customerAtom, inspectingCustomerAtom } from "@atoms/customer"
 import { inspectingProductAtom } from "@atoms/product"
@@ -29,16 +29,11 @@ const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
 const MINUTE_MS = 5_000;
 
 interface KioskMenuProps {
-    triggerRefresh: string[],
-    setTriggerRefresh: (input: string[]) => void,
     addToCart: (orderProducts: ProductPurchase[]) => ProductPurchase[],
-    debouncedResults: DebouncedFunc<(searchTerm: string, searchType: string) => Promise<void>>
 }
 
 export default function KioskMenu({
-    setTriggerRefresh, triggerRefresh,
     addToCart,
-    debouncedResults
 }: KioskMenuProps) {
     const resetProductInspection = useResetAtom(inspectingProductAtom)
     const clearSearchResults = useResetAtom(searchResultsAtom)
@@ -51,14 +46,15 @@ export default function KioskMenu({
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setDiscount = useSetAtom(activeDiscountAtom)
     const parkSale = useSetAtom(parkSaleAtom)
-    
+    const querySearchResults = useSetAtom(querySearchTerm)
+
     const [ inspectingCustomer, setInspectingCustomer ] = useAtom(inspectingCustomerAtom) 
     const [ inspectingProduct, setInspectingProduct ] = useAtom(inspectingProductAtom)
     
     const [ searchTermState, setSearchTermState ] = useAtom(searchTermAtom)
     const [ searchFocused, setSearchFocused ] = useAtom(searchFocusedAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
-    const [ searchType, setSearchType ] = useAtom(searchTypeAtom)
+    const [ searchType, setSearchType ] = useAtom(searchTypeHandlerAtom)
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
 
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
@@ -117,7 +113,13 @@ export default function KioskMenu({
         }, MINUTE_MS);
 
         return () => clearInterval(interval); // This represents the unmount function, in which you need to clear your interval to prevent memory leaks.
-    }, [triggerRefresh])
+    }, [])
+
+    const debouncedSearch = useRef(
+        debounce(async () => {
+            querySearchResults();
+        }, 300)
+    ).current;
 
     return (
             <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
@@ -149,14 +151,15 @@ export default function KioskMenu({
                             placeholder={`Search for ${searchType}`} className="bg-transparent focus:outline-none text-white max-w-[100%] min-w-[0px]"
                             style={{ flex: "1 0" }}
                             onChange={(e) => {
-                            debouncedResults(e.target.value, searchType);
-                        }}
+                                setSearchTermState(e.target.value)
+                                debouncedSearch()
+                            }}
                             onFocus={(e) => {
                                 setSearchFocused(true)
-                                debouncedResults(e.target.value, searchType);
+                                setSearchTermState(e.target.value)
+                                debouncedSearch()
                             }}
                             tabIndex={0}
-                            // onBlur={() => setSearchFocused(false)}
                             onKeyDown={(e) => {
                                 if(e.key == "Escape") {
                                     e.preventDefault();
@@ -168,28 +171,13 @@ export default function KioskMenu({
 
                         <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0 select-none">
                             <Image draggable={false} onClick={() => {
-                                clearSearchResults()
-                                setSearchTermState("")
                                 setSearchType("products")
-
-                                inputRef.current?.value ? inputRef.current.value = "" : {};
-                                inputRef.current?.focus()
                             }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "products" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
-                                clearSearchResults()
-                                setSearchTermState("")
                                 setSearchType("customers")
-
-                                inputRef.current?.value ? inputRef.current.value = "" : {};
-                                inputRef.current?.focus()
                             }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customers" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
-                                clearSearchResults()
-                                setSearchTermState("")
                                 setSearchType("transactions")
-
-                                inputRef.current?.value ? inputRef.current.value = "" : {};
-                                inputRef.current?.focus()
                             }} className="cursor-pointer" width="20" height="20" src="/icons/receipt-check-filled.svg" alt={''} style={{ filter: searchType == "transactions" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                         </div>
 
@@ -226,8 +214,6 @@ export default function KioskMenu({
                                                                 <div key={e.sku} className="flex flex-col overflow-hidden h-fit" onClick={() => {
                                                                     setInspectingCustomer(null);
                                                                     setSearchFocused(false);
-
-                                                                    
 
                                                                     let vmap_list = [];
 
@@ -371,6 +357,7 @@ export default function KioskMenu({
                                                     </>
                                                     :
                                                     (searchResults as Customer[])?.map((e: Customer, indx) => {
+                                                        console.log("RES", searchResults, searchType)
                                                         return (
                                                                 <div
                                                                     key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
@@ -420,8 +407,6 @@ export default function KioskMenu({
                                                                                     setSearchType("products");
 
                                                                                     setCustomerState(e)
-
-                                                                                    inputRef.current?.value ? inputRef.current.value = "" : {};
                                                                                 }}
                                                                                 id="assign-to-cart"
                                                                                 className="whitespace-nowrap justify-self-end pr-4 py-3"
@@ -522,8 +507,6 @@ export default function KioskMenu({
                                                         setSearchType("products");
                                                         clearSearchResults()
                                                         setCustomerState(inspectingCustomer)
-
-                                                        inputRef.current?.value ? inputRef.current.value = "" : {};
                                                     }}
                                                 >
                                                     <Image width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
@@ -1003,9 +986,6 @@ export default function KioskMenu({
                                         onClick={() => { 
                                             clearSearchResults()
                                             setSearchType("customers");
-
-                                            inputRef.current?.value ? inputRef.current.value = "" : {};
-                                            inputRef.current?.focus()
                                         }}
                                     >
                                         <Image className="select-none" width="25" height="25" src="/icons/user-01.svg" style={{ filter: "invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)" }} alt={''}></Image>
@@ -1107,8 +1087,6 @@ export default function KioskMenu({
                     activeTransactions?.map(k => {
                         return (
                             <SavedTransactionItem 
-                                setTriggerRefresh={setTriggerRefresh} 
-                                triggerRefresh={triggerRefresh} 
                                 transaction={k} 
                                 key={k.id} 
                             />

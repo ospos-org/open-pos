@@ -5,7 +5,7 @@ import Image from "next/image";
 import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "@utils/discountHelpers";
 import { Order, ProductPurchase } from "@utils/stockTypes";
 
-import { defaultKioskAtom, kioskPanelLogAtom, searchInputRefAtom } from "@atoms/kiosk";
+import { defaultKioskAtom, kioskPanelLogAtom } from "@atoms/kiosk";
 import { priceAtom, probingPricePayableAtom } from "@atoms/payment";
 import { aCustomerActiveAtom, customerAtom } from "@atoms/customer";
 import { searchTermAtom, searchTypeAtom } from "@atoms/search";
@@ -13,20 +13,15 @@ import { inspectingProductAtom } from "@atoms/product";
 import { masterStateAtom } from "@atoms/openpos";
 import { ordersAtom } from "@atoms/transaction";
 import { sortOrders } from "@/src/utils/utils";
+import { OrdersPriceSummary } from "./ordersPriceSummary";
+import { CartActionFooter } from "./cartActionFooter";
+import { CartActionHeader } from "./cartActionHeader";
 
 export default function CartMenu() {
     const currentStore = useAtomValue(masterStateAtom)
-    const orderInfo = useAtomValue(priceAtom)
-    const inputRef = useAtomValue(searchInputRefAtom)
     const aCustomerActive = useAtomValue(aCustomerActiveAtom)
 
-    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
-    const setSearchType = useSetAtom(searchTypeAtom)
-    const setProbePrice = useSetAtom(probingPricePayableAtom)
     const setInspectingProduct = useSetAtom(inspectingProductAtom)
-    const setSearchTermState = useSetAtom(searchTermAtom)
-
-    const resetCart = useResetAtom(defaultKioskAtom)
 
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
@@ -35,54 +30,7 @@ export default function CartMenu() {
         <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             <div className="flex flex-col gap-4 flex-1 max-h-full">
                 {/* Order Information */}
-                <div className="flex flex-row items-center justify-between max-h-screen overflow-hidden">
-                    <div className="text-white">
-                        {
-                            customerState ?
-                            <div className="flex flex-row items-center gap-2">
-                                <h2 className="font-semibold text-lg">{customerState.name}</h2>
-
-                                <Image
-                                    onClick={() => {
-                                        setCustomerState(null)
-                                    }} 
-                                    className="cursor-pointer" height={15} width={15} src="/icons/x-2.svg" alt="" style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
-                            </div>
-                            :
-                            <div 
-                                onClick={() => {
-                                    setSearchType("customers")
-                                    setSearchTermState("")
-
-                                    inputRef.current?.value ? inputRef.current.value = "" : {};
-                                    inputRef.current?.focus()
-                                }}
-                                className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                                <p>Select Customer</p>
-                                <Image 
-                                    className=""
-                                    height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>
-                            </div>
-                        }
-                        <div className="text-sm text-gray-400">
-                            {
-                                orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) == 0
-                                ? 
-                                "Cart Empty" 
-                                : 
-                                <p>
-                                    {orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)} item{((orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 1 ? "s" : "")}
-                                </p>
-                            }
-                        </div>
-                    </div>
-
-                    <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
-                        <p className="text-white select-none" onClick={() => {
-                            resetCart()
-                        }}>Clear Cart</p>
-                    </div>
-                </div>     
+                <CartActionHeader />  
 
                 <hr className="border-gray-400 opacity-25"/>
                 
@@ -412,70 +360,10 @@ export default function CartMenu() {
                 }
                 </div>
 
-                {/* <div className="flex flex-col gap-1 text-white justify-between px-2">
-                    {
-                        [].map((k, indx) => {
-                            return (
-                                <div className="flex flex-row items-center gap-2" key={k.promotion_id}>
-                                    <div className="bg-blue-600 h-5 w-5 rounded-full flex items-center justify-center text-xs">{indx+1}</div>
-                                    <p className="text-white">{k.name}</p>
-                                </div>
-                            )
-                        })
-                    }
-                </div> */}
-
                 <hr className="border-gray-400 opacity-25"/>
                 
-                <div className="flex flex-row items-center text-white justify-between px-2">
-                    <div>
-                        <p className="text-gray-400 font-bold">Sub Total</p>
-                        <p className="text-gray-600 font-bold">Tax</p>
-                        <p className="font-bold text-lg">Total</p>
-                    </div>
-                    
-                    <div className="flex flex-col gap-0">
-                        <p className="text-gray-400 font-bold items-end self-end">
-                            ${(orderInfo?.sub_total ?? 0).toFixed(2)} 
-                            {
-                                orderInfo?.sub_total == orderInfo?.non_discounted_sub_total
-                                ?
-                                <></>
-                                :
-                                ` (-$${((orderInfo?.non_discounted_sub_total ?? 0) - (orderInfo?.sub_total ?? 0)).toFixed(2)})`
-                            }
-                        </p>
-
-                        <p className="text-gray-600 font-bold items-end self-end">+15% (${(orderInfo?.tax ?? 0).toFixed(2)})</p>
-                        <p className="font-bold text-lg items-end self-end">${(orderInfo?.total ?? 0).toFixed(2)}</p>
-                    </div>
-                </div>
-                
-                <div className="flex flex-row items-center gap-4">
-                    <div 
-                        onClick={() => {
-                            // parkSale(
-                            //     master_state, setPadState, 
-                            //     orderState, setOrderState, 
-                            //     triggerRefresh, setTriggerRefresh, 
-                            //     customerState, setCustomerState, 
-                            //     kioskState, setKioskState
-                            // )
-                        }}
-                        className={`bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer ${(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0)) ?? 0 > 0 ? "" : "bg-opacity-10 opacity-20"}`}>
-                        <p className="text-gray-800 font-semibold">Park Sale</p>
-                    </div>
-
-                    <div
-                        onClick={() => {
-                            setKioskPanel("select-payment-method");
-
-                            setProbePrice(orderInfo?.total);
-                        }} 
-                        className={`${(orderState.reduce((p, c) => p + c.products.reduce((prev, curr) => { return prev + curr.quantity }, 0), 0) ?? 0) > 0 ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                        <p className={`text-white font-semibold ${""}`}>Checkout</p>
-                    </div>
-                </div>
+                <OrdersPriceSummary />
+                <CartActionFooter />
             </div>
         </div>
     )

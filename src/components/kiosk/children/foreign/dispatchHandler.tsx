@@ -2,9 +2,9 @@ import { useAtomValue, useSetAtom } from "jotai"
 import { useResetAtom } from "jotai/utils"
 import Image from "next/image"
 
-import { kioskPanelLogAtom, searchInputRefAtom } from "@atoms/kiosk"
 import { searchResultsAtom, searchTypeAtom } from "@atoms/search"
 import { aCustomerActiveAtom } from "@atoms/customer"
+import { kioskPanelLogAtom } from "@atoms/kiosk"
 
 interface DispatchProps {
     children: any,
@@ -13,12 +13,11 @@ interface DispatchProps {
 
 export function DispatchHandler({ children, title }: DispatchProps) {
     const aCustomer = useAtomValue(aCustomerActiveAtom)
-    const inputRef = useAtomValue(searchInputRefAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setSearchType = useSetAtom(searchTypeAtom)
 
     const clearSearchResults = useResetAtom(searchResultsAtom)
-    const setSearchType = useSetAtom(searchTypeAtom)
 
     if (aCustomer) {
         return <>{children}</>
@@ -46,9 +45,6 @@ export function DispatchHandler({ children, title }: DispatchProps) {
                     onClick={() => {
                         clearSearchResults()
                         setSearchType("customers");    
-
-                        inputRef.current?.value ? inputRef.current.value = "" : {};
-                        inputRef.current?.focus()
                     }}
                     className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer">
                     <p>Select Customer</p>

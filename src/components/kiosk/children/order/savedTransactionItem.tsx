@@ -11,11 +11,9 @@ import { ordersAtom } from '@atoms/transaction'
 
 interface TransactionItemProps {
     transaction: Transaction
-    triggerRefresh: string[]
-    setTriggerRefresh: (input: string[]) => void
 }
 
-export function SavedTransactionItem({ transaction, setTriggerRefresh, triggerRefresh }: TransactionItemProps) {
+export function SavedTransactionItem({ transaction }: TransactionItemProps) {
     const [ customer, setCustomer ] = useState<Customer | null>();
 
     const setOrderState = useSetAtom(ordersAtom)
@@ -65,13 +63,11 @@ export function SavedTransactionItem({ transaction, setTriggerRefresh, triggerRe
                 <div className="flex flex-row items-center gap-2 px-[4px] pr-[8px] py-[4px] rounded-full bg-gray-600">
                     <Image
                         className="cursor-pointer" 
-                        onClick={async () => {
+                        onClick={() => {
                             fetch(`${OPEN_STOCK_URL}/transaction/delete/${transaction.id}`, {
                                 method: "POST",
                                 credentials: "include",
                                 redirect: "follow",
-                            }).then(() => {
-                                setTriggerRefresh([  ...triggerRefresh ])
                             })
                         }}
                         src="/icons/x-close-01.svg" alt="" height={18} width={18} style={{ filter: "invert(100%) sepia(17%) saturate(7473%) hue-rotate(290deg) brightness(122%) contrast(114%)" }} />

@@ -154,7 +154,6 @@ export interface ActiveDiscountApplication {
 }
 
 const activeDiscountAtom = atom<ActiveDiscountApplication | null>(null)
-const searchInputRefAtom = atom<RefObject<HTMLInputElement>>(createRef<HTMLInputElement>())
 
 const generateTransactionAtom = atom((get) => {
     const customer = get(customerAtom)
@@ -196,4 +195,16 @@ const parkSaleAtom = atom(undefined, (get, set) => {
     }
 })
 
-export { currentOrderAtom, searchInputRefAtom, parkSaleAtom, generateTransactionAtom, transactionTypeAtom, defaultKioskAtom, transactingOrderAtom, kioskPanelLogAtom, kioskPanelAtom, kioskPanelHistory, selectionAtom, activeDiscountAtom }
+export { 
+    currentOrderAtom, 
+    parkSaleAtom, 
+    generateTransactionAtom, 
+    transactionTypeAtom, 
+    defaultKioskAtom, 
+    transactingOrderAtom, 
+    kioskPanelLogAtom, 
+    kioskPanelAtom, 
+    kioskPanelHistory, 
+    selectionAtom, 
+    activeDiscountAtom 
+}
