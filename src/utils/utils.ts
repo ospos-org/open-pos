@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
+import moment from "moment"
 import { twMerge } from "tailwind-merge"
 import { DbOrder, Order } from "./stockTypes"
  
@@ -15,6 +16,5 @@ export function sortDbOrders(orders: DbOrder[]) {
 }
 
 export function getDate(): string {
-  const date = new Date()
-  return `${date.getUTCDate()}/${date.getUTCMonth()+1}/${date.getUTCFullYear()}`
+  return moment(new Date(), 'DD/MM/YYYY', true).format()
 }

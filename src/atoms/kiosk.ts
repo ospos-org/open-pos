@@ -31,9 +31,20 @@ const defaultKioskAtom = atom((get) => {
     } as KioskState
 }, (_, set, resetKey: typeof RESET) => {
     if(resetKey === RESET) {
+        // Clear all payment intents (no spillover)
+        set(paymentIntentsAtom, [])
+
+        // Unset the active (selected) customer
         set(customerAtom, null)
+
+        // Clear all orders, new kiosk session
         set(ordersAtom, [])
+
+        // Set back to the primary panel
         set(kioskPanelLogAtom, "cart")
+
+        // Reset transaction type to default.
+        set(transactionTypeAtom, "Out")
     }
 })
 
@@ -158,7 +169,9 @@ const generateTransactionAtom = atom((get) => {
             customer_id: get(masterStateAtom).store_id,
             customer_type: "Store"
         },
+
         products,
+
         // As we are saving the order, we aren't charging the customer anything.
         order_total: 0.00
     } as TransactionInput

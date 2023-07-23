@@ -1,7 +1,7 @@
 import { useAtom, useSetAtom } from "jotai";
 import { useState } from "react";
-import Image from "next/image";
 import { v4 } from "uuid";
+import Image from "next/image";
 
 import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment";
 import { defaultKioskAtom, kioskPanelLogAtom } from "@atoms/kiosk";

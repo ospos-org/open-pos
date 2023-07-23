@@ -1,25 +1,35 @@
 "use client";
 
-import Kiosk from '../src/components/kiosk/kiosk'
 import { createRef, useEffect, useState } from 'react'
+import { useAtom } from 'jotai'
 import Image from "next/image"
-import Inventory from '../src/components/inventory/inventory';
-import Job from '../src/components/job/job';
-import Deliverables from '../src/components/remote/deliverables';
-import Incomings from '../src/components/remote/recievables';
-import { Employee, MasterState } from '../src/utils/stockTypes';
-import {OPEN_STOCK_URL} from "../src/utils/environment";
-import { retryPromise } from '@/src/utils/retryPromise';
-import { useWindowSize } from '@/src/hooks/useWindowSize';
-import { useAtom } from 'jotai';
-import { masterStateAtom } from '@/src/atoms/openpos';
+
+import Deliverables from '@components/remote/deliverables';
+import Incomings from '@components/remote/recievables';
+import Inventory from '@components/inventory/inventory';
+import Kiosk from '@components/kiosk/kiosk'
+import Job from '@components/job/job';
+
+import { masterStateAtom } from '@atoms/openpos';
+import { useWindowSize } from '@hooks/useWindowSize';
+import {OPEN_STOCK_URL} from "@utils/environment";
+import { retryPromise } from '@utils/retryPromise';
+import { Employee } from '@utils/stockTypes';
 
 const ICON_SIZE = 30
 
 export default function App() {
-	const [ page, setPage ] = useState(0);
-	const [ user, setUser ] = useState<Employee | null>(null);
 	const [ codeInput, setCodeInput ] = useState<string[]>(["","","","", "", "", "", ""]);
+
+	const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
+	const [ demoOverride, setDemoOverride ] = useState(false);
+	const [ menuOpen, setMenuOpen ] = useState(false);
+
+	const [ user, setUser ] = useState<Employee | null>(null);
+	const [ page, setPage ] = useState(0);
+
+	const input_ref = createRef<HTMLInputElement>();
+    const windowSize = useWindowSize();
 
 	const [ masterState, setMasterState ] = useAtom(masterStateAtom)
 
@@ -28,7 +38,7 @@ export default function App() {
 			...oldState,
 			kiosk_id: window.localStorage.getItem('openstock-kioskid')
 		}))
-	}, [])
+	}, [setMasterState])
 
 	useEffect(() => {
 		retryPromise(
@@ -52,7 +62,7 @@ export default function App() {
 				}
 			});
 		})
-	}, [user]);
+	}, [user, setMasterState]);
 
 	useEffect(() => {
 		setMasterState(m => {
@@ -61,49 +71,13 @@ export default function App() {
 				employee: user
 			}
 		})
-	}, [user])
-
-	const [ authCookie, setAuthCookie ] = useState("");
-	const [ lowModeCartOn, setLowModeCartOn ] = useState(false);
-	const [ menuOpen, setMenuOpen ] = useState(false);
+	}, [user, setMasterState])
 
 	useEffect(() => {
 		setTimeout(function () {
 			window.scrollTo(0, 1);
 		  }, 1000);
 	}, [])
-
-	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
-		fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
-			method: "POST",
-			body: JSON.stringify({
-				pass: pass,
-				kiosk_id: masterState.kiosk_id
-			}),
-			credentials: "include",
-			redirect: "follow"
-		}).then(async e => {
-			if(e.ok) {
-				const cookie = await e.text();
-				setAuthCookie(cookie);
-	
-				fetch(`${OPEN_STOCK_URL}/employee/rid/${rid}`, {
-					method: "GET",
-					credentials: "include",
-					redirect: "follow"
-				}).then(async k => {
-					if(k.ok) {
-						const employee: Employee[] = await k.json();
-						setUser(employee[0]);
-		
-						callback(pass)
-					}
-				})
-			}
-		})
-	}
-
-	const [ demoOverride, setDemoOverride ] = useState(false);
 
 	// Handle user authentication and pass it to child elements.
 	useEffect(() => {
@@ -127,8 +101,34 @@ export default function App() {
 		}
 	}, [codeInput, demoOverride])
 
-	const input_ref = createRef<HTMLInputElement>();
-    const windowSize = useWindowSize();
+	const fetch_cookie = async (rid: string, pass: string, callback: Function) => {
+		fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
+			method: "POST",
+			body: JSON.stringify({
+				pass: pass,
+				kiosk_id: masterState.kiosk_id
+			}),
+			credentials: "include",
+			redirect: "follow"
+		}).then(async e => {
+			if(e.ok) {
+				const cookie = await e.text();
+	
+				fetch(`${OPEN_STOCK_URL}/employee/rid/${rid}`, {
+					method: "GET",
+					credentials: "include",
+					redirect: "follow"
+				}).then(async k => {
+					if(k.ok) {
+						const employee: Employee[] = await k.json();
+						setUser(employee[0]);
+		
+						callback(pass)
+					}
+				})
+			}
+		})
+	}
 
     return (
 		<div className="flex flex-col max-h-screen overflow-hidden">
@@ -396,7 +396,6 @@ export default function App() {
 				</div>
 				{/* Content for Menu */}
 				<div className="bg-gray-800 flex flex-1 overflow-hidden">
-					
 					{
 						(() => {
 							switch(page) {
@@ -417,7 +416,6 @@ export default function App() {
 							}
 						})()
 					}
-					{/* Kiosk is one of the menus and acts as a filler until the method of navigation is determined. */}
 				</div>
 			</div>
 
@@ -431,8 +429,6 @@ export default function App() {
 				<Image onClick={() => {
 					setLowModeCartOn(!lowModeCartOn)
 				}} width="20" height="20" src={ !lowModeCartOn ? "/icons/corner-down-left.svg" : "/icons/corner-down-right.svg"} className="select-none cursor-pointer flex-1" alt={''} draggable={false} />
-				
-                {/* <p onClick={() => (true)}>OC</p> */}
             </div>
 			
 			{

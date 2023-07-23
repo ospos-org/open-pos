@@ -7,10 +7,10 @@ import { Order, ProductPurchase } from "@utils/stockTypes";
 
 import { defaultKioskAtom, kioskPanelLogAtom, searchInputRefAtom } from "@atoms/kiosk";
 import { priceAtom, probingPricePayableAtom } from "@atoms/payment";
+import { aCustomerActiveAtom, customerAtom } from "@atoms/customer";
+import { searchTermAtom, searchTypeAtom } from "@atoms/search";
 import { inspectingProductAtom } from "@atoms/product";
 import { masterStateAtom } from "@atoms/openpos";
-import { searchTypeAtom } from "@atoms/search";
-import { customerAtom } from "@atoms/customer";
 import { ordersAtom } from "@atoms/transaction";
 import { sortOrders } from "@/src/utils/utils";
 
@@ -18,11 +18,13 @@ export default function CartMenu() {
     const currentStore = useAtomValue(masterStateAtom)
     const orderInfo = useAtomValue(priceAtom)
     const inputRef = useAtomValue(searchInputRefAtom)
+    const aCustomerActive = useAtomValue(aCustomerActiveAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setSearchType = useSetAtom(searchTypeAtom)
     const setProbePrice = useSetAtom(probingPricePayableAtom)
     const setInspectingProduct = useSetAtom(inspectingProductAtom)
+    const setSearchTermState = useSetAtom(searchTermAtom)
 
     const resetCart = useResetAtom(defaultKioskAtom)
 
@@ -50,6 +52,7 @@ export default function CartMenu() {
                             <div 
                                 onClick={() => {
                                     setSearchType("customers")
+                                    setSearchTermState("")
 
                                     inputRef.current?.value ? inputRef.current.value = "" : {};
                                     inputRef.current?.focus()
@@ -388,7 +391,7 @@ export default function CartMenu() {
                                                                             <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(e.variant_information.retail_price * e.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
                                                                             <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
                                                                                 ${
-                                                                                    ((((e.variant_information.retail_price) * e.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(e.quantity, e.discount, e.variant_information.retail_price * 1.15, !(!customerState))).toFixed(2)
+                                                                                    ((((e.variant_information.retail_price) * e.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(e.quantity, e.discount, e.variant_information.retail_price * 1.15, aCustomerActive)).toFixed(2)
                                                                                     // ((applyDiscount((e.variant_information.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_information.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
                                                                                 }
                                                                             </p>

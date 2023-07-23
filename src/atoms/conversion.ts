@@ -10,8 +10,7 @@ import { customerAtom } from "@atoms/customer";
 import { ordersAtom } from "@atoms/transaction";
 
 const computeDatabaseOrderFormat = atom((get) => {
-    const date = getDate();
-
+    const date = getDate()
     const orderState = get(ordersAtom)
     const masterState = get(masterStateAtom)
     const customerState = get(customerAtom)

@@ -15,7 +15,7 @@ import { useWindowSize } from "@hooks/useWindowSize"
 import useKeyPress from "@hooks/useKeyPress"
 
 import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeAtom } from "@atoms/search"
-import { activeDiscountAtom, defaultKioskAtom, kioskPanelLogAtom, parkSaleAtom, searchInputRefAtom } from "@atoms/kiosk"
+import { activeDiscountAtom, kioskPanelLogAtom, parkSaleAtom, searchInputRefAtom } from "@atoms/kiosk"
 import { inspectingTransactionAtom, ordersAtom } from "@atoms/transaction"
 import { customerAtom, inspectingCustomerAtom } from "@atoms/customer"
 import { inspectingProductAtom } from "@atoms/product"
@@ -46,19 +46,18 @@ export default function KioskMenu({
     const searchResults = useAtomValue(searchResultsAtomic)
     const currentStore = useAtomValue(masterStateAtom)
     const inputRef = useAtomValue(searchInputRefAtom)
-    const searchTermState = useAtomValue(searchTermAtom)
-
+    
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setDiscount = useSetAtom(activeDiscountAtom)
     const parkSale = useSetAtom(parkSaleAtom)
-
+    
     const [ inspectingCustomer, setInspectingCustomer ] = useAtom(inspectingCustomerAtom) 
     const [ inspectingProduct, setInspectingProduct ] = useAtom(inspectingProductAtom)
-
+    
+    const [ searchTermState, setSearchTermState ] = useAtom(searchTermAtom)
     const [ searchFocused, setSearchFocused ] = useAtom(searchFocusedAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
     const [ searchType, setSearchType ] = useAtom(searchTypeAtom)
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
 
@@ -124,6 +123,11 @@ export default function KioskMenu({
             <div className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1" onKeyDownCapture={(e) => {
                 if(e.key == "Escape") setSearchFocused(false)
             }}>
+                {/* <div style={{ position: "absolute", top: 0, left: 0, zIndex: 500, background: "black", padding: "15px" }}>
+                    <p className="text-white">Input: {searchTermState}</p>
+                    <p className="text-white">Type: {searchType}</p>
+                </div> */}
+
                 <div className="p-4 pb-0">
                     <div className={`flex flex-1 flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 ${searchFocused ? "border-2 border-blue-500" : "border-2 border-gray-700"}`}>
                         {
@@ -165,21 +169,24 @@ export default function KioskMenu({
                         <div className="flex flex-row items-center gap-2 bg-gray-600 px-1 py-1 rounded-md flex-shrink-0 select-none">
                             <Image draggable={false} onClick={() => {
                                 clearSearchResults()
-                                setSearchType("products");
+                                setSearchTermState("")
+                                setSearchType("products")
 
                                 inputRef.current?.value ? inputRef.current.value = "" : {};
                                 inputRef.current?.focus()
                             }} className="cursor-pointer" width="20" height="20" src="/icons/cube-01-filled.svg" alt={''} style={{ filter: searchType == "products" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
                                 clearSearchResults()
-                                setSearchType("customers");
+                                setSearchTermState("")
+                                setSearchType("customers")
 
                                 inputRef.current?.value ? inputRef.current.value = "" : {};
                                 inputRef.current?.focus()
                             }} className="cursor-pointer" width="20" height="20" src="/icons/user-01.svg" alt={''} style={{ filter: searchType == "customers" ? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)" : "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)" }}></Image>
                             <Image draggable={false} onClick={() => {
                                 clearSearchResults()
-                                setSearchType("transactions");
+                                setSearchTermState("")
+                                setSearchType("transactions")
 
                                 inputRef.current?.value ? inputRef.current.value = "" : {};
                                 inputRef.current?.focus()
@@ -417,7 +424,7 @@ export default function KioskMenu({
                                                                                     inputRef.current?.value ? inputRef.current.value = "" : {};
                                                                                 }}
                                                                                 id="assign-to-cart"
-                                                                                className="whitespace-nowrap justify-self-end pr-4"
+                                                                                className="whitespace-nowrap justify-self-end pr-4 py-3"
                                                                             >
                                                                                 Assign to cart
                                                                             </p>
