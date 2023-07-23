@@ -1,12 +1,13 @@
-import Image from "next/image";
-import { FC, useEffect, useState } from "react";
-import { Transaction, VariantInformation } from "../../../../utils/stockTypes";
-import {OPEN_STOCK_URL} from "../../../../utils/environment";
-import moment from "moment";
 import { useAtomValue, useSetAtom } from "jotai";
-import { inspectingTransactionAtom } from "@/src/atoms/transaction";
-import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { inspectingProductAtom } from "@/src/atoms/product";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import moment from "moment";
+
+import { inspectingTransactionAtom } from "@atoms/transaction";
+import { inspectingProductAtom } from "@atoms/product";
+import { kioskPanelLogAtom } from "@atoms/kiosk";
+import { OPEN_STOCK_URL } from "@utils/environment";
+import { Transaction } from "@utils/stockTypes";
 
 export function RelatedOrders() {
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)

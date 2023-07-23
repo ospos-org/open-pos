@@ -1,19 +1,21 @@
-import { atom } from "jotai";
 import { atomWithReset, RESET } from "jotai/utils";
-import { customAlphabet } from "nanoid";
 import { createRef, RefObject } from "react";
+import { customAlphabet } from "nanoid";
+import { atom } from "jotai";
 import { v4 } from "uuid";
-import { getDate } from "../components/kiosk/kiosk";
-import { discountFromPromotion, fromDbDiscount } from "../utils/discountHelpers";
-import { OPEN_STOCK_URL } from "../utils/environment";
-import { PAD_MODES } from "../utils/kioskTypes";
-import { determineOptimalPromotionPathway } from "../utils/optimalPromotion";
-import { Customer, DiscountValue, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "../utils/stockTypes";
-import { computeDatabaseOrderFormat } from "./conversion";
-import { customerAtom } from "./customer";
-import { masterStateAtom } from "./openpos";
-import { paymentIntentsAtom, priceAtom } from "./payment";
-import { ordersAtom, ordersAtomsAtom } from "./transaction";
+
+import { Customer, DiscountValue, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
+import { discountFromPromotion, fromDbDiscount } from "@utils/discountHelpers";
+import { determineOptimalPromotionPathway } from "@utils/optimalPromotion";
+import { OPEN_STOCK_URL } from "@utils/environment";
+import { PAD_MODES } from "@utils/kioskTypes";
+
+import { paymentIntentsAtom, priceAtom } from "@atoms/payment";
+import { ordersAtom, ordersAtomsAtom } from "@atoms/transaction";
+import { computeDatabaseOrderFormat } from "@atoms/conversion";
+import { masterStateAtom } from "@atoms/openpos";
+import { customerAtom } from "@atoms/customer";
+import { getDate } from "../utils/utils";
 
 const defaultKioskAtom = atom((get) => {
     return {

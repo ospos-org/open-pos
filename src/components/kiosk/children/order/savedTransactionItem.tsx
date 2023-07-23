@@ -1,20 +1,22 @@
-import moment from 'moment';
-import Image from 'next/image';
+import { useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { fromDbDiscount } from '../../../../utils/discountHelpers';
-import { Customer, Order, Product, ProductPurchase, Promotion, Transaction } from '../../../../utils/stockTypes'
-import {OPEN_STOCK_URL} from "../../../../utils/environment";
-import { useAtom, useSetAtom } from 'jotai';
-import { defaultKioskAtom } from '@/src/atoms/kiosk';
-import { ordersAtom } from '@/src/atoms/transaction';
-import { customerAtom } from '@/src/atoms/customer';
+import Image from 'next/image';
+import moment from 'moment';
 
-export const SavedTransactionItem = (
-    { transaction, setTriggerRefresh, triggerRefresh }: 
-    { transaction: Transaction, setTriggerRefresh: Function, triggerRefresh: string[] }) => {
+import { Customer, Order, Product, ProductPurchase, Promotion, Transaction } from '@utils/stockTypes'
+import { fromDbDiscount } from '@utils/discountHelpers'
+import { OPEN_STOCK_URL } from "@utils/environment"
+import { customerAtom } from '@atoms/customer'
+import { ordersAtom } from '@atoms/transaction'
+
+interface TransactionItemProps {
+    transaction: Transaction
+    triggerRefresh: string[]
+    setTriggerRefresh: (input: string[]) => void
+}
+
+export function SavedTransactionItem({ transaction, setTriggerRefresh, triggerRefresh }: TransactionItemProps) {
     const [ customer, setCustomer ] = useState<Customer | null>();
-
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
 
     const setOrderState = useSetAtom(ordersAtom)
     const setCustomerState = useSetAtom(customerAtom)
@@ -45,7 +47,6 @@ export const SavedTransactionItem = (
     else return (
         <div className="flex flex-col gap-[4px] items-center p-4 text-white border-r-2 border-gray-600">
             <div className="flex-1 w-full px-2">
-                {/* <div className="bg-fuchsia-100 text-black p-2 px-[0.7rem] rounded-md font-bold">{customer?.name.split(" ").map((n)=>n[0]).join("")}</div> */}
                 <div className="flex flex-row gap-2 justify-between w-full flex-1 items-center">
                     <h3 className="text-gray-400 flex-1 w-full flex-nowrap whitespace-nowrap">{customer?.name}</h3>
                     <hr className="border-gray-600 w-full border-2 rounded-full" />

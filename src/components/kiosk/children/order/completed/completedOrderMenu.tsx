@@ -1,8 +1,10 @@
-import { aCustomerActiveAtom, customerAtom } from "@/src/atoms/customer"
-import { currentOrderAtom, defaultKioskAtom, kioskPanelAtom, kioskPanelHistory, transactingOrderAtom } from "@/src/atoms/kiosk"
-import { ordersAtomsAtom } from "@/src/atoms/transaction"
-import { useAtomValue, useSetAtom } from "jotai"
 import { useResetAtom } from "jotai/utils"
+import { useAtomValue } from "jotai"
+
+import { currentOrderAtom, defaultKioskAtom, kioskPanelAtom, kioskPanelHistory } from "@atoms/kiosk"
+import { aCustomerActiveAtom, customerAtom } from "@atoms/customer"
+import { ordersAtomsAtom } from "@atoms/transaction"
+
 import { IndividualProduct } from "./individualProduct"
 
 export function CompletedOrderMenu() {

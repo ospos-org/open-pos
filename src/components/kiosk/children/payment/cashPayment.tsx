@@ -1,11 +1,13 @@
-import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { paymentIntentsAtom, probingPricePayableAtom } from "@/src/atoms/payment";
-import { PaymentIntent } from "@/src/utils/stockTypes";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import Image from "next/image";
+import { useAtom, useSetAtom } from "jotai";
 import { useState } from "react";
+import Image from "next/image";
 import { v4 } from "uuid";
-import { getDate } from "../../kiosk";
+
+import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment";
+import { defaultKioskAtom, kioskPanelLogAtom } from "@atoms/kiosk";
+import { PaymentIntent } from "@utils/stockTypes";
+import { getDate } from "@utils/utils";
+
 import CashSelect from "./cashSelect";
 
 export function CashPayment() {

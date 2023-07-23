@@ -1,11 +1,12 @@
-import Image from "next/image";
-import { FC, createRef, useState, useEffect } from "react";
-import { NoteElement } from "./noteElement";
-import { Note, Order } from "../../utils/stockTypes";
-import { useAtom, useAtomValue } from "jotai";
-import { ordersAtomsAtom } from "@/src/atoms/transaction";
-import { NoteOrderItem } from "./noteOrderItem";
-import { nanoid } from "nanoid";
+import { FC, createRef, useState, useEffect } from "react"
+import { useAtom, useAtomValue } from "jotai"
+import { nanoid } from "nanoid"
+import Image from "next/image"
+
+import { ordersAtomsAtom } from "@atoms/transaction"
+
+import { NoteOrderItem } from "@components/common/noteOrderItem"
+import { NoteElement } from "@components/common/noteElement"
 
 const NotesMenu: FC<{ callback: (activeOrder: string, noteContent: string) => void, autoFocus?: boolean }> = ({ callback, autoFocus }) => {
     const input_ref = createRef<HTMLInputElement>();

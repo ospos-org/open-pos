@@ -1,11 +1,10 @@
-import { aCustomerActiveAtom } from "@/src/atoms/customer";
-import { kioskPanelLogAtom, searchInputRefAtom } from "@/src/atoms/kiosk";
-import { searchResultsAtom, searchTypeAtom } from "@/src/atoms/search";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useResetAtom } from "jotai/utils";
-import Image from "next/image";
-import { RefObject } from "react";
-import DispatchMenu from "./dispatchMenu";
+import { useAtomValue, useSetAtom } from "jotai"
+import { useResetAtom } from "jotai/utils"
+import Image from "next/image"
+
+import { kioskPanelLogAtom, searchInputRefAtom } from "@atoms/kiosk"
+import { searchResultsAtom, searchTypeAtom } from "@atoms/search"
+import { aCustomerActiveAtom } from "@atoms/customer"
 
 interface DispatchProps {
     children: any,

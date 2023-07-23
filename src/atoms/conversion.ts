@@ -1,11 +1,13 @@
 import { atom } from "jotai";
-import { getDate } from "../components/kiosk/kiosk";
-import { findMaxDiscount, toDbDiscount } from "../utils/discountHelpers";
-import { DbOrder, DbProductPurchase, StatusHistory } from "../utils/stockTypes";
-import { customerAtom } from "./customer";
-import { transactionTypeAtom } from "./kiosk";
-import { masterStateAtom } from "./openpos";
-import { ordersAtom } from "./transaction";
+
+import { DbOrder, DbProductPurchase, StatusHistory } from "@utils/stockTypes";
+import { findMaxDiscount, toDbDiscount } from "@utils/discountHelpers";
+import { getDate } from "@utils/utils";
+
+import { transactionTypeAtom } from "@atoms/kiosk";
+import { masterStateAtom } from "@atoms/openpos";
+import { customerAtom } from "@atoms/customer";
+import { ordersAtom } from "@atoms/transaction";
 
 const computeDatabaseOrderFormat = atom((get) => {
     const date = getDate();

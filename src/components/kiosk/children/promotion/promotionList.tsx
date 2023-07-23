@@ -1,5 +1,5 @@
-import { Promotion } from "../../../../utils/stockTypes";
-import { fromDbDiscount, parseDiscount } from "../../../../utils/discountHelpers";
+import { fromDbDiscount, parseDiscount } from "@utils/discountHelpers";
+import { Promotion } from "@utils/stockTypes";
 
 export default function PromotionList({
     promotions

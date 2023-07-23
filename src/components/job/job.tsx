@@ -1,8 +1,8 @@
-import FullCalendar from "@fullcalendar/react"
-import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from "@fullcalendar/interaction"
-import timeGridPlugin from '@fullcalendar/timegrid'
+import timeGridPlugin from "@fullcalendar/timegrid"
 import { EventInput } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid"
+import FullCalendar from "@fullcalendar/react"
 
 let eventGuid = 0;
 const TODAY_STR = new Date().toISOString().replace(/T.*$/, ''); // YYYY-MM-DD of today

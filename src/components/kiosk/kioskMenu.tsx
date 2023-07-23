@@ -1,39 +1,45 @@
-import useKeyPress from "@/src/hooks/useKeyPress";
-import { isEqual } from "lodash";
-import moment from "moment";
-import { customAlphabet } from "nanoid";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import { v4 } from "uuid";
-import { applyDiscount, fromDbDiscount, isValidVariant } from "../../utils/discountHelpers";
-import { OPEN_STOCK_URL } from "../../utils/environment";
-import { getDate, sortOrders } from "./kiosk";
-import PromotionList from "./children/promotion/promotionList";
-import { SavedTransactionItem } from "./children/order/savedTransactionItem";
-import { SearchFieldTransaction } from "./children/order/searchFieldTransaction";
-import { Customer, Product, Promotion, StrictVariantCategory, Transaction } from "../../utils/stockTypes";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeAtom } from "@/src/atoms/search";
-import { useResetAtom } from "jotai/utils";
-import { activeDiscountAtom, defaultKioskAtom, kioskPanelLogAtom, parkSaleAtom, searchInputRefAtom } from "@/src/atoms/kiosk";
-import { masterStateAtom } from "@/src/atoms/openpos";
-import { inspectingTransactionAtom, ordersAtom } from "@/src/atoms/transaction";
-import { customerAtom, inspectingCustomerAtom } from "@/src/atoms/customer";
-import { inspectingProductAtom } from "@/src/atoms/product";
-import { useWindowSize } from "@/src/hooks/useWindowSize";
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { DebouncedFunc, isEqual } from "lodash"
+import { useEffect, useState } from "react"
+import { customAlphabet } from "nanoid"
+import { useResetAtom } from "jotai/utils"
+import Image from "next/image"
+import moment from "moment"
+import { v4 } from "uuid"
+
+import { Customer, Product, ProductPurchase, Promotion, StrictVariantCategory, Transaction } from "@utils/stockTypes"
+import { applyDiscount, fromDbDiscount, isValidVariant } from "@utils/discountHelpers"
+import { getDate, sortOrders } from "@/src/utils/utils"
+import { OPEN_STOCK_URL } from "@utils/environment"
+import { useWindowSize } from "@hooks/useWindowSize"
+import useKeyPress from "@hooks/useKeyPress"
+
+import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeAtom } from "@atoms/search"
+import { activeDiscountAtom, defaultKioskAtom, kioskPanelLogAtom, parkSaleAtom, searchInputRefAtom } from "@atoms/kiosk"
+import { inspectingTransactionAtom, ordersAtom } from "@atoms/transaction"
+import { customerAtom, inspectingCustomerAtom } from "@atoms/customer"
+import { inspectingProductAtom } from "@atoms/product"
+import { masterStateAtom } from "@atoms/openpos"
+
+import { SearchFieldTransaction } from "./children/order/searchFieldTransaction"
+import { SavedTransactionItem } from "./children/order/savedTransactionItem"
+import PromotionList from "./children/promotion/promotionList"
 
 const BLOCK_SIZE = "sm:min-w-[250px] min-w-[49%]";
 const MINUTE_MS = 5_000;
+
+interface KioskMenuProps {
+    triggerRefresh: string[],
+    setTriggerRefresh: (input: string[]) => void,
+    addToCart: (orderProducts: ProductPurchase[]) => ProductPurchase[],
+    debouncedResults: DebouncedFunc<(searchTerm: string, searchType: string) => Promise<void>>
+}
 
 export default function KioskMenu({
     setTriggerRefresh, triggerRefresh,
     addToCart,
     debouncedResults
-}: {
-    setTriggerRefresh: Function, triggerRefresh: string[],
-    addToCart: Function,
-    debouncedResults: Function
-}) {
+}: KioskMenuProps) {
     const resetProductInspection = useResetAtom(inspectingProductAtom)
     const clearSearchResults = useResetAtom(searchResultsAtom)
 

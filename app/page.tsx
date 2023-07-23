@@ -401,7 +401,7 @@ export default function App() {
 						(() => {
 							switch(page) {
 								case 0:
-									return <Kiosk master_state={masterState} lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn} />
+									return <Kiosk lowModeCartOn={lowModeCartOn} />
 								case 1:
 									return <Inventory />
 								case 2:
@@ -413,7 +413,7 @@ export default function App() {
 								case 5:
 									return <></>
 								default:
-									return <Kiosk master_state={masterState} lowModeCartOn={lowModeCartOn} setLowModeCartOn={setLowModeCartOn} />
+									return <Kiosk lowModeCartOn={lowModeCartOn} />
 							}
 						})()
 					}

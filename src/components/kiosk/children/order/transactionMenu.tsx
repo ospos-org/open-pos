@@ -1,13 +1,15 @@
-import moment from "moment";
+import { useEffect, useState } from "react";
+import { useAtomValue } from "jotai";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { applyDiscount, findMaxDiscount, fromDbDiscount } from "../../../../utils/discountHelpers";
-import { NoteElement } from "../../../common/noteElement";
-import { Customer, DbOrder, Order, Transaction } from "../../../../utils/stockTypes";
-import {OPEN_STOCK_URL} from "../../../../utils/environment";
-import { useAtomValue } from "jotai";
+import moment from "moment";
+
+import { applyDiscount, fromDbDiscount } from "@utils/discountHelpers";
 import { inspectingTransactionAtom } from "@/src/atoms/transaction";
+import { Customer, DbOrder } from "@utils/stockTypes";
+import { OPEN_STOCK_URL } from "@utils/environment";
+
+import { NoteElement } from "@components/common/noteElement";
 
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)

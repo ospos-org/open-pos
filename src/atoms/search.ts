@@ -1,6 +1,7 @@
-import { atom } from "jotai";
 import { atomWithReset } from "jotai/utils";
-import { Customer, Product, Promotion, Transaction } from "../utils/stockTypes";
+import { atom } from "jotai";
+
+import { Customer, Product, Promotion, Transaction } from "@utils/stockTypes";
 
 interface SearchResults {
     products: {

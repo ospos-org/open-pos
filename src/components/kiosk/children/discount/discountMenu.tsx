@@ -1,10 +1,10 @@
-import { activeDiscountAtom } from "@/src/atoms/kiosk";
-import useKeyPress from "@/src/hooks/useKeyPress";
-import { useAtom } from "jotai";
-import Image from "next/image";
-import { FC, createRef, useEffect, useRef } from "react";
-import { applyDiscount } from "../../../../utils/discountHelpers";
-import { VariantInformation } from "../../../../utils/stockTypes";
+import { FC, createRef, useEffect, useRef } from "react"
+import { useAtom } from "jotai"
+import Image from "next/image"
+
+import { activeDiscountAtom } from "@atoms/kiosk"
+import { applyDiscount } from "@utils/discountHelpers"
+import useKeyPress from "@hooks/useKeyPress"
 
 const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback, multiple }) => {
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);

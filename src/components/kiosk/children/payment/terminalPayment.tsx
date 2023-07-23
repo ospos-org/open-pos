@@ -1,15 +1,12 @@
-import { computeDatabaseOrderFormat } from "@/src/atoms/conversion";
-import { customerAtom } from "@/src/atoms/customer";
-import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { masterStateAtom } from "@/src/atoms/openpos";
-import { paymentIntentsAtom, probingPricePayableAtom } from "@/src/atoms/payment";
-import { ordersAtom } from "@/src/atoms/transaction";
-import { OPEN_STOCK_URL } from "@/src/utils/environment";
-import { PaymentIntent, TransactionInput } from "@/src/utils/stockTypes";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import Image from "next/image";
-import { v4 } from "uuid";
-import { getDate, sortDbOrders } from "../../kiosk";
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { v4 } from "uuid"
+import Image from "next/image"
+
+import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom } from "@atoms/kiosk"
+import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment"
+import { OPEN_STOCK_URL } from "@utils/environment"
+import { PaymentIntent } from "@utils/stockTypes"
+import { getDate } from "@utils/utils"
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -17,7 +14,7 @@ export function TerminalPayment() {
 
     const computeTransaction = useAtomValue(generateTransactionAtom)
     const kioskState = useAtomValue(defaultKioskAtom)
-    
+
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
 
     return (

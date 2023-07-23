@@ -1,11 +1,13 @@
-import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
-import { masterStateAtom } from "@/src/atoms/openpos"
-import { ordersAtom } from "@/src/atoms/transaction"
-import { Note } from "@/src/utils/stockTypes"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import Image from "next/image"
-import NotesMenu from "../../common/notesMenu"
-import { getDate } from "../kiosk"
+
+import NotesMenu from "@components/common/notesMenu"
+
+import { kioskPanelLogAtom } from "@atoms/kiosk"
+import { masterStateAtom } from "@atoms/openpos"
+import { ordersAtom } from "@atoms/transaction"
+import { getDate } from "@utils/utils"
+import { Note } from "@utils/stockTypes"
 
 export function NotesScreen() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)

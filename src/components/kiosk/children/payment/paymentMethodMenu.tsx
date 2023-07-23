@@ -1,26 +1,22 @@
-import useKeyPress from "@/src/hooks/useKeyPress";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { OPEN_STOCK_URL} from "../../../../utils/environment";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { probingPricePayableAtom } from "@/src/atoms/payment";
-import { masterStateAtom } from "@/src/atoms/openpos";
-import { ordersAtom } from "@/src/atoms/transaction";
-import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, transactionTypeAtom } from "@/src/atoms/kiosk";
-import { customerAtom } from "@/src/atoms/customer";
+import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+
+import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, transactionTypeAtom } from "@atoms/kiosk"
+import { probingPricePayableAtom } from "@atoms/payment"
+import { OPEN_STOCK_URL} from "@utils/environment"
+import { ordersAtom } from "@atoms/transaction"
+import useKeyPress from "@hooks/useKeyPress"
 
 export function PaymentMethod() {
-    const currentStore = useAtomValue(masterStateAtom)
-    const customerState = useAtomValue(customerAtom)
+    const generateTransaction = useAtomValue(generateTransactionAtom)
+    const kioskState = useAtomValue(defaultKioskAtom)
     const orderState = useAtomValue(ordersAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setTransactionType = useSetAtom(transactionTypeAtom)
 
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
-
-    const generateTransaction = useAtomValue(generateTransactionAtom)
     
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
     const [ editPrice, setEditPrice ] = useState(false);

@@ -1,16 +1,18 @@
-import Image from "next/image";
-import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "../../../../utils/discountHelpers";
-import { sortOrders } from "../../kiosk";
-import { Order, ProductPurchase } from "../../../../utils/stockTypes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { priceAtom, probingPricePayableAtom } from "@/src/atoms/payment";
-import { customerAtom } from "@/src/atoms/customer";
-import { ordersAtom } from "@/src/atoms/transaction";
-import { searchTypeAtom } from "@/src/atoms/search";
-import { masterStateAtom } from "@/src/atoms/openpos";
-import { defaultKioskAtom, kioskPanelLogAtom, searchInputRefAtom } from "@/src/atoms/kiosk";
 import { useResetAtom } from "jotai/utils";
-import { inspectingProductAtom } from "@/src/atoms/product";
+import Image from "next/image";
+
+import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "@utils/discountHelpers";
+import { Order, ProductPurchase } from "@utils/stockTypes";
+
+import { defaultKioskAtom, kioskPanelLogAtom, searchInputRefAtom } from "@atoms/kiosk";
+import { priceAtom, probingPricePayableAtom } from "@atoms/payment";
+import { inspectingProductAtom } from "@atoms/product";
+import { masterStateAtom } from "@atoms/openpos";
+import { searchTypeAtom } from "@atoms/search";
+import { customerAtom } from "@atoms/customer";
+import { ordersAtom } from "@atoms/transaction";
+import { sortOrders } from "@/src/utils/utils";
 
 export default function CartMenu() {
     const currentStore = useAtomValue(masterStateAtom)

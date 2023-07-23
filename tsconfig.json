@@ -18,7 +18,7 @@
       "@hooks/*": ["./src/hooks/*"],
       "@utils/*": ["./src/utils/*"],
       "@components/*": ["./src/components/*"],
-      "@atoms/*": ["./src/components/*"]
+      "@atoms/*": ["./src/atoms/*"],
     },
     "incremental": true,
     "plugins": [

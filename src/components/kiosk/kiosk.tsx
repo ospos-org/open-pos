@@ -1,35 +1,38 @@
-import Image from "next/image";
-import { createRef, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { debounce } from "lodash";
-import { ReactBarcodeReader } from "../common/scanner";
 import { v4 } from "uuid"
-import { DbOrder, MasterState, Order, Product, ProductPurchase, Promotion, StrictVariantCategory, VariantInformation } from "../../utils/stockTypes";
-import { fromDbDiscount } from "../../utils/discountHelpers";
+
+import { Product, ProductPurchase, StrictVariantCategory, VariantInformation } from "@utils/stockTypes";
+import { activeDiscountAtom, kioskPanelLogAtom } from "@atoms/kiosk";
+import { searchResultsAtomic, searchTermAtom } from "@atoms/search";
+import { inspectingProductAtom } from "@atoms/product";
+import { fromDbDiscount } from "@utils/discountHelpers";
+import { OPEN_STOCK_URL } from "@utils/environment";
+import { useWindowSize } from "@hooks/useWindowSize";
+import { ordersAtom } from "@atoms/transaction";
+
+import { ReactBarcodeReader } from "@components/common/scanner";
+
 import PaymentMethod from "./children/payment/paymentMethodMenu";
+import RelatedOrders from "./children/order/relatedMenu";
+import CustomerMenu from "./children/customer/customerMenu";
 import DispatchMenu from "./children/foreign/dispatchMenu";
 import PickupMenu from "./children/foreign/pickupMenu";
-import CartMenu from "./children/order/cartMenu";
 import KioskMenu from "./kioskMenu";
-import moment from "moment"
-import {OPEN_STOCK_URL} from "../../utils/environment";
-import CustomerMenu from "./children/customer/customerMenu";
-import RelatedOrders from "./children/order/relatedMenu";
-import { PAD_MODES } from "../../utils/kioskTypes";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { ordersAtom } from "@/src/atoms/transaction";
-import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
-import { DiscountScreen } from "./children/discount/discountScreen";
-import { NotesScreen } from "./children/notesScreen";
-import { DispatchHandler } from "./children/foreign/dispatchHandler";
-import { CashPayment } from "./children/payment/cashPayment";
-import { TransactionScreen } from "./children/order/transactionScreen";
-import { TerminalPayment } from "./children/payment/terminalPayment";
-import { searchResultsAtom, searchResultsAtomic, searchTermAtom } from "@/src/atoms/search";
-import { activeDiscountAtom, kioskPanelAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { inspectingProductAtom } from "@/src/atoms/product";
-import { useWindowSize } from "@/src/hooks/useWindowSize";
+import CartMenu from "./children/order/cartMenu";
 
-export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
+import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
+import { TransactionScreen } from "./children/order/transactionScreen";
+import { DispatchHandler } from "./children/foreign/dispatchHandler";
+import { TerminalPayment } from "./children/payment/terminalPayment";
+import { DiscountScreen } from "./children/discount/discountScreen";
+import { CashPayment } from "./children/payment/cashPayment";
+import { NotesScreen } from "./children/notesScreen";
+import { sortOrders } from "@/src/utils/utils";
+
+
+export default function Kiosk({ lowModeCartOn }: { lowModeCartOn: boolean }) {
     const kioskPanel = useAtomValue(kioskPanelLogAtom) 
     const discount = useAtomValue(activeDiscountAtom)
     
@@ -267,17 +270,4 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
             }
         </>
     )
-}
-
-export function sortOrders(orders: Order[]) {
-    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
-}
-
-export function sortDbOrders(orders: DbOrder[]) {
-    return orders.sort((a, b) => a.order_type == "direct" ? -1 : 0)
-}
-
-export function getDate(): string {
-    const date = new Date()
-    return `${date.getUTCDate()}/${date.getUTCMonth()+1}/${date.getUTCFullYear()}`
 }

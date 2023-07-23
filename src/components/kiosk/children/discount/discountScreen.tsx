@@ -1,11 +1,13 @@
-import { aCustomerActiveAtom } from "@/src/atoms/customer"
-import { ActiveDiscountApplication, kioskPanelLogAtom } from "@/src/atoms/kiosk"
-import { ordersAtom } from "@/src/atoms/transaction"
-import { findMaxDiscount, isEquivalentDiscount } from "@/src/utils/discountHelpers"
-import { DiscountValue, ProductPurchase } from "@/src/utils/stockTypes"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import Image from "next/image"
 import { v4 } from "uuid"
+import Image from "next/image"
+
+import { findMaxDiscount, isEquivalentDiscount } from "@utils/discountHelpers"
+import { ActiveDiscountApplication, kioskPanelLogAtom } from "@atoms/kiosk"
+import { DiscountValue, ProductPurchase } from "@utils/stockTypes"
+import { aCustomerActiveAtom } from "@atoms/customer"
+import { ordersAtom } from "@atoms/transaction"
+
 import DiscountMenu from "./discountMenu"
 
 export function DiscountScreen() {

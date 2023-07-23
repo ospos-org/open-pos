@@ -1,6 +1,8 @@
-import { kioskPanelHistory, kioskPanelLogAtom } from "@/src/atoms/kiosk"
 import { useAtomValue, useSetAtom } from "jotai"
 import Image from "next/image"
+
+import { kioskPanelHistory, kioskPanelLogAtom } from "@atoms/kiosk"
+
 import TransactionMenu from "./transactionMenu"
 
 export function TransactionScreen() {

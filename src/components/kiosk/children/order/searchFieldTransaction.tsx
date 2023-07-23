@@ -1,13 +1,14 @@
-import moment from 'moment';
-import Image from 'next/image';
-import { useEffect, useState } from 'react'
-import { Customer, Transaction } from '../../../../utils/stockTypes'
-import { OPEN_STOCK_URL } from "../../../../utils/environment";
 import { useAtomValue, useSetAtom } from 'jotai';
-import { kioskPanelLogAtom } from '@/src/atoms/kiosk';
-import { inspectingTransactionAtom } from '@/src/atoms/transaction';
-import { searchTermAtom } from '@/src/atoms/search';
-import { useWindowSize } from '@/src/hooks/useWindowSize';
+import { useEffect, useState } from 'react'
+import Image from 'next/image';
+import moment from 'moment';
+
+import { inspectingTransactionAtom } from '@atoms/transaction';
+import { Customer, Transaction } from '@utils/stockTypes'
+import { kioskPanelLogAtom } from '@atoms/kiosk';
+import { OPEN_STOCK_URL } from "@utils/environment";
+import { searchTermAtom } from '@atoms/search';
+import { useWindowSize } from '@hooks/useWindowSize';
 
 export const SearchFieldTransaction = ({ transaction, notEnd }: { transaction: Transaction, notEnd: boolean }) => {
     const searchTermState = useAtomValue(searchTermAtom)
