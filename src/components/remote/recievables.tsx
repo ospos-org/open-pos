@@ -2,9 +2,10 @@ import { Skeleton } from "@/src/components/common/skeleton";
 import moment from "moment";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { OPEN_STOCK_URL, useWindowSize } from "../../utils/helpers";
+import { OPEN_STOCK_URL } from "../../utils/environment";
 import OrderView from "./orderView";
-import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "../../utils/stock_types";
+import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "../../utils/stockTypes";
+import { useWindowSize } from "@/src/hooks/useWindowSize";
 
 export default function Incomings({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);

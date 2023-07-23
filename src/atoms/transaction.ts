@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { splitAtom } from "jotai/utils";
-import { Order, Transaction } from "../utils/stock_types";
+import { Order, Transaction } from "../utils/stockTypes";
 
 const ordersAtom = atom<Order[]>([])
 const ordersAtomsAtom = splitAtom(ordersAtom)

@@ -1,15 +1,16 @@
+import { searchInputRefAtom } from '@/src/atoms/kiosk'
 import { searchFocusedAtom, searchTypeAtom } from '@/src/atoms/search'
-import { useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { RefObject, useCallback, useState } from 'react'
 import BarcodeReader from 'react-barcode-reader'
 
 interface ReactBarcodeReaderProps { 
 	onScan: (searchString: string) => void, 
-	inputRef: RefObject<HTMLInputElement> 
 }
 
-export const ReactBarcodeReader = ({ onScan, inputRef }: ReactBarcodeReaderProps) => {
+export const ReactBarcodeReader = ({ onScan }: ReactBarcodeReaderProps) => {
 	const [str, setStr] = useState<string>('')
+	const inputRef = useAtomValue(searchInputRefAtom)
 
 	const setSearchFocused = useSetAtom(searchFocusedAtom)
 	const setSearchType = useSetAtom(searchTypeAtom)

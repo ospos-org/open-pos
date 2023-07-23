@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "../../utils/stock_types";
-import { OPEN_STOCK_URL, useWindowSize } from "../../utils/helpers";
+import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "@utils/stockTypes";
+import { OPEN_STOCK_URL } from "@utils/environment";
 import moment from "moment";
 import Image from "next/image";
 
-import { Skeleton } from "@/src/components/common/skeleton"
+import { Skeleton } from "@components/common/skeleton"
 import OrderView from "./orderView";
 import { Check } from "react-feather";
+import { useWindowSize } from "@hooks/useWindowSize";
 
 
 export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {

@@ -1,12 +1,10 @@
-import { useEffect } from "react"
-import { applyPromotion, fromDbDiscount, parseDiscount } from "../../../../utils/discount_helpers";
-import { Order, ProductPurchase, Promotion } from "../../../../utils/stock_types";
+import { Promotion } from "../../../../utils/stockTypes";
+import { fromDbDiscount, parseDiscount } from "../../../../utils/discountHelpers";
 
 export default function PromotionList({
-    promotions, cart
+    promotions
 }: {
     promotions: Promotion[] | undefined,
-    cart: Order[]
 }) {
     return (
         <div className="flex flex-col gap-2 max-h-32 overflow-auto ">

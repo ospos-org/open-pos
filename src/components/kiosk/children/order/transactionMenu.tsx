@@ -2,10 +2,10 @@ import moment from "moment";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { applyDiscount, findMaxDiscount, fromDbDiscount } from "../../../../utils/discount_helpers";
+import { applyDiscount, findMaxDiscount, fromDbDiscount } from "../../../../utils/discountHelpers";
 import { NoteElement } from "../../../common/noteElement";
-import { Customer, DbOrder, Order, Transaction } from "../../../../utils/stock_types";
-import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { Customer, DbOrder, Order, Transaction } from "../../../../utils/stockTypes";
+import {OPEN_STOCK_URL} from "../../../../utils/environment";
 import { useAtomValue } from "jotai";
 import { inspectingTransactionAtom } from "@/src/atoms/transaction";
 

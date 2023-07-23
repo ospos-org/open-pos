@@ -1,5 +1,5 @@
 import { aCustomerActiveAtom } from "@/src/atoms/customer";
-import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { kioskPanelLogAtom, searchInputRefAtom } from "@/src/atoms/kiosk";
 import { searchResultsAtom, searchTypeAtom } from "@/src/atoms/search";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useResetAtom } from "jotai/utils";
@@ -8,13 +8,14 @@ import { RefObject } from "react";
 import DispatchMenu from "./dispatchMenu";
 
 interface DispatchProps {
-    inputRef: RefObject<HTMLInputElement>
     children: any,
     title: string
 }
 
-export function DispatchHandler({ inputRef, children, title }: DispatchProps) {
+export function DispatchHandler({ children, title }: DispatchProps) {
     const aCustomer = useAtomValue(aCustomerActiveAtom)
+    const inputRef = useAtomValue(searchInputRefAtom)
+
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const clearSearchResults = useResetAtom(searchResultsAtom)

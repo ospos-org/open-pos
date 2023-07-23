@@ -1,15 +1,23 @@
 import moment from 'moment';
 import Image from 'next/image';
 import { useEffect, useState } from 'react'
-import BarcodeReader from 'react-barcode-reader'
-import { Customer, Transaction } from '../../../../utils/stock_types'
-import {OPEN_STOCK_URL, useWindowSize} from "../../../../utils/helpers";
+import { Customer, Transaction } from '../../../../utils/stockTypes'
+import { OPEN_STOCK_URL } from "../../../../utils/environment";
+import { useAtomValue, useSetAtom } from 'jotai';
+import { kioskPanelLogAtom } from '@/src/atoms/kiosk';
+import { inspectingTransactionAtom } from '@/src/atoms/transaction';
+import { searchTermAtom } from '@/src/atoms/search';
+import { useWindowSize } from '@/src/hooks/useWindowSize';
 
-export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, setPadState, setCurrentViewedTransaction }: { transaction: Transaction, setCurrentViewedTransaction: Function, searchTermState: string, notEnd: boolean, setPadState: Function }) => {
+export const SearchFieldTransaction = ({ transaction, notEnd }: { transaction: Transaction, notEnd: boolean }) => {
+    const searchTermState = useAtomValue(searchTermAtom)
+
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
+
     const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));
     const b_ = transaction.products.map(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()) ? null : k)
 
-    // (indx == result.length-1)
     const [ customer, setCustomer ] = useState<Customer | null>();
     const windowSize = useWindowSize();
 
@@ -43,10 +51,11 @@ export const SearchFieldTransaction = ({ transaction, searchTermState, notEnd, s
                     <div
                         key={b.id}
                         onClick={() => {
-                        setPadState("inv-transaction")
-                        setCurrentViewedTransaction([transaction, b.id]);
-                    }}
-                        className="flex flex-col overflow-hidden h-fit">
+                            setKioskPanel("inv-transaction")
+                            setInspectingTransaction({ item: transaction, identifier: b.id });
+                        }}
+                        className="flex flex-col overflow-hidden h-fit"
+                    >
                         <div className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: `25px minmax(150px, 175px) 150px ${(windowSize.width ?? 0) >= 1578 ? "minmax(300px, 2fr)" : ""}  75px` }}>
                             <div>
                                 {

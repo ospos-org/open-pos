@@ -1,7 +1,6 @@
 import { atom } from "jotai";
-import { applyDiscount, applyDiscountsConsiderateOfQuantity, discountFromPromotion, fromDbDiscount } from "../utils/discount_helpers";
-import { determineOptimalPromotionPathway } from "../utils/helpers";
-import { Discount, DiscountValue } from "../utils/stock_types";
+import { applyDiscount, applyDiscountsConsiderateOfQuantity } from "../utils/discountHelpers";
+import { PaymentIntent } from "../utils/stockTypes";
 import { aCustomerActiveAtom } from "./customer";
 import { ordersAtomsAtom } from "./transaction";
 
@@ -79,4 +78,6 @@ const priceAtom = atom(
 /// The amount the user is trying to pay in the current instance.
 const probingPricePayableAtom = atom<number | null>(null)
 
-export { priceAtom, probingPricePayableAtom }
+const paymentIntentsAtom = atom<PaymentIntent[]>([])
+
+export { priceAtom, paymentIntentsAtom, probingPricePayableAtom }

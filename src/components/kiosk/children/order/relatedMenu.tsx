@@ -1,24 +1,23 @@
 import Image from "next/image";
 import { FC, useEffect, useState } from "react";
-import { Transaction, VariantInformation } from "../../../../utils/stock_types";
-import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { Transaction, VariantInformation } from "../../../../utils/stockTypes";
+import {OPEN_STOCK_URL} from "../../../../utils/environment";
 import moment from "moment";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { inspectingTransactionAtom } from "@/src/atoms/transaction";
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { inspectingProductAtom } from "@/src/atoms/product";
 
-interface RelatedOrdersProps {
-    activeProductVariant: VariantInformation | null
-}
-
-export function RelatedOrders({ activeProductVariant }: RelatedOrdersProps) {
+export function RelatedOrders() {
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    
+    const inspectingProduct = useAtomValue(inspectingProductAtom)
 
     const [ suggestions, setSuggestions ] = useState<Transaction[]>([]);
 
     useEffect(() => {
-        const data = fetch(`${OPEN_STOCK_URL}/transaction/product/${activeProductVariant?.barcode}`, {
+        fetch(`${OPEN_STOCK_URL}/transaction/product/${inspectingProduct.activeProductVariant?.barcode}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -26,7 +25,7 @@ export function RelatedOrders({ activeProductVariant }: RelatedOrdersProps) {
             const data: Transaction[] = await e.json();
             setSuggestions(data);
         });
-    }, [activeProductVariant]);
+    }, [inspectingProduct.activeProductVariant]);
 
     return (
         <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>

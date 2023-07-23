@@ -1,8 +1,8 @@
 import { debounce } from "lodash";
 import Image from "next/image";
 import { createRef, FC, useEffect, useMemo, useState } from "react";
-import { Address, ContactInformation, Customer } from "../../../../utils/stock_types";
-import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { Address, ContactInformation, Customer } from "../../../../utils/stockTypes";
+import {OPEN_STOCK_URL} from "../../../../utils/environment";
 import { useAtom, useSetAtom } from "jotai";
 import { customerAtom } from "@/src/atoms/customer";
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Employee, Note } from "../../utils/stock_types";
-import {OPEN_STOCK_URL} from "../../utils/helpers";
+import { Employee, Note } from "../../utils/stockTypes";
+import {OPEN_STOCK_URL} from "../../utils/environment";
 
 export function NoteElement({ note }: { note: Note }) {
     const [ author, setAuthor] = useState<Employee | null>(null);

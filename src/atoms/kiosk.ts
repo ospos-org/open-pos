@@ -1,26 +1,41 @@
 import { atom } from "jotai";
-import { atomWithReset, RESET, useResetAtom } from "jotai/utils";
+import { atomWithReset, RESET } from "jotai/utils";
 import { customAlphabet } from "nanoid";
+import { createRef, RefObject } from "react";
 import { v4 } from "uuid";
 import { getDate } from "../components/kiosk/kiosk";
-import { discountFromPromotion, fromDbDiscount } from "../utils/discount_helpers";
-import { determineOptimalPromotionPathway } from "../utils/helpers";
-import { PAD_MODES } from "../utils/kiosk_types";
-import { Customer, Discount, DiscountValue, KioskState, Order, Product, Transaction, VariantInformation } from "../utils/stock_types";
+import { discountFromPromotion, fromDbDiscount } from "../utils/discountHelpers";
+import { OPEN_STOCK_URL } from "../utils/environment";
+import { PAD_MODES } from "../utils/kioskTypes";
+import { determineOptimalPromotionPathway } from "../utils/optimalPromotion";
+import { Customer, DiscountValue, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "../utils/stockTypes";
+import { computeDatabaseOrderFormat } from "./conversion";
+import { customerAtom } from "./customer";
 import { masterStateAtom } from "./openpos";
-import { ordersAtomsAtom } from "./transaction";
+import { paymentIntentsAtom, priceAtom } from "./payment";
+import { ordersAtom, ordersAtomsAtom } from "./transaction";
 
-const defaultKioskAtom = atomWithReset<KioskState>({
-    customer: null,
-    transaction_type: "Out",
-    products: [],
-    order_total: null,
-    payment: [],
-    order_date: null,
-    order_notes: [],
-    salesperson: null,
-    till: null
+const defaultKioskAtom = atom((get) => {
+    return {
+        customer: get(customerAtom),
+        transaction_type: get(transactionTypeAtom),
+        products: get(ordersAtom),
+        order_total: get(priceAtom).total,
+        payment: get(paymentIntentsAtom),
+        order_date: getDate(),
+        order_notes: [],
+        salesperson: get(masterStateAtom).employee?.id,
+        till: get(masterStateAtom).kiosk_id
+    } as KioskState
+}, (_, set, resetKey: typeof RESET) => {
+    if(resetKey === RESET) {
+        set(customerAtom, null)
+        set(ordersAtom, [])
+        set(kioskPanelLogAtom, "cart")
+    }
 })
+
+const transactionTypeAtom = atom<TransactionType>("Out")
 
 const currentOrderAtom = atomWithReset<Order>({
     id: v4(),
@@ -99,6 +114,7 @@ const kioskPanelLogAtom = atom(
     (get) => get(kioskPanelAtom), 
     (get, set, value: PAD_MODES) => {
         set(kioskPanelHistory, [...get(kioskPanelHistory), value])
+        set(kioskPanelAtom, value)
     }
 )
 
@@ -125,5 +141,44 @@ export interface ActiveDiscountApplication {
 }
 
 const activeDiscountAtom = atom<ActiveDiscountApplication | null>(null)
+const searchInputRefAtom = atom<RefObject<HTMLInputElement>>(createRef<HTMLInputElement>())
 
-export { currentOrderAtom, defaultKioskAtom, transactingOrderAtom, kioskPanelLogAtom, kioskPanelAtom, kioskPanelHistory, selectionAtom, activeDiscountAtom }
+const generateTransactionAtom = atom((get) => {
+    const customer = get(customerAtom)
+    const products = get(computeDatabaseOrderFormat)
+
+    return {
+        ...get(defaultKioskAtom),
+        customer: customer ? {
+            customer_id: customer.id,
+            customer_type: "Individual"
+        } : {
+            customer_id: get(masterStateAtom).store_id,
+            customer_type: "Store"
+        },
+        products,
+        // As we are saving the order, we aren't charging the customer anything.
+        order_total: 0.00
+    } as TransactionInput
+})
+
+const parkSaleAtom = atom(undefined, (get, set) => {
+    if((get(ordersAtom)?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
+        const transaction = get(generateTransactionAtom)
+
+        fetch(`${OPEN_STOCK_URL}/transaction`, {
+            method: "POST",
+            body: JSON.stringify(transaction),
+            credentials: "include",
+            redirect: "follow"
+        }).then(async k => {
+            if(k.ok) {
+                set(defaultKioskAtom, RESET)
+            }else {
+                alert("Something went horribly wrong")
+            }
+        })
+    }
+})
+
+export { currentOrderAtom, searchInputRefAtom, parkSaleAtom, generateTransactionAtom, transactionTypeAtom, defaultKioskAtom, transactingOrderAtom, kioskPanelLogAtom, kioskPanelAtom, kioskPanelHistory, selectionAtom, activeDiscountAtom }

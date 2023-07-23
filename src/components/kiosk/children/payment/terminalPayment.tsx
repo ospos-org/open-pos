@@ -1,25 +1,24 @@
+import { computeDatabaseOrderFormat } from "@/src/atoms/conversion";
 import { customerAtom } from "@/src/atoms/customer";
-import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
 import { masterStateAtom } from "@/src/atoms/openpos";
-import { probingPricePayableAtom } from "@/src/atoms/payment";
+import { paymentIntentsAtom, probingPricePayableAtom } from "@/src/atoms/payment";
 import { ordersAtom } from "@/src/atoms/transaction";
-import { computeOrder, fileTransaction, OPEN_STOCK_URL } from "@/src/utils/helpers";
-import { PaymentIntent, TransactionInput } from "@/src/utils/stock_types";
+import { OPEN_STOCK_URL } from "@/src/utils/environment";
+import { PaymentIntent, TransactionInput } from "@/src/utils/stockTypes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import { useState } from "react";
 import { v4 } from "uuid";
 import { getDate, sortDbOrders } from "../../kiosk";
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
-    
-    const currentStore = useAtomValue(masterStateAtom)
-    const customerState = useAtomValue(customerAtom)
-    const orderState = useAtomValue(ordersAtom)
+    const setPaymentIntents = useSetAtom(paymentIntentsAtom)
 
+    const computeTransaction = useAtomValue(generateTransactionAtom)
+    const kioskState = useAtomValue(defaultKioskAtom)
+    
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
 
     return (
         <div className="bg-blue-500 p-6 flex flex-col h-full items-center" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
@@ -77,64 +76,35 @@ export function TerminalPayment() {
                         }
                     }
                 }];
-                
-                const transaction = (() => {
-                    setKioskState({
-                        ...kioskState,
-                        payment: payment_intents
-                    });
-                
-                    const qua = payment_intents.reduce(function (prev, curr) {
-                        return prev + (curr.amount.quantity ?? 0)
-                    }, 0);
-                
-                    if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "Quote") {
-                        setProbingPrice((kioskState.order_total ?? 0) - qua)
-                        setKioskPanel("select-payment-method")
-                
-                        return null;
-                    }else {
-                        const date = getDate();
-                
-                        // Following state change is for an in-store purchase, modifications to status and destination are required for shipments
-                        // Fulfil the orders taken in-store and leave the others as open.
-                        const new_state = computeOrder(kioskState.transaction_type ?? "Out", orderState, currentStore, customerState);
-                        // setOrderState(sortDbOrders(new_state));
-                
-                        const transaction = {
-                            ...kioskState,
-                            customer: customerState ? {
-                                customer_id: customerState?.id,
-                                customer_type: "Individual"
-                            } : {
-                                customer_id: currentStore.store_id,
-                                customer_type: "Store"
-                            },
-                            payment: payment_intents,
-                            products: sortDbOrders(new_state),
-                            order_date: date,
-                            salesperson: currentStore.employee?.id ?? "",
-                            till: currentStore.kiosk
-                        } as TransactionInput;
-                
-                        return transaction;
-                    }
-                })()
 
-                if(transaction) {
-                    fetch(`${OPEN_STOCK_URL}/transaction`, {
-                        method: "POST",
-                        body: JSON.stringify(transaction),
-                        credentials: "include",
-                        redirect: "follow"
-                    }).then(async k => {
-                        if(k.ok) {
-                            setKioskPanel("completed");
-                        }else {
-                            alert("Something went horribly wrong")
-                        }
-                    })
+                // Determine how much has been paid.
+                const qua = payment_intents.reduce(function (prev, curr) {
+                    return prev + (curr.amount.quantity ?? 0)
+                }, 0);
+
+                // If the current payment is still suboptimal, return otherwise continue.
+                // Unless the transaction is a quote, then proceed as normal regardless. 
+                if(qua < (kioskState.order_total ?? 0) && kioskState.transaction_type != "Quote") {
+                    setProbingPrice((kioskState.order_total ?? 0) - qua)
+                    setKioskPanel("select-payment-method")
+            
+                    return null;
                 }
+
+                setPaymentIntents(payment_intents);
+
+                fetch(`${OPEN_STOCK_URL}/transaction`, {
+                    method: "POST",
+                    body: JSON.stringify(computeTransaction),
+                    credentials: "include",
+                    redirect: "follow"
+                }).then(async k => {
+                    if(k.ok) {
+                        setKioskPanel("completed");
+                    }else {
+                        alert("Something went horribly wrong")
+                    }
+                })
             }}>skip to completion</p>
         </div>
     )

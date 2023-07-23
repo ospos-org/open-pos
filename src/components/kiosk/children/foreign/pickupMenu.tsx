@@ -5,8 +5,8 @@ import { createRef, FC, useCallback, useEffect, useMemo, useState } from "react"
 import { json } from "stream/consumers";
 import { v4 } from "uuid";
 import { getDate } from "../../kiosk";
-import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stock_types";
-import {OPEN_STOCK_URL} from "../../../../utils/helpers";
+import { Address, ContactInformation, Customer, DbOrder, DbProductPurchase, Employee, MasterState, Order, ProductPurchase, StockInfo, Store, VariantInformation } from "../../../../utils/stockTypes";
+import {OPEN_STOCK_URL} from "../../../../utils/environment";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { ordersAtom } from "@/src/atoms/transaction";
 import { customerAtom } from "@/src/atoms/customer";

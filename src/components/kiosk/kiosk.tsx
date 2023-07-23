@@ -1,20 +1,20 @@
 import Image from "next/image";
-import { createRef, useEffect, useMemo, useState } from "react";
+import { createRef, useCallback, useEffect, useMemo, useState } from "react";
 import { debounce } from "lodash";
 import { ReactBarcodeReader } from "../common/scanner";
 import { v4 } from "uuid"
-import { DbOrder, MasterState, Order, Product, ProductPurchase, Promotion, StrictVariantCategory, VariantInformation } from "../../utils/stock_types";
-import { fromDbDiscount } from "../../utils/discount_helpers";
+import { DbOrder, MasterState, Order, Product, ProductPurchase, Promotion, StrictVariantCategory, VariantInformation } from "../../utils/stockTypes";
+import { fromDbDiscount } from "../../utils/discountHelpers";
 import PaymentMethod from "./children/payment/paymentMethodMenu";
 import DispatchMenu from "./children/foreign/dispatchMenu";
 import PickupMenu from "./children/foreign/pickupMenu";
 import CartMenu from "./children/order/cartMenu";
 import KioskMenu from "./kioskMenu";
 import moment from "moment"
-import {OPEN_STOCK_URL, useWindowSize} from "../../utils/helpers";
+import {OPEN_STOCK_URL} from "../../utils/environment";
 import CustomerMenu from "./children/customer/customerMenu";
 import RelatedOrders from "./children/order/relatedMenu";
-import { PAD_MODES } from "../../utils/kiosk_types";
+import { PAD_MODES } from "../../utils/kioskTypes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { ordersAtom } from "@/src/atoms/transaction";
 import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
@@ -24,32 +24,33 @@ import { DispatchHandler } from "./children/foreign/dispatchHandler";
 import { CashPayment } from "./children/payment/cashPayment";
 import { TransactionScreen } from "./children/order/transactionScreen";
 import { TerminalPayment } from "./children/payment/terminalPayment";
-import { searchResultsAtom, searchResultsAtomic } from "@/src/atoms/search";
-import { activeDiscountAtom, kioskPanelAtom } from "@/src/atoms/kiosk";
+import { searchResultsAtom, searchResultsAtomic, searchTermAtom } from "@/src/atoms/search";
+import { activeDiscountAtom, kioskPanelAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { inspectingProductAtom } from "@/src/atoms/product";
+import { useWindowSize } from "@/src/hooks/useWindowSize";
 
 export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean }) {
-    const [ orderState, setOrderState ] = useAtom(ordersAtom)
-    const [ kioskPanel, setKioskPanel ] = useAtom(kioskPanelAtom) 
-
+    const kioskPanel = useAtomValue(kioskPanelLogAtom) 
     const discount = useAtomValue(activeDiscountAtom)
+    
     const setSearchResults = useSetAtom(searchResultsAtomic)
+    const setSearchTermState = useSetAtom(searchTermAtom)
 
-    /// --- REPLACE THESE ---
-    const [ activeProduct, setActiveProduct ] = useState<Product | null>(null);
-    const [ activeVariant, setActiveVariant ] = useState<StrictVariantCategory[] | null>(null);
-    const [ activeProductVariant, setActiveProductVariant ] = useState<VariantInformation | null>(null);
-    const [ activeVariantPossibilities, setActiveVariantPossibilities ] = useState<(StrictVariantCategory[] | null)[] | null>(null);
-    /// --- REPLACE THESE ---
+    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    const [ inspectingProduct, setInspectingProduct ] = useAtom(inspectingProductAtom)
 
-    const [ searchTermState, setSearchTermState ] = useState("");
-    const [ activeProductPromotions, setActiveProductPromotions ] = useState<Promotion[]>();
 
-    const addToCart = (product: Product, promotions: Promotion[], variant: VariantInformation, orderProducts: ProductPurchase[]) => {
-        const existing_product = orderProducts.find(k => k.product_code == variant.barcode ); // && isEqual(k.variant, variant?.variant_code)
-        let new_order_products_state = [];
+    const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
+    const window_size = useWindowSize();
 
-        if(existing_product) {
-            const matching_product = orderProducts.find(e => e.product_code == variant.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
+    const addToCart = useCallback((orderProducts: ProductPurchase[]) => {
+        const { activeProduct: product, activeProductPromotions: promotions, activeProductVariant: variant } = inspectingProduct
+    
+        const existing_product = orderProducts.find(k => k.product_code == variant?.barcode ); // && isEqual(k.variant, variant?.variant_code)
+        let new_order_products_state: ProductPurchase[] = [];
+
+        if(existing_product && variant && product) {
+            const matching_product = orderProducts.find(e => e.product_code == variant?.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
             
             if(matching_product) {
                 const total_stock = matching_product.variant_information.stock.reduce((p, c) => p += (c.quantity.quantity_sellable), 0);
@@ -84,7 +85,7 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
     
                 new_order_products_state = [ ...orderProducts, po ]
             }
-        }else {
+        }else if(product && variant){
             // Creating a new product in the order.
             const po: ProductPurchase = {
                 id: v4(),
@@ -111,50 +112,8 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
             new_order_products_state = [ ...orderProducts, po ]
         }
 
-        // if(kioskPanel == "cart" && discount.product?.barcode == "CART") {
-        //     setKioskPanel("cart")
-        //     // setDiscount({
-        //     //     type: "absolute",
-        //     //     for: "cart",
-        //     //     product: {
-        //     //         name: "",
-        //     //         stock: [],
-        //     //         images: [],
-        //     //         /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
-        //     //         variant_code: [],
-        //     //         order_history: [],
-        //     //         /// impl! Implement this type!
-        //     //         stock_information: {
-        //     //             stock_group: "string",
-        //     //             sales_group: 'string',
-        //     //             value_stream: 'string',
-        //     //             brand: 'string',
-        //     //             unit: 'string',
-        //     //             tax_code: 'string',
-        //     //             weight: 'string',
-        //     //             volume: 'string',
-        //     //             max_volume: 'string',
-        //     //             back_order: false,
-        //     //             discontinued: false,
-        //     //             non_diminishing: false,
-        //     //             shippable: true
-        //     //         },
-        //     //         loyalty_discount: {
-        //     //             Absolute: 0
-        //     //         },
-        //     //         id: "",
-        //     //         barcode: "CART",
-        //     //         marginal_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0),
-        //     //         retail_price: new_order_products_state?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0)
-        //     //     },
-        //     //     value: 0,
-        //     //     exclusive: false,
-        //     //     orderId: ""
-        //     // })
-        // }
-
-        return new_order_products_state;
-    }
+        return new_order_products_state
+    }, [inspectingProduct])
 
     const debouncedResults = useMemo(() => {
         return debounce(async (searchTerm: string, searchType: string) => {
@@ -182,9 +141,9 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
             if(data.length == 1 && searchType == "product") {
                 const e: Product = data[0].product;
 
-                let vmap_list = [];
-                let active_variant = null;
-                let active_product_variant = null;
+                let vmap_list: (StrictVariantCategory[] | null)[] = [];
+                let active_variant: StrictVariantCategory[] | null = null;
+                let active_product_variant: VariantInformation | null = null;
 
                 for(let i = 0; i < e.variants.length; i++) {
                     const var_map = e.variants[i].variant_code.map(k => {
@@ -218,28 +177,26 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                         }
                     }
 
-                    const new_pdt_list = addToCart(e, data[0].promotions, active_product_variant, cOs.products);
+                    const new_pdt_list = addToCart(cOs.products);
                     const new_order_state = orderState.map(e => e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e);
 
                     setOrderState(sortOrders(new_order_state))
                 }else {
-                    setActiveProduct(e);
-                    setActiveVariantPossibilities(vmap_list);
-                    setActiveVariant(active_variant ?? vmap_list[0]);
-                    setActiveProductVariant(active_product_variant ?? e.variants[0]);
+                    setInspectingProduct((currentProduct) => ({
+                        ...currentProduct,
+                        activeProduct: e,
+                        activeVariantPossibilities: vmap_list,
+                        activeVariant: active_variant ?? vmap_list[0],
+                        activeProductVariant: active_product_variant ?? e.variants[0]
+                    }))
                 }
             }
     
             setSearchResults(data);
         }, 50);
-    }, [orderState, discount]);
+    }, [orderState, discount, addToCart, setInspectingProduct, setOrderState, setSearchResults]);
 
-    const input_ref = createRef<HTMLInputElement>();
-    const window_size = useWindowSize();
-
-
-    const [ triggerRefresh, setTriggerRefresh ] = useState(["a"]);
-
+    
     useEffect(() => {
         return () => {
             debouncedResults.cancel();
@@ -249,7 +206,6 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
     return (
         <>
             <ReactBarcodeReader
-                inputRef={input_ref}
                 onScan={(e: any) => {
                     debouncedResults(e, "product");
                 }}
@@ -260,16 +216,9 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                     <></>
                     :
                     <KioskMenu
-                        setActiveProduct={setActiveProduct} activeProduct={activeProduct}
                         setTriggerRefresh={setTriggerRefresh} triggerRefresh={triggerRefresh}
-                        setActiveProductPromotions={setActiveProductPromotions} activeProductPromotions={activeProductPromotions ?? []}
-                        setSearchTermState={setSearchTermState} searchTermState={searchTermState}
-                        setActiveVariantPossibilities={setActiveVariantPossibilities} activeVariantPossibilities={activeVariantPossibilities}
-                        setActiveVariant={setActiveVariant} activeVariant={activeVariant}
-                        setActiveProductVariant={setActiveProductVariant} activeProductVariant={activeProductVariant}
-                        input_ref={input_ref}
-                        addToCart={addToCart}
                         debouncedResults={debouncedResults}
+                        addToCart={addToCart}
                     />
             }
 
@@ -278,67 +227,36 @@ export default function Kiosk({ master_state, setLowModeCartOn, lowModeCartOn }:
                     (() => {
                         switch(kioskPanel) {
                             case "cart":
-                                return (
-                                    <CartMenu
-                                        setActiveProductPromotions={setActiveProductPromotions}
-                                        setActiveProduct={setActiveProduct} 
-                                        setActiveProductVariant={setActiveProductVariant}
-                                        input_ref={input_ref}
-                                    />
-                                )
+                                return <CartMenu />
                             case "customer":
-                                return (
-                                    <CustomerMenu />
-                                )
+                                return <CustomerMenu />
                             case "customer-create":
-                                return (
-                                    <CustomerMenu />
-                                )
+                                return <CustomerMenu />
                             case "related-orders":
-                                return (
-                                    <RelatedOrders
-                                        activeProductVariant={activeProductVariant}
-                                        />
-                                )
+                                return <RelatedOrders />
                             case "select-payment-method":
-                                return (
-                                    <PaymentMethod />
-                                )
+                                return <PaymentMethod />
                             case "inv-transaction":
-                                return (
-                                    <TransactionScreen />
-                                )
+                                return <TransactionScreen />
                             case "await-debit":
-                                // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
-                                return (
-                                    <TerminalPayment />
-                                )
+                                return <TerminalPayment />
                             case "completed":
-                                return (
-                                    <CompletedOrderMenu />
-                                )
+                                return <CompletedOrderMenu />
                             case "discount":
-                                return (
-                                    <DiscountScreen />
-                                )
+                                return <DiscountScreen />
                             case "await-cash":
-                                // On completion of this page, ensure all payment segments are made, i.e. if a split payment is forged, return to the payment select screen with the new amount to complete the payment. 
-                                return (
-                                    <CashPayment />
-                                )
+                                return <CashPayment />
                             case "note":
-                                return (
-                                    <NotesScreen />
-                                )
+                                return <NotesScreen />
                             case "pickup-from-store":
-                                return (
-                                    <DispatchHandler inputRef={input_ref} title="Pickup from Store">
+                                return  (
+                                    <DispatchHandler title="Pickup from Store">
                                         <PickupMenu />
                                     </DispatchHandler>
                                 )
                             case "ship-to-customer":
                                 return (
-                                    <DispatchHandler inputRef={input_ref} title="Ship order to customer">
+                                    <DispatchHandler title="Ship order to customer">
                                         <DispatchMenu />
                                     </DispatchHandler>
                                 )
@@ -360,15 +278,6 @@ export function sortDbOrders(orders: DbOrder[]) {
 }
 
 export function getDate(): string {
-    return ""
-    // return new Date().toString()
-    // return moment(new Date(), 'DD/MM/YYYY', true).format()
-}
-
-function unite(...data: any[]) {
-    return [].concat.apply([], data).reduce((result, current) => {
-      return ~result.indexOf(current)
-      ? result
-      : result.concat(current)
-    }, []);
+    const date = new Date()
+    return `${date.getUTCDate()}/${date.getUTCMonth()+1}/${date.getUTCFullYear()}`
 }

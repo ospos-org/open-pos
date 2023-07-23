@@ -1,14 +1,12 @@
 import useKeyPress from "@/src/hooks/useKeyPress";
 import Image from "next/image";
-import { FC, useEffect, useLayoutEffect, useRef, useState } from "react";
-import {computeOrder, OPEN_STOCK_URL} from "../../../../utils/helpers";
-import { getDate } from "../../kiosk";
-import { Customer, KioskState, MasterState, Order, TransactionInput, VariantInformation } from "../../../../utils/stock_types";
+import { useEffect, useRef, useState } from "react";
+import { OPEN_STOCK_URL} from "../../../../utils/environment";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { probingPricePayableAtom } from "@/src/atoms/payment";
 import { masterStateAtom } from "@/src/atoms/openpos";
 import { ordersAtom } from "@/src/atoms/transaction";
-import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, transactionTypeAtom } from "@/src/atoms/kiosk";
 import { customerAtom } from "@/src/atoms/customer";
 
 export function PaymentMethod() {
@@ -17,9 +15,12 @@ export function PaymentMethod() {
     const orderState = useAtomValue(ordersAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setTransactionType = useSetAtom(transactionTypeAtom)
 
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
     const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
+
+    const generateTransaction = useAtomValue(generateTransactionAtom)
     
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
     const [ editPrice, setEditPrice ] = useState(false);
@@ -32,11 +33,6 @@ export function PaymentMethod() {
             f1firstUpdate.current += 1;
             return;
         }
-
-        setKioskState((oldState: KioskState) => ({
-            ...oldState,
-            transaction_type: "Out"
-        }));
 
         setKioskPanel("await-debit");
     }, [f1Pressed]);
@@ -62,42 +58,22 @@ export function PaymentMethod() {
             return;
         }
 
-        const new_state = computeOrder("Quote", orderState, currentStore, customerState);
-        
-        const transaction = {
-            ...kioskState,
-            products: new_state,
-            customer: customerState ? {
-                customer_id: customerState?.id,
-                customer_type: "Individual"
-            } : {
-                customer_id: currentStore.store_id,
-                customer_type: "Store"
-            },
-            order_total: 0.00,
-            transaction_type: "Quote",
-            payment: [],
-            order_date: getDate(),
-            salesperson: currentStore.employee?.id ?? "",
-            till: currentStore.kiosk
-        } as TransactionInput;
+        setTransactionType("Quote")
 
-        if(transaction) {
-            fetch(`${OPEN_STOCK_URL}/transaction`, {
-                method: "POST",
-                body: JSON.stringify(transaction),
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                console.log(k);
+        fetch(`${OPEN_STOCK_URL}/transaction`, {
+            method: "POST",
+            body: JSON.stringify(generateTransaction),
+            credentials: "include",
+            redirect: "follow"
+        }).then(async k => {
+            console.log(k);
 
-                if(k.ok) {
-                    setKioskPanel("completed");
-                }else {
-                    alert("Something went horribly wrong")
-                }
-            })
-        }
+            if(k.ok) {
+                setKioskPanel("completed");
+            }else {
+                alert("Something went horribly wrong")
+            }
+        })
     }, [f6Pressed]);
 
     useEffect(() => {
@@ -237,11 +213,6 @@ export function PaymentMethod() {
                     <div 
                         className="flex flex-row items-end gap-2 cursor-pointer"
                         onClick={() => {
-                            setKioskState((oldState) => ({
-                                ...oldState,
-                                transaction_type: "Out"
-                            }));
-
                             setKioskPanel("await-debit");
                         }}>
                         <p className="text-white font-semibold text-2xl">Eftpos</p>
@@ -271,43 +242,22 @@ export function PaymentMethod() {
                     </div>
                     <div
                         onClick={() => {
-                            // let transaction = fileTransaction([], setKioskState, { ...kioskState, transaction_type: "quote" }, setProbingPrice, setPadState, orderState, master_state, customerState);
-                            const new_state = computeOrder("Quote", orderState, currentStore, customerState);
+                            setTransactionType("Quote")
 
-                            const transaction = {
-                                ...kioskState,
-                                products: new_state,
-                                customer: customerState ? {
-                                    customer_id: customerState?.id,
-                                    customer_type: "Individual"
-                                } : {
-                                    customer_id: currentStore.store_id,
-                                    customer_type: "Store"
-                                },
-                                order_total: 0.00,
-                                transaction_type: "Quote",
-                                payment: [],
-                                order_date: getDate(),
-                                salesperson: currentStore.employee?.id ?? "",
-                                till: currentStore.kiosk
-                            } as TransactionInput;
+                            fetch(`${OPEN_STOCK_URL}/transaction`, {
+                                method: "POST",
+                                body: JSON.stringify(generateTransaction),
+                                credentials: "include",
+                                redirect: "follow"
+                            }).then(async k => {
+                                console.log(k);
 
-                            if(transaction) {
-                                fetch(`${OPEN_STOCK_URL}/transaction`, {
-                                    method: "POST",
-                                    body: JSON.stringify(transaction),
-                                    credentials: "include",
-                                    redirect: "follow"
-                                }).then(async k => {
-                                    console.log(k);
-
-                                    if(k.ok) {
-                                        setKioskPanel("completed");
-                                    }else {
-                                        alert("Something went horribly wrong")
-                                    }
-                                })
-                            }
+                                if(k.ok) {
+                                    setKioskPanel("completed");
+                                }else {
+                                    alert("Something went horribly wrong")
+                                }
+                            })
                         }} 
                         className="flex flex-row items-end gap-2 cursor-pointer">
                         <p className="text-white font-semibold text-2xl">Save as Quote</p>

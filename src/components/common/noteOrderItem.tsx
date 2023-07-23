@@ -1,4 +1,4 @@
-import { Order } from "@/src/utils/stock_types"
+import { Order } from "@/src/utils/stockTypes"
 import { PrimitiveAtom, useAtomValue } from "jotai"
 
 export function NoteOrderItem({ activeAtom, callback }: { activeAtom: PrimitiveAtom<Order>, callback: (orderAtom: PrimitiveAtom<Order>) => void }) {

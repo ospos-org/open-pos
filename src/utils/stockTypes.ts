@@ -1,5 +1,5 @@
 export type KioskState = {
-    customer: string | null,
+    customer: Customer | null,
     transaction_type: TransactionType | null,
     products: DbOrder[] | null,
     order_total: number | null,

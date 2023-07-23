@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Customer, MasterState, Order, OrderStatusStatus, Transaction } from "../../utils/stock_types";
-import { OPEN_STOCK_URL } from "../../utils/helpers";
+import { Customer, MasterState, Order, OrderStatusStatus, Transaction } from "../../utils/stockTypes";
+import { OPEN_STOCK_URL } from "../../utils/environment";
 import moment from "moment";
 import Image from "next/image";
-import { applyDiscount, findMaxDiscount } from "../../utils/discount_helpers";
+import { applyDiscount, findMaxDiscount } from "../../utils/discountHelpers";
 import Link from "next/link";
 import NotesMenu from "../common/notesMenu";
 import { getDate } from "../kiosk/kiosk";
@@ -100,7 +100,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 100 ?
                     <div 
                         onClick={async () => {
-                            if ((activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
+                            if ((activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
                                 const new_status: OrderStatusStatus = {
                                     type: "instore",
                                     value: getDate()
@@ -122,7 +122,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                             }
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{(activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder.origin.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{(activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -288,8 +288,8 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
             <div className="flex flex-col gap-2">
                 <p className="text-gray-400">NOTES</p>
 
-                <NotesMenu notes={[activeOrder]} autoFocus={false} callback={() => {
-
+                <NotesMenu autoFocus={false} callback={() => {
+                    // Handle adding notes to an order.
                 }}/>
             </div>
         </div>

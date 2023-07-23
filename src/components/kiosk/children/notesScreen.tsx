@@ -1,7 +1,7 @@
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
 import { masterStateAtom } from "@/src/atoms/openpos"
 import { ordersAtom } from "@/src/atoms/transaction"
-import { Note } from "@/src/utils/stock_types"
+import { Note } from "@/src/utils/stockTypes"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import Image from "next/image"
 import NotesMenu from "../../common/notesMenu"

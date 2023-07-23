@@ -1,6 +1,6 @@
 import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { probingPricePayableAtom } from "@/src/atoms/payment";
-import { PaymentIntent } from "@/src/utils/stock_types";
+import { paymentIntentsAtom, probingPricePayableAtom } from "@/src/atoms/payment";
+import { PaymentIntent } from "@/src/utils/stockTypes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import CashSelect from "./cashSelect";
 
 export function CashPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setPaymentIntents = useSetAtom(paymentIntentsAtom)
 
     const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
@@ -74,17 +75,14 @@ export function CashPayment() {
                             }
                         }];
 
-                        setKioskState({
-                            ...kioskState,
-                            payment: new_payment
-                        });
+                        setPaymentIntents(new_payment)
 
-                        const qua = new_payment.reduce(function (prev, curr) {
+                        const quantity = new_payment.reduce(function (prev, curr) {
                             return prev + (curr.amount.quantity ?? 0)
                         }, 0);
 
-                        if(qua < (kioskState.order_total ?? 0)) {
-                            setProbingPrice((kioskState.order_total ?? 0) - qua)
+                        if(quantity < (kioskState.order_total ?? 0)) {
+                            setProbingPrice((kioskState.order_total ?? 0) - quantity)
                             setKioskPanel("select-payment-method")
                         }else {
                             setKioskPanel("completed")

@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomWithReset } from "jotai/utils";
-import { Customer, Product, Promotion, Transaction } from "../utils/stock_types";
+import { Customer, Product, Promotion, Transaction } from "../utils/stockTypes";
 
 interface SearchResults {
     products: {
@@ -29,5 +29,6 @@ const searchResultsAtomic = atom(
 )
 
 const searchFocusedAtom = atom<boolean>(false)
+const searchTermAtom = atom<string>("")
 
-export { searchResultsAtom, searchResultsAtomic, searchTypeAtom, searchFocusedAtom }
+export { searchResultsAtom, searchResultsAtomic, searchTermAtom, searchTypeAtom, searchFocusedAtom }

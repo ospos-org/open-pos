@@ -1,5 +1,5 @@
-import { applyDiscount, findMaxDiscount } from "@/src/utils/discount_helpers"
-import { Order } from "@/src/utils/stock_types"
+import { applyDiscount, findMaxDiscount } from "@/src/utils/discountHelpers"
+import { Order } from "@/src/utils/stockTypes"
 import { PrimitiveAtom, useAtomValue } from "jotai"
 
 export function IndividualProduct({ productAtom, customerActive }: { productAtom: PrimitiveAtom<Order>, customerActive: boolean }) {

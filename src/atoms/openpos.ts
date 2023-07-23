@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { MasterState } from "../utils/stock_types";
+import { MasterState } from "../utils/stockTypes";
 
 const masterStateAtom = atomWithStorage<MasterState>("openstock-master-state", {
     store_lut: [],

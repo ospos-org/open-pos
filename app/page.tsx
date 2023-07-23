@@ -7,8 +7,12 @@ import Inventory from '../src/components/inventory/inventory';
 import Job from '../src/components/job/job';
 import Deliverables from '../src/components/remote/deliverables';
 import Incomings from '../src/components/remote/recievables';
-import { Employee, MasterState } from '../src/utils/stock_types';
-import {OPEN_STOCK_URL, retryPromise, useWindowSize} from "../src/utils/helpers";
+import { Employee, MasterState } from '../src/utils/stockTypes';
+import {OPEN_STOCK_URL} from "../src/utils/environment";
+import { retryPromise } from '@/src/utils/retryPromise';
+import { useWindowSize } from '@/src/hooks/useWindowSize';
+import { useAtom } from 'jotai';
+import { masterStateAtom } from '@/src/atoms/openpos';
 
 const ICON_SIZE = 30
 
@@ -16,37 +20,8 @@ export default function App() {
 	const [ page, setPage ] = useState(0);
 	const [ user, setUser ] = useState<Employee | null>(null);
 	const [ codeInput, setCodeInput ] = useState<string[]>(["","","","", "", "", "", ""]);
-	
-	const [ masterState, setMasterState ] = useState<MasterState>({
-		store_lut: [],
-		store_id: "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
-		store_code: "001",
-		store_contact: {
-			name: "Torpedo7",
-			mobile: {
-				number: "+6421212120",
-				valid: true
-			},
-			email: {
-				root: "order",
-				domain: "torpedo7.com",
-				full: "order@torpedo7.com"
-			},
-			landline: "",
-			address: {
-				street: "9 Carbine Road",
-				street2: "",
-				city: "Auckland",
-				country: "New Zealand",
-				po_code: "100",
-				lat: 100,
-				lon: 100
-			},
-		},
-		employee: user,
-		kiosk_id: null, // "adbd48ab-f4ca-4204-9c88-3516f3133621",
-		kiosk: "NEW"
-	});
+
+	const [ masterState, setMasterState ] = useAtom(masterStateAtom)
 
 	useEffect(() => {
 		setMasterState((oldState) => ({

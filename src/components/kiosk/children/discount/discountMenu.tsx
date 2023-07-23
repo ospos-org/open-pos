@@ -3,8 +3,8 @@ import useKeyPress from "@/src/hooks/useKeyPress";
 import { useAtom } from "jotai";
 import Image from "next/image";
 import { FC, createRef, useEffect, useRef } from "react";
-import { applyDiscount } from "../../../../utils/discount_helpers";
-import { VariantInformation } from "../../../../utils/stock_types";
+import { applyDiscount } from "../../../../utils/discountHelpers";
+import { VariantInformation } from "../../../../utils/stockTypes";
 
 const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback, multiple }) => {
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);

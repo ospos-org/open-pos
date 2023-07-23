@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { FC, createRef, useState, useEffect } from "react";
 import { NoteElement } from "./noteElement";
-import { Note, Order } from "../../utils/stock_types";
+import { Note, Order } from "../../utils/stockTypes";
 import { useAtom, useAtomValue } from "jotai";
 import { ordersAtomsAtom } from "@/src/atoms/transaction";
 import { NoteOrderItem } from "./noteOrderItem";

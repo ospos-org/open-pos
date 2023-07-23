@@ -1,4 +1,4 @@
-import { DiscountValue, Order, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stock_types";
+import { DiscountValue, Order, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stockTypes";
 
 export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {

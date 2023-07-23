@@ -1,43 +1,30 @@
-import { isEqual } from "lodash";
-import { customAlphabet } from "nanoid";
 import Image from "next/image";
-import { RefObject, useEffect, useState } from "react";
-import { v4 } from "uuid";
-import { applyDiscount, applyDiscountsConsiderateOfQuantity, applyPromotion, discountFromPromotion, findMaxDiscount, fromDbDiscount, isGreaterDiscount, parseDiscount, stringValueToObj } from "../../../../utils/discount_helpers";
-import { determineOptimalPromotionPathway, parkSale } from "../../../../utils/helpers";
-import { getDate, sortOrders } from "../../kiosk";
-import { PAD_MODES } from "../../../../utils/kiosk_types";
-import { Allocation, ContactInformation, Customer, DiscountValue, Employee, KioskState, MasterState, Order, ProductPurchase, Promotion } from "../../../../utils/stock_types";
+import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "../../../../utils/discountHelpers";
+import { sortOrders } from "../../kiosk";
+import { Order, ProductPurchase } from "../../../../utils/stockTypes";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { priceAtom, probingPricePayableAtom } from "@/src/atoms/payment";
 import { customerAtom } from "@/src/atoms/customer";
 import { ordersAtom } from "@/src/atoms/transaction";
-import { searchResultsAtomic, searchTypeAtom } from "@/src/atoms/search";
+import { searchTypeAtom } from "@/src/atoms/search";
 import { masterStateAtom } from "@/src/atoms/openpos";
-import { defaultKioskAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
+import { defaultKioskAtom, kioskPanelLogAtom, searchInputRefAtom } from "@/src/atoms/kiosk";
 import { useResetAtom } from "jotai/utils";
+import { inspectingProductAtom } from "@/src/atoms/product";
 
-export default function CartMenu({ 
-    setActiveProduct, setActiveProductVariant,
-    setActiveProductPromotions,
-    input_ref
-}: { 
-    setActiveProduct: Function, 
-    setActiveProductPromotions: Function,
-    setActiveProductVariant: Function, 
-    input_ref: RefObject<HTMLInputElement>
-}) {
-    const orderInfo = useAtomValue(priceAtom)
+export default function CartMenu() {
     const currentStore = useAtomValue(masterStateAtom)
+    const orderInfo = useAtomValue(priceAtom)
+    const inputRef = useAtomValue(searchInputRefAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setSearchType = useSetAtom(searchTypeAtom)
     const setProbePrice = useSetAtom(probingPricePayableAtom)
+    const setInspectingProduct = useSetAtom(inspectingProductAtom)
 
     const resetCart = useResetAtom(defaultKioskAtom)
 
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
-    const [ kioskState, setKioskState ] = useAtom(defaultKioskAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
 
     return (
@@ -62,8 +49,8 @@ export default function CartMenu({
                                 onClick={() => {
                                     setSearchType("customers")
 
-                                    input_ref.current?.value ? input_ref.current.value = "" : {};
-                                    input_ref.current?.focus()
+                                    inputRef.current?.value ? inputRef.current.value = "" : {};
+                                    inputRef.current?.focus()
                                 }}
                                 className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
                                 <p>Select Customer</p>
@@ -339,9 +326,13 @@ export default function CartMenu({
                                                     
                                                     <div className="flex-1 cursor-pointer"
                                                         onClick={() => {
-                                                            setActiveProduct(e.product)
-                                                            setActiveProductVariant(e.variant_information)
-                                                            setActiveProductPromotions(e.active_promotions);
+                                                            setInspectingProduct((currentProduct) => ({
+                                                                ...currentProduct,
+                                                                activeProduct: e.product,
+                                                                activeProductVariant: e.variant_information,
+                                                                activeProductPromotions: e.active_promotions
+
+                                                            }))
                                                         }} >
                                                         <p className="font-semibold">{e.product.company} {e.product.name}</p>
                                                         <p className="text-sm text-gray-400">{e.variant_information.name}</p>
