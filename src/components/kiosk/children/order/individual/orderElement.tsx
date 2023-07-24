@@ -2,7 +2,7 @@ import { PrimitiveAtom, useAtomValue } from "jotai"
 
 import { Order } from "@utils/stockTypes"
 
-import { ChildPerProduct } from "./ChildPerProduct"
+import { ChildPerProduct } from "./childPerProduct"
 import { PromotionLabel } from "./promotionLabel"
 import { OrderTitle } from "./orderTitle"
 

@@ -1,22 +1,11 @@
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import Image from "next/image"
+import { useAtomValue } from "jotai"
 
-import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "@utils/discountHelpers"
-import { Order, ProductPurchase } from "@utils/stockTypes"
-import { inspectingProductAtom } from "@atoms/product"
-import { aCustomerActiveAtom } from "@atoms/customer"
-import { masterStateAtom } from "@atoms/openpos"
 import { ordersAtom } from "@atoms/transaction"
-import { sortOrders } from "@utils/utils"
-import { ChildPerOrder } from "./ChildPerOrder"
+
+import { ChildPerOrder } from "./childPerOrder"
 
 export function CartProductsList() {
-    const currentStore = useAtomValue(masterStateAtom)
-    const aCustomerActive = useAtomValue(aCustomerActiveAtom)
-
-    const setInspectingProduct = useSetAtom(inspectingProductAtom)
-
-    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    const orderState= useAtomValue(ordersAtom)
 
     return (
         <div className="flex flex-col flex-1 h-full gap-4 overflow-auto max-h-full py-2">
