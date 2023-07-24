@@ -1,4 +1,4 @@
-import { DiscountValue, Order, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stockTypes";
+import { DiscountValue, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stockTypes";
 
 export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {
@@ -13,26 +13,51 @@ export function isValidVariant(activeProduct: Product, activeVariant: StrictVari
     })
 }
 
-export function applyDiscountsConsiderateOfQuantity(quantity: number, discounts: DiscountValue[], price: number, cstate: boolean) {
+export function applyDiscountsConsiderateOfQuantity(
+    currentQuantity: number, 
+    discounts: DiscountValue[], 
+    price: number, 
+    customerActive: boolean
+) {
+    // Here we have the following:
+    // --- 
+    // Each discount has its own "applicable quantity". When this is 0,
+    // the discount can **no longer be applied**, as its usable quantity
+    // has been exhausted.
+    //
+    // We can then iterate over each discount given to the product, reducing
+    // and removing each discount when it has been "exhausted".
+
     let savings = 0;
-    let q = quantity;
-    
-    let promos: DiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion")));
+    let exhaustiblePromotions: DiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion" || b.source == "user")));
 
-    while(q > 0 && promos.length > 0)
+    // While we have quantity to serve, and promotions to apply...
+    while(currentQuantity > 0 && exhaustiblePromotions.length > 0)
     {
-        let discount_val = findMaxDiscount(promos, price, cstate);
+        const maximumDiscountFound = findMaxDiscount(exhaustiblePromotions, price, customerActive);
 
-        while(discount_val[0].applicable_quantity > 0) {
-            discount_val[0].applicable_quantity -= 1;
-            q -= 1;
-    
-            let discount = discount_val[0].value;
+        // While we can apply the promotion
+        while(currentQuantity > 0 && maximumDiscountFound[0].applicable_quantity > 0) {
+            // Reduce both applicable and current quantities
+            maximumDiscountFound[0].applicable_quantity -= 1;
+            currentQuantity -= 1;
+            
+            const discount = maximumDiscountFound[0].value;
             savings += (price - applyDiscount(price, discount));
-            // console.log("Applied", price - applyDiscount(price, discount));
+            console.log("Applied", price - applyDiscount(price, discount));
         }
 
-        promos = promos.filter((b, i) => i !== discount_val[1]);
+        // Remove the promotion, it has been exhausted.
+        exhaustiblePromotions = exhaustiblePromotions.filter((b, i) => i !== maximumDiscountFound[1]);
+    }
+
+    if (savings === 0) {
+        // We have no savings, lets try default to non-"promotion" sources.
+        let otherPromotions = discounts.filter(b => b.source == "loyalty")
+
+        // Only applies ONE, loop this if needed.
+        const maximumDiscountFound = findMaxDiscount(otherPromotions, price, customerActive);
+        savings += (price - applyDiscount(price, maximumDiscountFound[0].value));
     }
 
     return savings

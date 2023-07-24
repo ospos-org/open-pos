@@ -20,6 +20,8 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
         }
     })
 
+    console.log("MAP", product_map)
+
     products.map(b => {
         // Run promotion simulation
         const mapped: [Promotion, number][] = b.active_promotions.map(d => {
@@ -39,7 +41,6 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 promotion_sim: mapped,
                 utilized: null,
                 is_joined: false
-                // external_carrier: null
             })
         }
     });
@@ -52,7 +53,7 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
 
         let point = analysis_list[indx_of];
 
-        if(!point) continue;
+        if (!point) continue;
 
         let promotional_index = 0;
         let optimal_promotion: [Promotion, number] | null = point.promotion_sim[0];
@@ -62,9 +63,9 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
             // b.variant_information.barcode == point.reference_field.barcode
         // ), point)
 
-        while(true) {
-            if(optimal_promotion == null) break;
-            if(optimal_promotion[0].get.Category || optimal_promotion[0].get.Any || optimal_promotion[0].get.Specific) {
+        while (true) {
+            if (optimal_promotion == null) break;
+            if (optimal_promotion[0].get.Category || optimal_promotion[0].get.Any || optimal_promotion[0].get.Specific) {
                 // Is impacting an external source...
     
                 // Find an appropriate external source by checking those remaining in the queue
@@ -140,21 +141,21 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 }else {
                     break;
                 }
-            }else {
+            } else {
                 break;
             }
         }
         
         let should_apply = true;
 
-        if(optimal_promotion != null && (point.utilized != null || point.is_joined)) { // && !point.is_joined
+        if (optimal_promotion != null && (point.utilized != null || point.is_joined)) { // && !point.is_joined
             const external_indx = analysis_list.findIndex(k => k.id == point.utilized?.utilizer);
             if(external_indx == -1) break;
 
             const external_ref = analysis_list[external_indx];
             
             // If the current promotion provides a greater saving than the external, replace.
-            if(optimal_promotion[1] > (external_ref.chosen_promotion?.saving ?? 0)) {
+            if (optimal_promotion[1] > (external_ref.chosen_promotion?.saving ?? 0)) {
                 should_apply = true;
 
                 // Recursively delete and push
@@ -175,11 +176,13 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 }
 
                 delete_and_push(external_ref.id);
-            }else should_apply = false;
+            } else {
+                should_apply = false;
+            }
         }
 
-        if(optimal_promotion && should_apply) {
-            if(external_source_id != null) {
+        if (optimal_promotion && should_apply) {
+            if (external_source_id != null) {
                 const external_indx = analysis_list.findIndex(k => k.id == external_source_id);
                 analysis_list[indx_of].is_joined = true;
                 
@@ -196,7 +199,9 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
                 };
 
                 analysis_list[external_indx].is_joined = false;
-            }else point.is_joined = false;
+            } else {
+                point.is_joined = false;
+            }
 
             // --- Correctly Apply New Promotion --- // 
             point.chosen_promotion = {

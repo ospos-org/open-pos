@@ -4,14 +4,12 @@ import { customAlphabet } from "nanoid";
 import { atom } from "jotai";
 import { v4 } from "uuid";
 
-import { Customer, DiscountValue, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
-import { discountFromPromotion, fromDbDiscount } from "@utils/discountHelpers";
-import { determineOptimalPromotionPathway } from "@utils/optimalPromotion";
+import { Customer, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
 import { OPEN_STOCK_URL } from "@utils/environment";
 import { PAD_MODES } from "@utils/kioskTypes";
 
 import { paymentIntentsAtom, priceAtom } from "@atoms/payment";
-import { ordersAtom, ordersAtomsAtom } from "@atoms/transaction";
+import { ordersAtom } from "@atoms/transaction";
 import { computeDatabaseOrderFormat } from "@atoms/conversion";
 import { masterStateAtom } from "@atoms/openpos";
 import { customerAtom } from "@atoms/customer";
@@ -72,53 +70,6 @@ const currentOrderAtom = atomWithReset<Order>({
     order_type: "direct",
     previous_failed_fulfillment_attempts: []
 })
-
-/// We build orders upon this atom, committing changes to the transactionAtom.
-const transactingOrderAtom = atom(
-    (get) => get(currentOrderAtom), 
-    (get, set) => {
-        let flat_products = get(ordersAtomsAtom).map(k => get(k).products).flatMap(k => k);
-
-        const optimal_products = determineOptimalPromotionPathway(flat_products);
-        let optimal_queue = optimal_products.filter(b => b.chosen_promotion?.promotion != null && b.chosen_promotion != null);
-
-        const applied_promotions = get(ordersAtomsAtom).map(b => {
-            return { ...get(b), products: get(b).products.map(k => {
-                const dim = [];
-
-                for(let i = 0; i < k.quantity; i++) {
-                    // Find relevant in optimal list
-                    const exists = optimal_queue.findIndex(n => n.reference_field.barcode == k.variant_information.barcode);
-
-                    // console.log("::index::", exists, optimal_queue[exists]);
-
-                    if(exists !== -1 && optimal_queue[exists].chosen_promotion != null && optimal_queue[exists].chosen_promotion?.promotion != null) {
-                        // Apply discount
-                        const di =  {
-                            source: "promotion",
-                            value: fromDbDiscount(discountFromPromotion(optimal_queue[exists].chosen_promotion!.promotion!)),
-                            promotion: optimal_queue[exists].chosen_promotion!.promotion,
-                            applicable_quantity: 1
-                        } as DiscountValue;
-
-                        // console.log("applying, di: ", di);
-                        dim.push(di);
-
-                        // Remove from queue
-                        optimal_queue.splice(exists, 1);
-                    }
-                }
-
-                return {
-                    ...k,
-                    discount: [...k.discount.filter(b => b.source !== "promotion"), ...dim]
-                }
-            })}
-        });
-
-        set(currentOrderAtom, { ...get(currentOrderAtom), ...applied_promotions })
-    }
-)
 
 const kioskPanelAtom = atomWithReset<PAD_MODES>("cart")
 const kioskPanelHistory = atomWithReset<PAD_MODES[]>([])
@@ -201,7 +152,6 @@ export {
     generateTransactionAtom, 
     transactionTypeAtom, 
     defaultKioskAtom, 
-    transactingOrderAtom, 
     kioskPanelLogAtom, 
     kioskPanelAtom, 
     kioskPanelHistory, 

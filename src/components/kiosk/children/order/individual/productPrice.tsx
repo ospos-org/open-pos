@@ -18,13 +18,31 @@ export function ProductPrice({ product }: ProductPriceProps) {
 
                     return (
                         applyDiscount(product.variant_information.retail_price, findMaxDiscount(product.discount, product.variant_information.retail_price, aCustomerActive)[0].value) == product.variant_information.retail_price ?
-                        <p>${((product.variant_information.retail_price * 1.15) * product.quantity).toFixed(2) }</p>
+                        <p>${(product.variant_information.retail_price * product.quantity * 1.15).toFixed(2) }</p>
                         :
                         <>
-                            <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}><p className="line-through">${(product.variant_information.retail_price * product.quantity * 1.15).toFixed(2)}</p> {parseDiscount(max_disc.value)}</div>
+                            <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}>
+                                <p className="line-through">
+                                    ${(product.variant_information.retail_price * product.quantity * 1.15).toFixed(2)}
+                                </p> 
+                                
+                                {parseDiscount(max_disc.value)}
+                            </div>
+
                             <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
                                 ${
-                                    ((((product.variant_information.retail_price) * product.quantity) * 1.15) - applyDiscountsConsiderateOfQuantity(product.quantity, product.discount, product.variant_information.retail_price * 1.15, aCustomerActive)).toFixed(2)
+                                    (
+                                        (
+                                            (product.variant_information.retail_price * product.quantity) * 1.15
+                                        ) 
+                                        - 
+                                        applyDiscountsConsiderateOfQuantity(
+                                            product.quantity, 
+                                            product.discount, 
+                                            product.variant_information.retail_price * 1.15,
+                                            aCustomerActive
+                                        )
+                                    ).toFixed(2)
                                     // ((applyDiscount((e.variant_informatiocurrentOrder.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_informatiocurrentOrder.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
                                 }
                             </p>

@@ -58,8 +58,6 @@ const querySearchTerm = atom(undefined,
             return;
         }
 
-        console.log("OKAY QUERYING!")
-
         var myHeaders = new Headers();
         myHeaders.append("Cookie", `${document.cookie}`);
 

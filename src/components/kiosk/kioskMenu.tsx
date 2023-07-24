@@ -198,8 +198,6 @@ export default function KioskMenu({
                         <div className="flex flex-1 flex-col flex-wrap bg-gray-700 rounded-sm text-white overflow-hidden">
                             {
                                 (() => {
-                                    console.log("RES", searchType, searchResults)
-
                                     switch(searchType) {
                                         case "products":
                                             return (
@@ -357,7 +355,6 @@ export default function KioskMenu({
                                                     </>
                                                     :
                                                     (searchResults as Customer[])?.map((e: Customer, indx) => {
-                                                        console.log("RES", searchResults, searchType)
                                                         return (
                                                                 <div
                                                                     key={`CUSTOMER-${e.id}`} className="flex flex-col overflow-hidden h-fit"
@@ -711,7 +708,7 @@ export default function KioskMenu({
                                 </div>
 
                                 <div className="flex 2xl:flex-row flex-col-reverse items-start gap-8">
-                                    <div className="flex flex-col gap-8 max-w-[550px] w-full">
+                                    <div className="flex flex-col gap-8 xl:max-w-[550px] w-full">
                                         <PromotionList promotions={inspectingProduct.activeProductPromotions} />
 
                                         <div className="flex flex-col gap-4 flex-wrap">
