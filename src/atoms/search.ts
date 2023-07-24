@@ -1,11 +1,9 @@
-import { atomWithReset, RESET } from "jotai/utils";
+import { createRef, RefObject } from "react";
+import { atomWithReset } from "jotai/utils";
 import { atom } from "jotai";
 
-import { Customer, Product, Promotion, StrictVariantCategory, Transaction, VariantInformation } from "@utils/stockTypes";
-import { createRef, RefObject } from "react";
-import { OPEN_STOCK_URL } from "../utils/environment";
-import { ordersAtom } from "./transaction";
-import atomWithDebounce from "../utils/atomWithDebounce";
+import { Customer, Product, Promotion, Transaction } from "@utils/stockTypes";
+import { OPEN_STOCK_URL } from "@utils/environment";
 
 interface SearchResults {
     products: {

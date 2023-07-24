@@ -10,14 +10,18 @@ import { OPEN_STOCK_URL } from "@utils/environment";
 import { searchTermAtom } from '@atoms/search';
 import { useWindowSize } from '@hooks/useWindowSize';
 
-export const SearchFieldTransaction = ({ transaction, notEnd }: { transaction: Transaction, notEnd: boolean }) => {
+interface ItemTransactionProps {
+    transaction: Transaction,
+    notEnd: boolean
+}
+
+export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
     const searchTermState = useAtomValue(searchTermAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
 
     const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));
-    const b_ = transaction.products.map(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()) ? null : k)
 
     const [ customer, setCustomer ] = useState<Customer | null>();
     const windowSize = useWindowSize();
