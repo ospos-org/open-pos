@@ -4,7 +4,7 @@ import { customAlphabet } from "nanoid";
 import { atom } from "jotai";
 import { v4 } from "uuid";
 
-import { Customer, KioskState, Order, Product, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
+import { Customer, KioskState, Order, Product, ProductPurchase, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
 import { OPEN_STOCK_URL } from "@utils/environment";
 import { PAD_MODES } from "@utils/kioskTypes";
 
@@ -14,6 +14,8 @@ import { computeDatabaseOrderFormat } from "@atoms/conversion";
 import { masterStateAtom } from "@atoms/openpos";
 import { customerAtom } from "@atoms/customer";
 import { getDate } from "../utils/utils";
+import { inspectingProductAtom } from "./product";
+import { fromDbDiscount } from "../utils/discountHelpers";
 
 const defaultKioskAtom = atom((get) => {
     return {
@@ -146,8 +148,81 @@ const parkSaleAtom = atom(undefined, (get, set) => {
     }
 })
 
+const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[]) => {
+    const { activeProduct: product, activeProductPromotions: promotions, activeProductVariant: variant } = get(inspectingProductAtom)
+
+    const existing_product = orderProducts.find(k => k.product_code == variant?.barcode ); // && isEqual(k.variant, variant?.variant_code)
+    let new_order_products_state: ProductPurchase[] = [];
+
+    if(existing_product && variant && product) {
+        const matching_product = orderProducts.find(e => e.product_code == variant?.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
+        
+        if(matching_product) {
+            const total_stock = matching_product.variant_information.stock.reduce((p, c) => p += (c.quantity.quantity_sellable), 0);
+            // If a matching product exists; apply emendation
+            new_order_products_state = orderProducts.map(e => {
+                if(total_stock <= e.quantity) return e;
+
+                return e.product_code == variant.barcode ? { ...e, quantity: e.quantity+1 } : e  //  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
+            });
+        }else {
+            const po: ProductPurchase = {
+                id: v4(),
+                product_code: variant.barcode ?? product.sku ?? "",
+                discount: [{
+                    source: "loyalty",
+                    value: fromDbDiscount(variant.loyalty_discount),
+                    applicable_quantity: -1
+                }],
+                product_cost: variant?.retail_price ?? 0,
+                product_name: product.company + " " + product.name,
+                product_variant_name: variant.name,
+                product_sku: product.sku,
+                quantity: 1,
+                transaction_type: "Out",
+
+                product: product,
+                variant_information: variant ?? product.variants[0],
+                active_promotions: promotions,
+
+                tags: product.tags 
+            };
+
+            new_order_products_state = [ ...orderProducts, po ]
+        }
+    }else if(product && variant){
+        // Creating a new product in the order.
+        const po: ProductPurchase = {
+            id: v4(),
+            product_code: variant.barcode ?? product.sku ?? "",
+            discount: [{
+                source: "loyalty",
+                value: fromDbDiscount(variant.loyalty_discount),
+                applicable_quantity: -1
+            }],
+            product_cost: variant?.retail_price ?? 0,
+            product_name: product.company + " " + product.name,
+            product_variant_name: variant.name,
+            product_sku: product.sku,
+            quantity: 1,
+            transaction_type: "Out",
+
+            product: product,
+            variant_information: variant ?? product.variants[0],
+            active_promotions: promotions,
+
+            tags: product.tags
+        };
+
+        new_order_products_state = [ ...orderProducts, po ]
+    }
+
+    return new_order_products_state
+})
+
 export { 
-    currentOrderAtom, 
+    currentOrderAtom,
+    addToCartAtom,
     parkSaleAtom, 
     generateTransactionAtom, 
     transactionTypeAtom, 

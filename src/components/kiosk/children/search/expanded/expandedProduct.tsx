@@ -1,28 +1,26 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import Image from "next/image";
-
-import { inspectingProductAtom } from "@atoms/product";
-import { applyDiscount, fromDbDiscount, isValidVariant } from "@/src/utils/discountHelpers";
-import { masterStateAtom } from "@/src/atoms/openpos";
-import { ProductPurchase, StrictVariantCategory } from "@/src/utils/stockTypes";
-import { v4 } from "uuid";
-import { getDate, sortOrders } from "@/src/utils/utils";
 import { customAlphabet } from "nanoid";
-import { ordersAtom } from "@/src/atoms/transaction";
-import { BLOCK_SIZE } from "../../../kioskMenu";
-import PromotionList from "../../promotion/promotionList";
 import { isEqual } from "lodash";
-import { kioskPanelLogAtom } from "@/src/atoms/kiosk";
-import { useWindowSize } from "@/src/hooks/useWindowSize";
+import Image from "next/image";
+import { v4 } from "uuid";
 
-interface ExpandedProductProps {
-    addToCart: (orderProducts: ProductPurchase[]) => ProductPurchase[],
-}
+import { applyDiscount, fromDbDiscount, isValidVariant } from "@utils/discountHelpers";
+import { addToCartAtom, kioskPanelLogAtom } from "@atoms/kiosk";
+import { StrictVariantCategory } from "@utils/stockTypes";
+import { inspectingProductAtom } from "@atoms/product";
+import { getDate, sortOrders } from "@utils/utils";
+import { masterStateAtom } from "@atoms/openpos";
+import { useWindowSize } from "@hooks/useWindowSize";
+import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
+import { ordersAtom } from "@/src/atoms/transaction";
 
-export function ExpandedProduct({ addToCart }: ExpandedProductProps) {    
+import PromotionList from "../../promotion/promotionList";
+
+export function ExpandedProduct() {    
     const currentStore = useAtomValue(masterStateAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const addToCart = useSetAtom(addToCartAtom)
     
     const [ inspectingProduct, setInspectingProduct ] = useAtom(inspectingProductAtom)
     const [ orderState, setOrderState ] = useAtom(ordersAtom)

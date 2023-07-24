@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useResetAtom } from "jotai/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import moment from "moment";
 import Image from "next/image";
 
@@ -10,6 +10,8 @@ import { inspectingTransactionAtom } from "@atoms/transaction";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
 import { Transaction } from "@utils/stockTypes";
 import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
+import { OPEN_STOCK_URL } from "@/src/utils/environment";
+
 
 export function ExpandedCustomer() {
     const clearSearchResults = useResetAtom(searchResultsAtom)
@@ -22,8 +24,23 @@ export function ExpandedCustomer() {
     const setSearchType = useSetAtom(searchTypeHandlerAtom)
 
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
-
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
+
+    useEffect(() => {
+        if(inspectingCustomer) {
+            fetch(`${OPEN_STOCK_URL}/customer/transactions/${inspectingCustomer.id}`, {
+                method: "GET",
+				credentials: "include",
+				redirect: "follow"
+            }).then(async k => {
+                if(k.ok) {
+                    const data: Transaction[] = await k.json();
+
+                    setActiveCustomerTransactions(data)
+                }
+            })
+        }
+    }, [inspectingCustomer]);
 
     if (!inspectingCustomer) return <></>
 
