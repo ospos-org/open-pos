@@ -841,7 +841,7 @@ export default function KioskMenu({
                                                     inspectingProduct.activeProductVariant?.stock.map(e => {
                                                         return (
                                                             <div key={`STOCK-FOR-${e.store.store_id}`} className="flex flex-row items-center justify-between gap-2">
-                                                                <p>{e.store.store_code}</p>
+                                                                <p>{currentStore.store_lut.find((element) => element.code === e.store.store_code)?.contact.name}</p>
                                                                 <div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full"></div>
                                                                 <p>{e.quantity.quantity_sellable}</p>
                                                                 <p className="text-gray-400">({e.quantity.quantity_unsellable} Unsellable)</p>

@@ -42,10 +42,8 @@ const searchTypeHandlerAtom = atom(
         set(searchTypeAtom, value)
 
         // Make input value blank.
-        let refValue = get(searchInputRefAtom).current?.value
-        if (refValue) {
-            refValue = ""
-        }
+        // @ts-expect-error Assigning to override `inputRef`
+        if (get(searchInputRefAtom).current?.value) get(searchInputRefAtom).current.value = ""
 
         get(searchInputRefAtom).current?.focus()
     }
