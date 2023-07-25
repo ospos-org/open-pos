@@ -9,11 +9,17 @@ import { useWindowSize } from "@hooks/useWindowSize";
 import { OPEN_STOCK_URL } from "@utils/environment";
 
 import OrderView from "./orderView";
+import { useAtom, useAtomValue } from "jotai";
+import { masterStateAtom, mobileLowModeAtom } from "@/src/atoms/openpos";
 
-export default function Deliverables({ master_state, setLowModeCartOn, lowModeCartOn }: { master_state: MasterState, setLowModeCartOn: Function, lowModeCartOn: boolean}) {
+export default function Deliverables() {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
     const [ , setIsLoading ] = useState(true);
     const windowSize = useWindowSize();
+
+    const [ lowModeCartOn, setLowModeCartOn ] = useAtom(mobileLowModeAtom)
+
+    const masterState = useAtomValue(masterStateAtom)
 
     const [ productCategories, setProductCategories ] = useState<ProductCategory[]>([]);
     const [ menuState, setMenuState ] = useState<{
@@ -132,7 +138,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
     useEffect(() => {
         setIsLoading(true);
 
-        fetch(`${OPEN_STOCK_URL}/transaction/deliverables/${master_state.store_id}`, {
+        fetch(`${OPEN_STOCK_URL}/transaction/deliverables/${masterState.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -143,7 +149,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
             setIsLoading(false);
             setProductCategories(parseDeliverables(data))
         })
-    }, [master_state.store_id])
+    }, [masterState.store_id])
 
     const [ viewingMode, setViewingMode ] = useState(0);
 
@@ -646,7 +652,7 @@ export default function Deliverables({ master_state, setLowModeCartOn, lowModeCa
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
                             activeOrder != null ? 
-                                <OrderView activeOrder={activeOrder} setActiveOrder={setActiveOrder} master_state={master_state} /> 
+                                <OrderView activeOrder={activeOrder} setActiveOrder={setActiveOrder} master_state={masterState} /> 
                             : 
                                 <div className="h-full flex flex-col items-center justify-center flex-1">
                                     <p className="text-gray-400 text-center self-center">

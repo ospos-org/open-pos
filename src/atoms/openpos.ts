@@ -1,8 +1,17 @@
 import { atomWithStorage } from "jotai/utils"
 
-import { MasterState } from "@utils/stockTypes"
+import { Employee, MasterState, Store } from "@utils/stockTypes"
+import { atom } from "jotai"
 
-const masterStateAtom = atomWithStorage<MasterState>("openstock-master-state", {
+const pageAtom = atom<number>(0)
+const mobileMenuOpenAtom = atom<boolean>(false)
+const mobileLowModeAtom = atom<boolean>(false)
+const activeEmployeeAtom = atom<Employee | null>(null);
+const storeLookupTableAtom = atom<Store[]>([])
+
+const passwordInputAtom = atom<string[]>(["","","","", "", "", "", ""]);
+
+const rawMasterStateAtom = atomWithStorage<MasterState>("openstock-master-state", {
     store_lut: [],
     store_id: "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
     store_code: "001",
@@ -33,4 +42,15 @@ const masterStateAtom = atomWithStorage<MasterState>("openstock-master-state", {
     kiosk: "NEW"
 })
 
-export { masterStateAtom }
+const masterStateAtom = atom(
+    (get) => ({
+        ...get(rawMasterStateAtom),
+        employee: get(activeEmployeeAtom),
+        store_lut: get(storeLookupTableAtom)
+    }), 
+    (_, set, value: MasterState) => {
+        set(rawMasterStateAtom, value)
+    }
+)
+
+export { masterStateAtom, pageAtom, mobileMenuOpenAtom, mobileLowModeAtom, storeLookupTableAtom, activeEmployeeAtom, passwordInputAtom }

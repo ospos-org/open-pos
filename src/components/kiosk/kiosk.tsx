@@ -20,9 +20,11 @@ import { TerminalPayment } from "./children/payment/terminalPayment";
 import { DiscountScreen } from "./children/discount/discountScreen";
 import { CashPayment } from "./children/payment/cashPayment";
 import { NotesScreen } from "./children/notesScreen";
+import { mobileLowModeAtom } from "@/src/atoms/openpos";
 
-export default function Kiosk({ lowModeCartOn }: { lowModeCartOn: boolean }) {
-    const kioskPanel = useAtomValue(kioskPanelLogAtom) 
+export default function Kiosk() {
+    const lowModeCartOn = useAtomValue(mobileLowModeAtom)
+    const kioskPanel = useAtomValue(kioskPanelLogAtom)
 
     const window_size = useWindowSize();
 
