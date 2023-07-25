@@ -1,20 +1,19 @@
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
 import { Check } from "react-feather";
-import Image from "next/image";
 import moment from "moment";
+import Image from "next/image";
 
-import { MasterState, Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "@utils/stockTypes";
-import { Skeleton } from "@components/common/skeleton"
-import { useWindowSize } from "@hooks/useWindowSize";
+import { Order, PickStatus, Product, ProductCategory, ProductInstance, Transaction } from "@utils/stockTypes";
+import { masterStateAtom, mobileLowModeAtom } from "@atoms/openpos";
 import { OPEN_STOCK_URL } from "@utils/environment";
+import { useWindowSize } from "@hooks/useWindowSize";
+import { Skeleton } from "@components/common/skeleton"
 
 import OrderView from "./orderView";
-import { useAtom, useAtomValue } from "jotai";
-import { masterStateAtom, mobileLowModeAtom } from "@/src/atoms/openpos";
 
 export default function Deliverables() {
     const [ deliverables, setDeliverables ] = useState<Order[]>([]);
-    const [ , setIsLoading ] = useState(true);
     const windowSize = useWindowSize();
 
     const [ lowModeCartOn, setLowModeCartOn ] = useAtom(mobileLowModeAtom)
@@ -59,8 +58,6 @@ export default function Deliverables() {
 
     const parseDeliverables = (deliverables: Order[]) => {
         let categories: ProductCategory[] = [];
-
-        // console.log(deliverables)
 
         deliverables.map(k => {
             k.products.map(b => {
@@ -136,8 +133,6 @@ export default function Deliverables() {
     }
 
     useEffect(() => {
-        setIsLoading(true);
-
         fetch(`${OPEN_STOCK_URL}/transaction/deliverables/${masterState.store_id}`, {
             method: "GET",
             credentials: "include",
@@ -146,14 +141,11 @@ export default function Deliverables() {
         .then(async b => {
             const data: Order[] = await b.json();
             setDeliverables(data);
-            setIsLoading(false);
             setProductCategories(parseDeliverables(data))
         })
     }, [masterState.store_id])
 
     const [ viewingMode, setViewingMode ] = useState(0);
-
-    console.log(stateChange, windowSize.width)
 
     return (
         <>
