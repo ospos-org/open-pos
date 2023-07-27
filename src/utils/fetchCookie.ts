@@ -1,4 +1,5 @@
 import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback } from "react";
 import { activeEmployeeAtom, masterStateAtom, storeLookupTableAtom } from "../atoms/openpos";
 import { OPEN_STOCK_URL } from "./environment";
 import { Employee } from "./stockTypes";
@@ -9,7 +10,7 @@ const useFetchCookie = () => {
     const setStoreLut = useSetAtom(storeLookupTableAtom)
     const setUser = useSetAtom(activeEmployeeAtom)
 
-    const query = (async function(rid: string, pass: string, callback: (password: string) => void) {
+    const query = useCallback(async function(rid: string, pass: string, callback: (password: string) => void) {
         fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
             method: "POST",
             body: JSON.stringify({
@@ -43,7 +44,7 @@ const useFetchCookie = () => {
                 })
             }
         })
-    })
+    }, [masterState.kiosk_id])
     
     return { query }
 }
