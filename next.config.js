@@ -4,7 +4,7 @@ const nextConfig = {
     appDir: true,
   },
   images: {
-    domains: ["www.torpedo7.co.nz"]
+    domains: ["www.torpedo7.co.nz", "cdn.shopify.com"]
   }
 }
 

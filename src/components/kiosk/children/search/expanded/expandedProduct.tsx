@@ -29,12 +29,25 @@ export function ExpandedProduct() {
 
     if (!inspectingProduct) return <></>
 
+    console.log(inspectingProduct)
+
     return (
         <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
             <div className="flex flex-row items-start gap-4">
                 <div className="flex flex-col md:flex-row items-start h-full flex-1 gap-2">
                     <div className="pr-4">
-                        <Image src={inspectingProduct.activeProductVariant?.images?.[0] ?? inspectingProduct.activeProduct?.images[0] ?? ""} className="rounded-md" height={150} width={150} alt={inspectingProduct.activeProduct?.name ?? ""}></Image>
+                        <Image 
+                            src={
+                                inspectingProduct.activeProductVariant?.images?.[0] && inspectingProduct.activeProductVariant?.images?.[0] !== "" ? 
+                                    inspectingProduct.activeProductVariant?.images?.[0] 
+                                : 
+                                    inspectingProduct.activeProduct?.images?.[0] ?? ""
+                            } 
+                            className="rounded-md" 
+                            height={150} 
+                            width={150} 
+                            alt={inspectingProduct.activeProduct?.name ?? ""}
+                        ></Image>
                     </div>
 
                     <div className="flex flex-col flex-1">
