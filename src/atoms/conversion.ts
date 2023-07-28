@@ -45,7 +45,7 @@ const computeDatabaseOrderFormat = atom((get) => {
                         tags: k.tags
                     } as DbProductPurchase
                 }) as DbProductPurchase[],
-                status: (transactionType == "Saved" || transactionType == "Quote" ? {   
+                status: (!(transactionType == "Saved" || transactionType == "Quote") ? {   
                     status: {
                         type: "fulfilled",
                         value: date

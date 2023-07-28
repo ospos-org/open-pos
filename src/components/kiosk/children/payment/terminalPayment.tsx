@@ -10,11 +10,11 @@ import { getDate } from "@utils/utils"
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
-    const setPaymentIntents = useSetAtom(paymentIntentsAtom)
-
+    
     const computeTransaction = useAtomValue(generateTransactionAtom)
     const kioskState = useAtomValue(defaultKioskAtom)
-
+    
+    const [ paymentIntents, setPaymentIntents ] = useAtom(paymentIntentsAtom)
     const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
 
     return (
@@ -38,7 +38,7 @@ export function TerminalPayment() {
             </div>
 
             <p onClick={() => {
-                const payment_intents: PaymentIntent[] = [ ...kioskState.payment, {
+                const payment_intents: PaymentIntent[] = [ ...paymentIntents, {
                     amount: {quantity: probingPrice ?? 0, currency: 'NZD'},
                     delay_action: "Cancel",
                     delay_duration: "PT12H",
@@ -74,6 +74,8 @@ export function TerminalPayment() {
                     }
                 }];
 
+                setPaymentIntents([ ...payment_intents ]);
+
                 // Determine how much has been paid.
                 const qua = payment_intents.reduce(function (prev, curr) {
                     return prev + (curr.amount.quantity ?? 0)
@@ -88,11 +90,9 @@ export function TerminalPayment() {
                     return null;
                 }
 
-                setPaymentIntents(payment_intents);
-
                 fetch(`${OPEN_STOCK_URL}/transaction`, {
                     method: "POST",
-                    body: JSON.stringify(computeTransaction),
+                    body: JSON.stringify({ ...computeTransaction, payment: payment_intents }),
                     credentials: "include",
                     redirect: "follow"
                 }).then(async k => {
