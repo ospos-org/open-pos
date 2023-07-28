@@ -125,7 +125,7 @@ const generateTransactionAtom = atom((get) => {
         products,
 
         // As we are saving the order, we aren't charging the customer anything.
-        order_total: 0.00
+        order_total: get(priceAtom).total
     } as TransactionInput
 })
 

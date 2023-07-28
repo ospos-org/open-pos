@@ -151,7 +151,7 @@ export default function Deliverables() {
         <>
             {
                 (!lowModeCartOn || ((windowSize.width ?? 0) > 640)) ? 
-                <div className="flex flex-col gap-4 md:p-4 p-6 w-full">
+                <div className="flex flex-col md:p-4 p-6 w-full">
                     <div className="flex w-full max-w-full flex-row items-center gap-2 bg-gray-400 bg-opacity-10 p-2 rounded-md">
                         <div className={`text-white ${viewingMode == 0 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(0)}>Order</div>
                         <div className={`text-white ${viewingMode == 1 ? "bg-gray-500" : " bg-transparent"} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`} onClick={() => setViewingMode(1)}>Batch</div>
@@ -162,7 +162,7 @@ export default function Deliverables() {
                             switch(viewingMode) {
                                 case 0:
                                     return (
-                                        <div>
+                                        <div className="overflow-y-scroll py-4">
                                             {
                                                 deliverables.length <= 0 ?
                                                 <div className="flex items-center justify-center h-full pt-4">
@@ -327,7 +327,7 @@ export default function Deliverables() {
                                     )
                                 case 1:
                                     return (
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-2 py-4">
                                             {
                                                 deliverables.length <= 0 ?
                                                 <div className="flex items-center justify-center h-full pt-4">

@@ -10,7 +10,7 @@ export function SearchGroup() {
     const searchType = useAtomValue(searchTypeHandlerAtom)
 
     return (
-        <div className="flex flex-1 flex-col flex-wrap bg-gray-700 rounded-sm text-white overflow-hidden">
+        <div className="flex flex-1 flex-col flex-wrap bg-gray-700 rounded-sm text-white overflow-hidden mb-4">
             {
                 (() => {
                     switch(searchType) {
