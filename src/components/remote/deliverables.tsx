@@ -1,10 +1,9 @@
-import { useAtomValue, useSetAtom } from "jotai";
-import { useEffect } from "react";
+import { useAtomValue, useSetAtom } from "jotai"
+import { useEffect } from "react"
 
-import { masterStateAtom } from "@atoms/openpos";
-import { OPEN_STOCK_URL } from "@utils/environment";
-import { Order, Product } from "@utils/stockTypes";
-
+import { masterStateAtom } from "@atoms/openpos"
+import { OPEN_STOCK_URL } from "@utils/environment"
+import { Order, Product } from "@utils/stockTypes"
 import { 
     deliverablesProductInformationAtom, 
     deliverablesActiveOrderAtom, 
@@ -12,10 +11,11 @@ import {
     deliverablesMenuStateAtom, 
     productCategoriesAtom,
     deliverablesAtom
-} from "@atoms/deliverables";
-import { SwitchViews } from "./deliverables/switchViews";
-import { OrderSummary, parseDeliverables } from "./deliverables/orderSummary";
-import { ExpandedOrder } from "./deliverables/expandedOrder";
+} from "@atoms/deliverables"
+
+import { SwitchViews } from "./deliverables/switchViews"
+import { OrderSummary, parseDeliverables } from "./deliverables/orderSummary"
+import { ExpandedOrder } from "./deliverables/expandedOrder"
 
 export default function Deliverables() {
     const menuState = useAtomValue(deliverablesMenuStateAtom);

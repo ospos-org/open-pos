@@ -1,9 +1,10 @@
-import { deliverablesAtom } from "@/src/atoms/deliverables";
-import { useWindowSize } from "@/src/hooks/useWindowSize";
-import { Order, PickStatus } from "@/src/utils/stockTypes";
-import { useAtomValue } from "jotai";
-import moment from "moment";
-import { Check } from "react-feather";
+import { Check } from "react-feather"
+import { useAtomValue } from "jotai"
+import moment from "moment"
+
+import { Order, PickStatus } from "@utils/stockTypes"
+import { deliverablesAtom } from "@atoms/deliverables"
+import { useWindowSize } from "@hooks/useWindowSize"
 
 interface OrderGroupViewProps {
     setActiveCallback: (newActiveOrder: Order) => void

@@ -1,9 +1,15 @@
-import { deliverablesActiveOrderAtom, deliverablesAtom, deliverablesMenuStateAtom, deliverablesStateChangeAtom, productCategoriesAtom } from "@/src/atoms/deliverables";
-import { mobileLowModeAtom } from "@/src/atoms/openpos";
-import { useWindowSize } from "@/src/hooks/useWindowSize"
-import { Order } from "@/src/utils/stockTypes";
-import { useAtom, useSetAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useState } from "react"
+import { useAtom, useSetAtom } from "jotai"
+
+import { 
+    deliverablesActiveOrderAtom, 
+    deliverablesMenuStateAtom, 
+    deliverablesStateChangeAtom 
+} from "@atoms/deliverables"
+import { useWindowSize } from "@hooks/useWindowSize"
+import { mobileLowModeAtom } from "@atoms/openpos"
+import { Order } from "@utils/stockTypes"
+
 import { BatchGroupView } from "./batchGroupView"
 import { OrderGroupView } from "./orderGroupView"
 

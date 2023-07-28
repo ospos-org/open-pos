@@ -1,6 +1,11 @@
-import { deliverablesAtom, deliverablesMenuStateAtom, productCategoriesAtom } from "@/src/atoms/deliverables"
-import { useWindowSize } from "@/src/hooks/useWindowSize"
 import { useAtomValue, useSetAtom } from "jotai"
+
+import { 
+    deliverablesMenuStateAtom, 
+    productCategoriesAtom,
+    deliverablesAtom,
+} from "@atoms/deliverables"
+import { useWindowSize } from "@hooks/useWindowSize"
 
 export function BatchGroupView() {
     const deliverables = useAtomValue(deliverablesAtom)

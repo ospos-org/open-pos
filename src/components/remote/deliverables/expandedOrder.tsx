@@ -1,7 +1,12 @@
-import { deliverablesActiveOrderAtom, deliverablesMenuStateAtom, deliverablesStateChangeAtom } from "@/src/atoms/deliverables";
-import { masterStateAtom, mobileLowModeAtom } from "@/src/atoms/openpos";
-import { useWindowSize } from "@/src/hooks/useWindowSize";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai"
+
+import { 
+    deliverablesStateChangeAtom,
+    deliverablesActiveOrderAtom, 
+    deliverablesMenuStateAtom
+} from "@atoms/deliverables";
+import { masterStateAtom, mobileLowModeAtom } from "@atoms/openpos"
+import { useWindowSize } from "@hooks/useWindowSize"
 import OrderView from "../orderView"
 
 export function ExpandedOrder() {
@@ -13,8 +18,24 @@ export function ExpandedOrder() {
     const [ activeOrder, setActiveOrder ] = useAtom(deliverablesActiveOrderAtom)
 
     const windowSize = useWindowSize()
-
-    if (!(menuState == null && stateChange == null && (((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640)))) {
+    
+    // Don't show on specific situations
+    if (
+        !(
+            menuState == null && 
+            stateChange == null && 
+            (
+                (
+                    (windowSize.width ?? 0) < 640 
+                    && lowModeCartOn
+                ) 
+                || 
+                (
+                    (windowSize.width ?? 0) >= 640
+                )
+            )
+        )
+    ) {
         return <></>
     }
 

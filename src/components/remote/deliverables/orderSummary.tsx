@@ -1,10 +1,17 @@
-import { deliverablesAtom, deliverablesMenuStateAtom, deliverablesProductInformationAtom, deliverablesStateChangeAtom, productCategoriesAtom } from "@/src/atoms/deliverables";
-import { OPEN_STOCK_URL } from "@/src/utils/environment";
-import { Order, ProductCategory, Transaction } from "@/src/utils/stockTypes";
-import { useAtom, useSetAtom } from "jotai";
-import Image from "next/image";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useState } from "react";
-import { Skeleton } from "../../common/skeleton";
+import Image from "next/image";
+
+import { 
+    deliverablesProductInformationAtom, 
+    deliverablesStateChangeAtom, 
+    deliverablesMenuStateAtom, 
+    productCategoriesAtom,
+    deliverablesAtom
+} from "@atoms/deliverables";
+import { Order, ProductCategory, Transaction } from "@/src/utils/stockTypes";
+import { OPEN_STOCK_URL } from "@/src/utils/environment";
+import { Skeleton } from "@components/common/skeleton";
 
 const parseDeliverables = (deliverables: Order[]) => {
     let categories: ProductCategory[] = [];
@@ -83,12 +90,13 @@ const parseDeliverables = (deliverables: Order[]) => {
 }
 
 export function OrderSummary() {
+    const menuInformation = useAtomValue(deliverablesProductInformationAtom)
+
     const setProductCategories = useSetAtom(productCategoriesAtom)
 
     const [ menuState, setMenuState ] = useAtom(deliverablesMenuStateAtom)
-    const [ deliverables, setDeliverables ] = useAtom(deliverablesAtom)
     const [ stateChange, setStateChange ] = useAtom(deliverablesStateChangeAtom)
-    const [ menuInformation, setMenuInformation ] = useAtom(deliverablesProductInformationAtom)
+    const [ deliverables, setDeliverables ] = useAtom(deliverablesAtom)
 
     const [ pendingStatus, setPendingStatus ] = useState<string | null>()
 
