@@ -18,3 +18,5 @@ export function sortDbOrders(orders: DbOrder[]) {
 export function getDate(): string {
   return moment(new Date(), 'DD/MM/YYYY', true).format()
 }
+
+export const ICON_SIZE = 30

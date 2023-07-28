@@ -13,8 +13,6 @@ import { POSBanner } from '@/src/components/common/posBanner';
 import { PasswordInput } from '@/src/components/common/passwordInput';
 import useFetchCookie from '@/src/utils/fetchCookie';
 
-const ICON_SIZE = 30
-
 export default function App() {
 	const user = useAtomValue(activeEmployeeAtom);
 	
@@ -81,5 +79,3 @@ export default function App() {
 		</div>
 	)
 }
-
-export { ICON_SIZE }

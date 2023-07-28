@@ -2,7 +2,7 @@ import { useAtom, useSetAtom } from "jotai";
 import Image from "next/image";
 
 import { mobileLowModeAtom, mobileMenuOpenAtom, pageAtom } from "@atoms/openpos";
-import { ICON_SIZE } from "@/app/page";
+import { ICON_SIZE } from "@/src/utils/utils";
 
 export function MobileNavigationElement() {
     const setLowModeCartOn = useSetAtom(mobileLowModeAtom)
