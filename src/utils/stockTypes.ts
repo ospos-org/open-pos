@@ -7,7 +7,7 @@ export type KioskState = {
     order_date: string | null,
     order_notes: Note[] | null,
     salesperson: string | null,
-    till: string | null
+    kiosk: string | null
 };
 
 export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "Quote"
@@ -25,7 +25,7 @@ export type Transaction = {
     order_notes: Note[],
 
     salesperson: string,
-    till: string
+    kiosk: string
 }
 
 export type TransactionInput = {
@@ -39,7 +39,7 @@ export type TransactionInput = {
     order_notes: Note[],
 
     salesperson: string,
-    till: string
+    kiosk: string
 }
 
 export type TransactionCustomer = {
@@ -433,7 +433,7 @@ export type Attendance = {
 
 export type Attendant = {
     track_type: "in" | "out",
-    till: string
+    kiosk: string
 }
 
 export type ContactInformation = {

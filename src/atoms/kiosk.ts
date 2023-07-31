@@ -28,7 +28,7 @@ const defaultKioskAtom = atom((get) => {
         order_date: getDate(),
         order_notes: [],
         salesperson: get(masterStateAtom).employee?.id,
-        till: get(masterStateAtom).kiosk_id
+        kiosk: get(masterStateAtom).kiosk_id
     } as KioskState
 }, (_, set, resetKey: typeof RESET) => {
     if(resetKey === RESET) {

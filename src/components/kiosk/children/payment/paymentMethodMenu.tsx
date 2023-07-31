@@ -32,7 +32,7 @@ export function PaymentMethod() {
         }
 
         setKioskPanel("await-debit");
-    }, [f1Pressed]);
+    }, [f1Pressed, setKioskPanel]);
 
     const f2Pressed = useKeyPress(['F2'])
     const f2firstUpdate = useRef(0);
@@ -44,7 +44,7 @@ export function PaymentMethod() {
         }
 
         setKioskPanel("await-cash");
-    }, [f2Pressed]);
+    }, [f2Pressed, setKioskPanel]);
 
     const f6Pressed = useKeyPress(['F6']);
     const f6firstUpdate = useRef(0);
@@ -71,7 +71,7 @@ export function PaymentMethod() {
                 alert("Something went horribly wrong")
             }
         })
-    }, [f6Pressed]);
+    }, [f6Pressed, generateTransaction, setKioskPanel, setTransactionType]);
 
     useEffect(() => {
         let has_negative_stocks = false;
