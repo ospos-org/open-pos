@@ -4,6 +4,7 @@ import { atom } from "jotai";
 
 import { Customer, Product, Promotion, Transaction } from "@utils/stockTypes";
 import { OPEN_STOCK_URL } from "@utils/environment";
+import queryOs from "../utils/query-os";
 
 interface SearchResults {
     products: {
@@ -62,7 +63,7 @@ const querySearchTerm = atom(undefined,
         const searchType = get(searchTypeAtom)
         const searchTerm = get(searchTermAtom)
 
-        const fetchResult = await fetch(`${OPEN_STOCK_URL}/${searchType.substring(0, searchType.length-1)}/${searchType == "transactions" ? "ref" : searchType == "products" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
+        const fetchResult = await queryOs(`${searchType.substring(0, searchType.length-1)}/${searchType == "transactions" ? "ref" : searchType == "products" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
             method: "GET",
             headers: myHeaders,
             redirect: "follow",

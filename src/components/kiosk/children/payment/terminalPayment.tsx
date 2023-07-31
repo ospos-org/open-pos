@@ -7,6 +7,7 @@ import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment"
 import { OPEN_STOCK_URL } from "@utils/environment"
 import { PaymentIntent } from "@utils/stockTypes"
 import { getDate } from "@utils/utils"
+import queryOs from "@/src/utils/query-os"
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -90,7 +91,7 @@ export function TerminalPayment() {
                     return null;
                 }
 
-                fetch(`${OPEN_STOCK_URL}/transaction`, {
+                queryOs(`transaction`, {
                     method: "POST",
                     body: JSON.stringify({ ...computeTransaction, payment: payment_intents }),
                     credentials: "include",

@@ -11,10 +11,10 @@ import {
 } from "@/src/atoms/receivables"
 import { masterStateAtom, mobileLowModeAtom } from "@atoms/openpos"
 import { Order, Product } from "@utils/stockTypes"
-import { OPEN_STOCK_URL } from "@utils/environment"
 import { useWindowSize } from "@hooks/useWindowSize"
 
 import OrderView from "./orderView"
+import queryOs from "@/src/utils/query-os"
 
 export default function Receivables() {
     const masterState = useAtomValue(masterStateAtom)
@@ -30,7 +30,7 @@ export default function Receivables() {
 
     useEffect(() => {
         if(menuState != null)
-            fetch(`${OPEN_STOCK_URL}/product/${menuState?.product}`, {
+            queryOs(`product/${menuState?.product}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -38,10 +38,10 @@ export default function Receivables() {
                 const data: Product = await k.json();
                 setMenuInformation(data);
             })
-    }, [menuState])
+    }, [menuState, setMenuInformation])
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/transaction/receivables/${masterState.store_id}`, {
+        queryOs(`transaction/receivables/${masterState.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -50,7 +50,7 @@ export default function Receivables() {
             const data: Order[] = await b.json();
             setReceivables(data);
         })
-    }, [masterState.store_id])
+    }, [masterState.store_id, setReceivables])
 
     return (
         <>
@@ -134,7 +134,7 @@ export default function Receivables() {
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
                             activeOrder != null ? 
-                                <OrderView activeOrder={activeOrder} setActiveOrder={setActiveOrder} master_state={masterState} /> 
+                                <OrderView orderAtom={receivablesActiveOrderAtom} /> 
                             : 
                                 <div className="h-full flex flex-col items-center justify-center flex-1">
                                     <p className="text-gray-400 text-center self-center">

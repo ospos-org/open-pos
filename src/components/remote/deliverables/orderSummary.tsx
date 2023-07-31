@@ -12,6 +12,7 @@ import {
 import { Order, ProductCategory, Transaction } from "@/src/utils/stockTypes";
 import { OPEN_STOCK_URL } from "@/src/utils/environment";
 import { Skeleton } from "@components/common/skeleton";
+import queryOs from "@/src/utils/query-os";
 
 const parseDeliverables = (deliverables: Order[]) => {
     let categories: ProductCategory[] = [];
@@ -278,7 +279,7 @@ export function OrderSummary() {
 
                             <div
                                 onClick={() => {
-                                    fetch(`${OPEN_STOCK_URL}/transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
+                                    queryOs(`transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
                                         method: "POST",
                                         body: pendingStatus,
                                         credentials: "include",

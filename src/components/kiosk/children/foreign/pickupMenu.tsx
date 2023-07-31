@@ -12,6 +12,7 @@ import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
 import { getDate } from "@utils/utils"
+import queryOs from "@/src/utils/query-os"
 
 export function PickupMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
@@ -33,7 +34,7 @@ export function PickupMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/store/${currentStore.store_id}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await queryOs(`helpers/distance/store/${currentStore.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -235,7 +236,7 @@ export function PickupMenu() {
                                                     })
 
                                                     Promise.all(inverse_order.map(async k => {
-                                                        const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
+                                                        const data: Store = await (await queryOs(`store/${k.store}`, {
                                                             method: "GET",
                                                             credentials: "include",
                                                             redirect: "follow"

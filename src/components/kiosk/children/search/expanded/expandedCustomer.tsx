@@ -11,6 +11,7 @@ import { kioskPanelLogAtom } from "@atoms/kiosk";
 import { Transaction } from "@utils/stockTypes";
 import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
 import { OPEN_STOCK_URL } from "@/src/utils/environment";
+import queryOs from "@/src/utils/query-os";
 
 
 export function ExpandedCustomer() {
@@ -28,7 +29,7 @@ export function ExpandedCustomer() {
 
     useEffect(() => {
         if(inspectingCustomer) {
-            fetch(`${OPEN_STOCK_URL}/customer/transactions/${inspectingCustomer.id}`, {
+            queryOs(`customer/transactions/${inspectingCustomer.id}`, {
                 method: "GET",
 				credentials: "include",
 				redirect: "follow"

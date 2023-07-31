@@ -7,6 +7,7 @@ import { probingPricePayableAtom } from "@atoms/payment"
 import { OPEN_STOCK_URL} from "@utils/environment"
 import { ordersAtom } from "@atoms/transaction"
 import useKeyPress from "@hooks/useKeyPress"
+import queryOs from "@/src/utils/query-os"
 
 export function PaymentMethod() {
     const generateTransaction = useAtomValue(generateTransactionAtom)
@@ -56,7 +57,7 @@ export function PaymentMethod() {
 
         setTransactionType("Quote")
 
-        fetch(`${OPEN_STOCK_URL}/transaction`, {
+        queryOs(`transaction`, {
             method: "POST",
             body: JSON.stringify(generateTransaction),
             credentials: "include",
@@ -240,7 +241,7 @@ export function PaymentMethod() {
                         onClick={() => {
                             setTransactionType("Quote")
 
-                            fetch(`${OPEN_STOCK_URL}/transaction`, {
+                            queryOs(`transaction`, {
                                 method: "POST",
                                 body: JSON.stringify(generateTransaction),
                                 credentials: "include",

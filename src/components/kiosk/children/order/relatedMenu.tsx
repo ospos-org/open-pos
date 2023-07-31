@@ -8,6 +8,7 @@ import { inspectingProductAtom } from "@atoms/product";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
 import { OPEN_STOCK_URL } from "@utils/environment";
 import { Transaction } from "@utils/stockTypes";
+import queryOs from "@/src/utils/query-os";
 
 export function RelatedOrders() {
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
@@ -18,7 +19,7 @@ export function RelatedOrders() {
     const [ suggestions, setSuggestions ] = useState<Transaction[]>([]);
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/transaction/product/${inspectingProduct.activeProductVariant?.barcode}`, {
+        queryOs(`transaction/product/${inspectingProduct.activeProductVariant?.barcode}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"

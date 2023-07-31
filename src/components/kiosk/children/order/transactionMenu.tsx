@@ -10,6 +10,7 @@ import { Customer, DbOrder } from "@utils/stockTypes";
 import { OPEN_STOCK_URL } from "@utils/environment";
 
 import { NoteElement } from "@components/common/noteElement";
+import queryOs from "@/src/utils/query-os";
 
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)
@@ -25,7 +26,7 @@ export default function TransactionMenu() {
         setRefChoices(transaction?.item.products)
 
         if(transaction?.item?.customer.customer_type != "Store") {
-            fetch(`${OPEN_STOCK_URL}/customer/${transaction?.item?.customer.customer_id}`, {
+            queryOs(`customer/${transaction?.item?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -34,7 +35,7 @@ export default function TransactionMenu() {
                 setCustomer(n);
             })
         }else {
-            fetch(`${OPEN_STOCK_URL}/store/code/${transaction?.item?.customer.customer_id}`, {
+            queryOs(`store/code/${transaction?.item?.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

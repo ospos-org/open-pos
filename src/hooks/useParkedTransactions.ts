@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { OPEN_STOCK_URL } from "../utils/environment";
+import queryOs from "../utils/query-os";
 import { Transaction } from "../utils/stockTypes";
 
 const MINUTE_MS = 5_000;
@@ -8,7 +9,7 @@ const useParkedTransactions = () => {
     const [ activeTransactions, setActiveTransactions ] = useState<Transaction[] | null>(null);
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/transaction/saved`, {
+        queryOs(`transaction/saved`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -21,7 +22,7 @@ const useParkedTransactions = () => {
         })
         
         const interval = setInterval(() => {
-            fetch(`${OPEN_STOCK_URL}/transaction/saved`, {
+            queryOs(`transaction/saved`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

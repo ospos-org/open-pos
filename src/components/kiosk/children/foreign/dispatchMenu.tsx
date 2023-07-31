@@ -12,6 +12,7 @@ import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
 import { getDate } from "@utils/utils"
+import queryOs from "@/src/utils/query-os"
 
 export function DispatchMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
@@ -31,7 +32,7 @@ export function DispatchMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await fetch(`${OPEN_STOCK_URL}/helpers/distance/${customerState?.id}`, {
+        const distance_data: { store_id: string, store_code: string, distance: number }[] = await queryOs(`helpers/distance/${customerState?.id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
@@ -62,7 +63,7 @@ export function DispatchMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await fetch(`${OPEN_STOCK_URL}/helpers/suggest/`, {
+            const data = await queryOs(`helpers/suggest/`, {
                 method: "POST",
                 credentials: "include",
                 redirect: "follow",
@@ -303,7 +304,7 @@ export function DispatchMenu() {
                                                 })
 
                                                 Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await fetch(`${OPEN_STOCK_URL}/store/${k.store}`, {
+                                                    const data: Store = await (await queryOs(`store/${k.store}`, {
                                                         method: "GET",
                                                         credentials: "include",
                                                         redirect: "follow"
@@ -513,7 +514,7 @@ export function DispatchMenu() {
                                                 if(!loading) {
                                                     setLoading(true);
 
-                                                    fetch(`${OPEN_STOCK_URL}/customer/contact/${customerState?.id}`, {
+                                                    queryOs(`customer/contact/${customerState?.id}`, {
                                                         method: "POST",
                                                         body: JSON.stringify(customerState?.contact),
                                                         credentials: "include",

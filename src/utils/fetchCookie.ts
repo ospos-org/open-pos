@@ -1,8 +1,9 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback } from "react";
-import { activeEmployeeAtom, masterStateAtom, storeLookupTableAtom } from "../atoms/openpos";
-import { OPEN_STOCK_URL } from "./environment";
+
+import { activeEmployeeAtom, masterStateAtom, storeLookupTableAtom } from "@atoms/openpos";
 import { Employee } from "./stockTypes";
+import queryOs from "./query-os";
 
 const useFetchCookie = () => {
     const masterState = useAtomValue(masterStateAtom)
@@ -11,7 +12,7 @@ const useFetchCookie = () => {
     const setUser = useSetAtom(activeEmployeeAtom)
 
     const query = useCallback(async function(rid: string, pass: string, callback: (password: string) => void) {
-        fetch(`${OPEN_STOCK_URL}/employee/auth/rid/${rid}`, {
+        queryOs(`employee/auth/rid/${rid}`, {
             method: "POST",
             body: JSON.stringify({
                 pass: pass,
@@ -21,7 +22,7 @@ const useFetchCookie = () => {
             redirect: "follow"
         }).then(async e => {
             if(e.ok) {
-                fetch(`${OPEN_STOCK_URL}/employee/rid/${rid}`, {
+                queryOs(`employee/rid/${rid}`, {
                     method: "GET",
                     credentials: "include",
                     redirect: "follow"
@@ -30,7 +31,7 @@ const useFetchCookie = () => {
                         const employee: Employee[] = await k.json();
                         setUser(employee[0]);
 
-                        fetch(`${OPEN_STOCK_URL}/store/`, {
+                        queryOs(`store/`, {
                             method: "GET",
                             redirect: "follow",
                             credentials: "include"
@@ -44,7 +45,7 @@ const useFetchCookie = () => {
                 })
             }
         })
-    }, [masterState.kiosk_id])
+    }, [masterState.kiosk_id, setStoreLut, setUser])
     
     return { query }
 }

@@ -16,6 +16,7 @@ import {
 import { SwitchViews } from "./deliverables/switchViews"
 import { OrderSummary, parseDeliverables } from "./deliverables/orderSummary"
 import { ExpandedOrder } from "./deliverables/expandedOrder"
+import queryOs from "@/src/utils/query-os"
 
 export default function Deliverables() {
     const menuState = useAtomValue(deliverablesMenuStateAtom);
@@ -27,10 +28,9 @@ export default function Deliverables() {
     const setMenuInformation = useSetAtom(deliverablesProductInformationAtom);
     const setProductCategories = useSetAtom(productCategoriesAtom);
 
-
     useEffect(() => {
         if(menuState != null)
-            fetch(`${OPEN_STOCK_URL}/product/${menuState?.product}`, {
+            queryOs(`product/${menuState?.product}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -53,7 +53,7 @@ export default function Deliverables() {
     }, [activeOrder, setDeliverables])
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/transaction/deliverables/${masterState.store_id}`, {
+        queryOs(`transaction/deliverables/${masterState.store_id}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"

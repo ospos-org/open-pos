@@ -16,6 +16,7 @@ import { customerAtom } from "@atoms/customer";
 import { getDate } from "../utils/utils";
 import { inspectingProductAtom } from "./product";
 import { fromDbDiscount } from "../utils/discountHelpers";
+import queryOs from "../utils/query-os";
 
 const defaultKioskAtom = atom((get) => {
     return {
@@ -133,7 +134,7 @@ const parkSaleAtom = atom(undefined, (get, set) => {
     if((get(ordersAtom)?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
         const transaction = get(generateTransactionAtom)
 
-        fetch(`${OPEN_STOCK_URL}/transaction`, {
+        queryOs(`transaction`, {
             method: "POST",
             body: JSON.stringify(transaction),
             credentials: "include",

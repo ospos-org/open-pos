@@ -5,17 +5,15 @@ import {
     deliverablesActiveOrderAtom, 
     deliverablesMenuStateAtom
 } from "@atoms/deliverables";
-import { masterStateAtom, mobileLowModeAtom } from "@atoms/openpos"
+import { mobileLowModeAtom } from "@atoms/openpos"
 import { useWindowSize } from "@hooks/useWindowSize"
 import OrderView from "../orderView"
 
 export function ExpandedOrder() {
     const menuState = useAtomValue(deliverablesMenuStateAtom)
-    const masterState = useAtomValue(masterStateAtom)
     const stateChange = useAtomValue(deliverablesStateChangeAtom)
+    const activeOrder = useAtomValue(deliverablesActiveOrderAtom)
     const lowModeCartOn = useAtomValue(mobileLowModeAtom)
-
-    const [ activeOrder, setActiveOrder ] = useAtom(deliverablesActiveOrderAtom)
 
     const windowSize = useWindowSize()
     
@@ -43,7 +41,7 @@ export function ExpandedOrder() {
         <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
             {
                 activeOrder != null ? 
-                    <OrderView activeOrder={activeOrder} setActiveOrder={setActiveOrder} master_state={masterState} /> 
+                    <OrderView orderAtom={deliverablesActiveOrderAtom} /> 
                 : 
                     <div className="h-full flex flex-col items-center justify-center flex-1">
                         <p className="text-gray-400 text-center self-center">

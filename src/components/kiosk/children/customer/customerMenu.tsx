@@ -7,6 +7,7 @@ import { Address, ContactInformation, Customer } from "@utils/stockTypes"
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
 import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@/src/atoms/customer"
+import queryOs from "@/src/utils/query-os"
 
 function CustomerMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -55,7 +56,7 @@ function CustomerMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await fetch(`${OPEN_STOCK_URL}/helpers/suggest/`, {
+            const data = await queryOs(`helpers/suggest/`, {
                 method: "POST",
                 credentials: "include",
                 redirect: "follow",
@@ -235,7 +236,7 @@ function CustomerMenu() {
                             if(!loading) {
                                 setLoading(true);
 
-                                fetch(customerState === null ? `${OPEN_STOCK_URL}/customer` : `${OPEN_STOCK_URL}/customer/${customerStateInternal?.id}`, {
+                                queryOs(customerState === null ? `customer` : `customer/${customerStateInternal?.id}`, {
                                     method: "POST",
                                     body: JSON.stringify({ ...customerStateInternal, contact: customerStateInternal?.contact, name: customerStateInternal?.contact.name }),
                                     credentials: "include",

@@ -6,30 +6,31 @@ import Link from "next/link"
 import { 
     OrderStatusStatus,
     Transaction,
-    MasterState, 
     Customer, 
     Order
 } from "@utils/stockTypes";
 import { applyDiscount, findMaxDiscount } from "@utils/discountHelpers"
-import { OPEN_STOCK_URL } from "@utils/environment"
 import { getDate } from "@utils/utils"
 import NotesMenu from "@components/common/notesMenu"
+import queryOs from "@/src/utils/query-os";
+import { PrimitiveAtom, useAtom, useAtomValue } from "jotai";
+import { masterStateAtom } from "@/src/atoms/openpos";
 
-export default function OrderView({ activeOrder, setActiveOrder, master_state }: { activeOrder: Order, setActiveOrder: Function, master_state: MasterState }) {
-    const [ _, setOrderInfo ] = useState<Transaction | null>(null);
+export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Order | null> }) {
+    const masterState = useAtomValue(masterStateAtom)
+
+    const [ activeOrder, setActiveOrder ] = useAtom(orderAtom)
     const [ customerInfo, setCustomerInfo ] = useState<Customer | null>(null);
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/transaction/ref/${activeOrder.reference}`, {
+        queryOs(`transaction/ref/${activeOrder?.reference}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
         }).then(async d => {
             if(d.ok) {
                 const data: Transaction[] = await d.json();
-                setOrderInfo(data[0]);
-
-                fetch(`${OPEN_STOCK_URL}/customer/${data[0].customer.customer_id}`, {
+                queryOs(`customer/${data[0].customer.customer_id}`, {
                     method: "GET",
                     credentials: "include",
                     redirect: "follow"
@@ -49,7 +50,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
         let total_products = 0
         let completed = 0;
 
-        activeOrder.products.map(v => {
+        activeOrder?.products.map(v => {
             total_products += v.quantity
             v?.instances?.map(k => {
                 if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
@@ -59,7 +60,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
         })
 
         setCompletedPercentage(completed / total_products * 100)
-    }, [activeOrder.products])
+    }, [activeOrder?.products])
 
     return (
         <div className="flex flex-col gap-8">
@@ -73,7 +74,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
 
                 <div className="bg-gray-800 rounded-md p-1">
                     {
-                        activeOrder.order_type === "pickup" ?
+                        activeOrder?.order_type === "pickup" ?
                         <Image 
                             className=""
                             height={40} width={40} src="/icons/building-02.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -98,7 +99,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 0 || (activeOrder.status.status.InStore || activeOrder.status.status.Fulfilled) ?
                     <div 
                         className="bg-green-600 cursor-not-allowed opacity-25 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 select-none">
-                        <p>{activeOrder.order_type === "pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{activeOrder?.order_type === "pickup" ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -107,13 +108,13 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     completedPercentage === 100 ?
                     <div 
                         onClick={async () => {
-                            if ((activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== master_state?.store_id))) {
+                            if ((activeOrder?.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== masterState?.store_id))) {
                                 const new_status: OrderStatusStatus = {
                                     type: "instore",
                                     value: getDate()
                                 }
                                 
-                                const data = await fetch(`${OPEN_STOCK_URL}/transaction/status/order/${activeOrder.reference}`, {
+                                const data = await queryOs(`transaction/status/order/${activeOrder?.reference}`, {
                                     method: "POST",
                                     credentials: "include",
                                     redirect: "follow",
@@ -122,14 +123,20 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                                 
                                 if (data.ok) {
                                     const updated: Transaction = await data.json();
-                                    setActiveOrder({ ...updated.products.find((order) => order.reference === activeOrder.reference) })
+
+                                    // @ts-expect-error
+                                    setActiveOrder({ 
+                                        ...updated.products.find(
+                                            (order) => order.reference === activeOrder?.reference
+                                        ) 
+                                    })
                                 }
                             } else {
                                 console.log("CHANGE TO SCREEN TO SHOW PACKING")
                             }
                         }}
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{(activeOrder.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== master_state?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
+                        <p>{(activeOrder?.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== masterState?.store_id)) ? "Mark Ready for Pickup" : "Send to Packing"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -137,7 +144,7 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
                     :
                     <div 
                         className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
-                        <p>{activeOrder.order_type === "pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
+                        <p>{activeOrder?.order_type === "pickup" ? "Mark Partial as Ready for Pickup" : "Continue as Partially Complete"}</p>
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/check-square.svg" alt="" style={{ filter: "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)" }}></Image>
@@ -256,9 +263,9 @@ export default function OrderView({ activeOrder, setActiveOrder, master_state }:
 
             <div>
                 <p className="text-gray-400">DESTINATION</p>
-                <p className="text-white font-bold">{activeOrder.destination?.contact.name}</p>
-                <p className="text-white">{activeOrder.destination?.contact.address.street}</p>
-                <p className="text-gray-400">{activeOrder.destination?.contact.address.street2} {activeOrder.destination?.contact.address.city} {activeOrder.destination?.contact.address.po_code}</p> 
+                <p className="text-white font-bold">{activeOrder?.destination?.contact.name}</p>
+                <p className="text-white">{activeOrder?.destination?.contact.address.street}</p>
+                <p className="text-gray-400">{activeOrder?.destination?.contact.address.street2} {activeOrder?.destination?.contact.address.city} {activeOrder?.destination?.contact.address.po_code}</p> 
             </div>
             
             <div className="flex flex-col gap-2">

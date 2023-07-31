@@ -8,6 +8,7 @@ import { fromDbDiscount } from '@utils/discountHelpers'
 import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from '@atoms/customer'
 import { ordersAtom } from '@atoms/transaction'
+import queryOs from '@/src/utils/query-os';
 
 interface TransactionItemProps {
     transaction: Transaction
@@ -21,7 +22,7 @@ export function SavedTransactionItem({ transaction }: TransactionItemProps) {
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
-            fetch(`${OPEN_STOCK_URL}/customer/${transaction.customer.customer_id}`, {
+            queryOs(`customer/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -30,7 +31,7 @@ export function SavedTransactionItem({ transaction }: TransactionItemProps) {
                 setCustomer(n);
             })
         }else {
-            fetch(`${OPEN_STOCK_URL}/store/code/${transaction.customer.customer_id}`, {
+            queryOs(`store/code/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -64,7 +65,7 @@ export function SavedTransactionItem({ transaction }: TransactionItemProps) {
                     <Image
                         className="cursor-pointer" 
                         onClick={() => {
-                            fetch(`${OPEN_STOCK_URL}/transaction/delete/${transaction.id}`, {
+                            queryOs(`transaction/delete/${transaction.id}`, {
                                 method: "POST",
                                 credentials: "include",
                                 redirect: "follow",
@@ -83,7 +84,7 @@ export function SavedTransactionItem({ transaction }: TransactionItemProps) {
                             // active_promotions: Promotion[]
                             const updated_orders: Order[] = await Promise.all(transaction.products.map(async k => {
                                 const new_products = k.products.map(async b => {
-                                    const data: { product: Product, promotions: Promotion[] } = await (await fetch(`${OPEN_STOCK_URL}/product/with_promotions/${b.product_sku}`, {
+                                    const data: { product: Product, promotions: Promotion[] } = await (await queryOs(`product/with_promotions/${b.product_sku}`, {
                                         method: "GET",
                                         credentials: "include",
                                         redirect: "follow"

@@ -9,6 +9,7 @@ import { kioskPanelLogAtom } from '@atoms/kiosk';
 import { OPEN_STOCK_URL } from "@utils/environment";
 import { searchTermAtom } from '@atoms/search';
 import { useWindowSize } from '@hooks/useWindowSize';
+import queryOs from '@/src/utils/query-os';
 
 interface ItemTransactionProps {
     transaction: Transaction,
@@ -28,7 +29,7 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
-            fetch(`${OPEN_STOCK_URL}/customer/${transaction.customer.customer_id}`, {
+            queryOs(`customer/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"
@@ -37,7 +38,7 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
                 setCustomer(n);
             })
         }else {
-            fetch(`${OPEN_STOCK_URL}/store/code/${transaction.customer.customer_id}`, {
+            queryOs(`store/code/${transaction.customer.customer_id}`, {
                 method: "GET",
                 credentials: "include",
                 redirect: "follow"

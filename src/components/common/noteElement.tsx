@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 
 import { Employee, Note } from "@utils/stockTypes"
-import { OPEN_STOCK_URL } from "@utils/environment"
+import queryOs from "@/src/utils/query-os";
 
 export function NoteElement({ note }: { note: Note }) {
     const [ author, setAuthor] = useState<Employee | null>(null);
 
     useEffect(() => {
-        fetch(`${OPEN_STOCK_URL}/employee/${note.author}`, {
+        queryOs(`employee/${note.author}`, {
             method: "GET",
             credentials: "include",
             redirect: "follow"
