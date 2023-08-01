@@ -12,6 +12,7 @@ import { MobileMenu } from '@/src/components/common/mobileMenu';
 import { POSBanner } from '@/src/components/common/posBanner';
 import { PasswordInput } from '@/src/components/common/passwordInput';
 import useFetchCookie from '@/src/utils/fetchCookie';
+import { Toaster } from 'sonner';
 
 export default function App() {
 	const user = useAtomValue(activeEmployeeAtom);
@@ -48,6 +49,8 @@ export default function App() {
     return (
 		<div className="flex flex-col max-h-screen overflow-hidden">
 			<POSBanner />
+
+			<Toaster position="top-center" />
 
 			{ !user && <PasswordInput inputRef={input_ref} />	}
 

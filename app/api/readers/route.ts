@@ -1,7 +1,7 @@
 import stripe from "@/src/utils/serveStripeInstance";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         const { data: readers } = await stripe.terminal.readers.list();
         return NextResponse.json({ readersList: readers });
