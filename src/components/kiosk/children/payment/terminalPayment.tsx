@@ -8,6 +8,7 @@ import { OPEN_STOCK_URL } from "@utils/environment"
 import { PaymentIntent } from "@utils/stockTypes"
 import { getDate } from "@utils/utils"
 import queryOs from "@/src/utils/query-os"
+import { toast } from "sonner"
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -100,7 +101,9 @@ export function TerminalPayment() {
                     if(k.ok) {
                         setKioskPanel("completed");
                     }else {
-                        alert("Something went horribly wrong")
+                        toast.message('Failed to save transaction', {
+                            description: `Server gave: ${await k.json()}`,
+                        })
                     }
                 })
             }}>skip to completion</p>

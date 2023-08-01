@@ -2,12 +2,15 @@ import { atomWithStorage } from "jotai/utils"
 
 import { Employee, MasterState, Store } from "@utils/stockTypes"
 import { atom } from "jotai"
+import Stripe from "stripe"
 
 const pageAtom = atom<number>(0)
 const mobileMenuOpenAtom = atom<boolean>(false)
 const mobileLowModeAtom = atom<boolean>(false)
 const activeEmployeeAtom = atom<Employee | null>(null);
 const storeLookupTableAtom = atom<Store[]>([])
+const activeTerminalAtom = atom<Stripe.Terminal.Reader | null>(null)
+const availableTerminalsAtom = atom<Stripe.Terminal.Reader[]>([])
 
 const passwordInputAtom = atom<string[]>(["","","","", "", "", "", ""]);
 
@@ -39,18 +42,32 @@ const rawMasterStateAtom = atomWithStorage<MasterState>("openstock-master-state"
     },
     employee: null,
     kiosk_id: null, // "adbd48ab-f4ca-4204-9c88-3516f3133621",
-    kiosk: "NEW"
+    kiosk: "NEW",
+    availableTerminals: [],
+    activeTerminal: null
 })
 
 const masterStateAtom = atom(
     (get) => ({
         ...get(rawMasterStateAtom),
         employee: get(activeEmployeeAtom),
-        store_lut: get(storeLookupTableAtom)
+        store_lut: get(storeLookupTableAtom),
+        availableTerminals: get(availableTerminalsAtom),
+        activeTerminal: get(activeTerminalAtom)
     }), 
     (_, set, value: MasterState) => {
         set(rawMasterStateAtom, value)
     }
 )
 
-export { masterStateAtom, pageAtom, mobileMenuOpenAtom, mobileLowModeAtom, storeLookupTableAtom, activeEmployeeAtom, passwordInputAtom }
+export { 
+    availableTerminalsAtom, 
+    storeLookupTableAtom, 
+    activeTerminalAtom, 
+    mobileMenuOpenAtom, 
+    activeEmployeeAtom, 
+    mobileLowModeAtom, 
+    passwordInputAtom,
+    masterStateAtom, 
+    pageAtom,
+}

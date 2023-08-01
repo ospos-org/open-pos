@@ -1,9 +1,9 @@
 "use client";
 
 import { createRef, useEffect, useState } from 'react'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 
-import { activeEmployeeAtom, mobileMenuOpenAtom, passwordInputAtom } from '@atoms/openpos';
+import { activeEmployeeAtom, availableTerminalsAtom, mobileMenuOpenAtom, passwordInputAtom } from '@atoms/openpos';
 import { useWindowSize } from '@hooks/useWindowSize';
 import { MobileNavigationElement } from '@/src/components/common/mobileNavigationElement';
 import { DesktopNavigationElement } from '@/src/components/common/desktopNavigationElement';
@@ -13,10 +13,13 @@ import { POSBanner } from '@/src/components/common/posBanner';
 import { PasswordInput } from '@/src/components/common/passwordInput';
 import useFetchCookie from '@/src/utils/fetchCookie';
 import { Toaster } from 'sonner';
+import config from '@/src/payment/config';
 
 export default function App() {
 	const user = useAtomValue(activeEmployeeAtom);
-	
+
+	const setActiveTerminals = useSetAtom(availableTerminalsAtom)	
+
 	const [ demoOverride, setDemoOverride ] = useState(false);
 	const [ codeInput, setCodeInput ] = useAtom(passwordInputAtom);
 	const [ menuOpen, setMenuOpen ] = useAtom(mobileMenuOpenAtom);
@@ -24,6 +27,16 @@ export default function App() {
 	const input_ref = createRef<HTMLInputElement>();
     const windowSize = useWindowSize();
 	const { query } = useFetchCookie()
+
+	useEffect(() => {
+		// OnMount
+		config.get_terminals().then(terminals => {
+			if (!terminals.error) {
+				setActiveTerminals(terminals.value)
+				console.log("set: ", terminals.value)
+			}
+		})
+	}, [])
 
 	// Handle user authentication and pass it to child elements.
 	useEffect(() => {

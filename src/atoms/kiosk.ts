@@ -17,6 +17,7 @@ import { getDate } from "../utils/utils";
 import { inspectingProductAtom } from "./product";
 import { fromDbDiscount } from "../utils/discountHelpers";
 import queryOs from "../utils/query-os";
+import { toast } from "sonner";
 
 const defaultKioskAtom = atom((get) => {
     return {
@@ -143,7 +144,9 @@ const parkSaleAtom = atom(undefined, (get, set) => {
             if(k.ok) {
                 set(defaultKioskAtom, RESET)
             }else {
-                alert("Something went horribly wrong")
+                toast.message('Failed to save transaction', {
+                    description: `Server gave: ${await k.json()}`,
+                })
             }
         })
     }

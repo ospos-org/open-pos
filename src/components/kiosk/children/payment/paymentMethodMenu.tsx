@@ -8,6 +8,7 @@ import { OPEN_STOCK_URL} from "@utils/environment"
 import { ordersAtom } from "@atoms/transaction"
 import useKeyPress from "@hooks/useKeyPress"
 import queryOs from "@/src/utils/query-os"
+import { toast } from "sonner"
 
 export function PaymentMethod() {
     const generateTransaction = useAtomValue(generateTransactionAtom)
@@ -66,7 +67,9 @@ export function PaymentMethod() {
             if(k.ok) {
                 setKioskPanel("completed");
             }else {
-                alert("Something went horribly wrong")
+                toast.message('Failed to save transaction', {
+                    description: `Server gave: ${await k.json()}`,
+                })
             }
         })
     }, [f6Pressed, generateTransaction, setKioskPanel, setTransactionType]);
@@ -247,7 +250,9 @@ export function PaymentMethod() {
                                 if(k.ok) {
                                     setKioskPanel("completed");
                                 }else {
-                                    alert("Something went horribly wrong")
+                                    toast.message('Failed to save transaction', {
+                                        description: `Server gave: ${await k.json()}`,
+                                    })
                                 }
                             })
                         }} 

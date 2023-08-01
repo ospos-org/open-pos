@@ -1,3 +1,5 @@
+import Stripe from "stripe";
+
 export type KioskState = {
     customer: Customer | null,
     transaction_type: TransactionType | null,
@@ -474,9 +476,14 @@ export type Note = {
 export type MasterState = {
     store_id: string | null,
     store_code: string,
-    employee: Employee | null | undefined,
     store_contact: ContactInformation,
     store_lut: Store[],
+    
+    employee: Employee | null | undefined,
+
     kiosk: string,
-    kiosk_id: string | null
+    kiosk_id: string | null,
+
+    activeTerminal: Stripe.Terminal.Reader | null,
+    availableTerminals: Stripe.Terminal.Reader[] 
 }
