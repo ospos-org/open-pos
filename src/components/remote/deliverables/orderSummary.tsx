@@ -296,8 +296,6 @@ export function OrderSummary() {
                                                 abn = deliverables.map(k => {
                                                     return b.id == k.id ? b : k
                                                 }) as Order[];
-
-                                                // console.log("ABN", abn, b)
                                             })
 
                                             setDeliverables(abn)

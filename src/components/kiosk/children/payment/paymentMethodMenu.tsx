@@ -63,8 +63,6 @@ export function PaymentMethod() {
             credentials: "include",
             redirect: "follow"
         }).then(async k => {
-            console.log(k);
-
             if(k.ok) {
                 setKioskPanel("completed");
             }else {
@@ -84,7 +82,6 @@ export function PaymentMethod() {
                         const store_id = b?.origin?.store_id ?? "";
                         const stock_level = n.stock.reduce((p, c) => p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0), 0);
 
-                        console.log(store_id, stock_level, n.stock);
                         if(stock_level <= 0) {
                             has_negative_stocks = true;
                         }
@@ -247,8 +244,6 @@ export function PaymentMethod() {
                                 credentials: "include",
                                 redirect: "follow"
                             }).then(async k => {
-                                console.log(k);
-
                                 if(k.ok) {
                                     setKioskPanel("completed");
                                 }else {

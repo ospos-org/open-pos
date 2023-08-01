@@ -38,8 +38,6 @@ export default function App() {
             const rid = code_string.substring(0, 4);
             const pass = code_string.substring(4, 9);
 
-			console.log("GONNA QUERY IT ;)")
-
 			query(rid, pass, (password: string) => {
 				// Refetch every 9 minutes. Expires every 10
 				// setInterval(() => query(rid, password, () => {}), 9 * 60 * 1000)

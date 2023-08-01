@@ -44,7 +44,6 @@ export function applyDiscountsConsiderateOfQuantity(
             
             const discount = maximumDiscountFound[0].value;
             savings += (price - applyDiscount(price, discount));
-            console.log("Applied", price - applyDiscount(price, discount));
         }
 
         // Remove the promotion, it has been exhausted.

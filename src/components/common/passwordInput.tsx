@@ -51,8 +51,6 @@ export function PasswordInput({ inputRef }: { inputRef: RefObject<HTMLInputEleme
                                 onClick={() => {
                                     const indx = codeInput.findIndex(b => b == "");
 
-                                    console.log(indx, codeInput[indx]);
-
                                     if(indx >= 0) {
                                         let new_input = codeInput;
                                         new_input[indx-1] = "";
@@ -89,8 +87,6 @@ export function PasswordInput({ inputRef }: { inputRef: RefObject<HTMLInputEleme
             <input type="text" readOnly={true} className="bg-transparent outline-none text-gray-800" autoFocus ref={inputRef} onBlur={(e) => {e.currentTarget.focus()}} onKeyDown={(e) => {
                 if(e.key == "Backspace") {
                     const indx = codeInput.findIndex(b => b == "");
-
-                    console.log(indx, codeInput[indx]);
 
                     if(indx >= 0) {
                         let new_input = codeInput;

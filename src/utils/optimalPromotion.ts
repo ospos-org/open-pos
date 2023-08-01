@@ -20,8 +20,6 @@ export const determineOptimalPromotionPathway = (products: ProductPurchase[]) =>
         }
     })
 
-    console.log("MAP", product_map)
-
     products.map(b => {
         // Run promotion simulation
         const mapped: [Promotion, number][] = b.active_promotions.map(d => {

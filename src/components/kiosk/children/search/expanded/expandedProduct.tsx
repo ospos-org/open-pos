@@ -29,8 +29,6 @@ export function ExpandedProduct() {
 
     if (!inspectingProduct) return <></>
 
-    console.log(inspectingProduct)
-
     return (
         <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
             <div className="flex flex-row items-start gap-4">
