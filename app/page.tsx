@@ -36,7 +36,7 @@ export default function App() {
 				console.log("set: ", terminals.value)
 			}
 		})
-	}, [])
+	}, [setActiveTerminals])
 
 	// Handle user authentication and pass it to child elements.
 	useEffect(() => {

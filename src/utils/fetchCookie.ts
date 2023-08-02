@@ -16,7 +16,8 @@ const useFetchCookie = () => {
             method: "POST",
             body: JSON.stringify({
                 pass: pass,
-                kiosk_id: masterState.kiosk_id
+                kiosk_id: masterState.kiosk_id,
+                tenant_id: "DEFAULT_TENANT",
             }),
             credentials: "include",
             redirect: "follow"
