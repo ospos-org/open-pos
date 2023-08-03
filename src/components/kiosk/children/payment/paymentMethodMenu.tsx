@@ -2,7 +2,7 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai"
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 
-import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, transactionTypeAtom } from "@atoms/kiosk"
+import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, perfAtom, transactionTypeAtom } from "@atoms/kiosk"
 import { probingPricePayableAtom } from "@atoms/payment"
 import { OPEN_STOCK_URL} from "@utils/environment"
 import { ordersAtom } from "@atoms/transaction"
@@ -14,6 +14,7 @@ export function PaymentMethod() {
     const generateTransaction = useAtomValue(generateTransactionAtom)
     const kioskState = useAtomValue(defaultKioskAtom)
     const orderState = useAtomValue(ordersAtom)
+    const perfState = useAtomValue(perfAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setTransactionType = useSetAtom(transactionTypeAtom)
@@ -98,7 +99,7 @@ export function PaymentMethod() {
 
     return (
         <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-            <div className="flex flex-col h-full gap-24">
+            <div className={`flex flex-col h-full ${hasNegativeStock && perfState.type === "creative" ? "gap-14" : "gap-20"}`}>
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-row justify-between cursor-pointer">
                         <div 
@@ -114,10 +115,14 @@ export function PaymentMethod() {
                     </div>
 
                     {
-                        hasNegativeStock ?
-                        <div className="flex flex-col justify-between bg-red-900 px-2 pr-4 py-2 rounded-md gap-2">
-                            <p className="text-white bg-red-600 px-2 rounded-md font-bold font-mono text-center">WARNING</p>
-                            <p className="text-red-200 p-2">This cart contains products with negative stock levels, proceed with caution.</p>
+                        hasNegativeStock && perfState.type === "creative" ?
+                        <div className="flex mt-4 relative flex-row items-center p-1 bg-orange-900 rounded-md gap-2">
+                            <div className="absolute top-[-14px] left-[-7px] bg-orange-600 px-2 py-1 flex-1 h-fit rounded-md flex flex-row items-center gap-1">
+                                <Image src="/icons/alert-triangle.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} 
+                                    height={15} width={15} alt="" />
+                                <p className="text-white font-bold text-xs">WARNING</p>
+                            </div>
+                            <p className="text-red-200 p-2 text-xs">This cart contains products with negative stock levels, proceed with caution.</p>
                         </div>
                         :
                         <></>
