@@ -170,7 +170,7 @@ export default function TransactionMenu() {
                                     <div className="flex flex-row items-center justify-between flex-1">
                                         <div className="flex flex-col">
                                             <div className="flex flex-row items-center gap-2">
-                                                <p className="text-white font-semibold">{type}</p>
+                                                <p className="text-white font-semibold">{type[0].toUpperCase()}{type.substring(1)}</p>
                                                 <p className="text-gray-400 text-sm">{moment(k.timestamp).format("DD/MM/YY LT")}</p>
                                             </div>
                                             <p className="text-gray-400 font-semibold text-sm">{k.reason}</p>
@@ -219,16 +219,23 @@ export default function TransactionMenu() {
                                                 }])
                                             }
                                         }}
-                                        className={`min-h-[18px] min-w-[18px] rounded-md border-2 ${matchingItem !== -1 ? "border-gray-400 bg-gray-500" : "border-gray-600 bg-gray-800"}`}
-                                    ></div>
+                                        className={`flex items-center justify-center h-[20px] w-[20px] cursor-pointer`}
+                                    >
+                                        {
+                                            matchingItem !== -1 ?
+                                            <Image src="/icons/check-square.svg" alt="" height={20} width={20} style={{ filter: "invert(95%) sepia(100%) saturate(20%) hue-rotate(289deg) brightness(104%) contrast(106%)" }}></Image>
+                                            :
+                                            <Image src="/icons/square.svg" alt="" height={20} width={20} style={{ filter: "invert(70%) sepia(11%) saturate(294%) hue-rotate(179deg) brightness(92%) contrast(87%)" }}></Image>
+                                        }
+                                    </div>
                                     
-                                    <div className={`flex flex-row ${matchingItem === -1 ? "bg-gray-600" : "bg-gray-400"} p-0 rounded-sm`}>
+                                    <div className={`flex flex-row ${matchingItem === -1 ? "bg-gray-600" : "bg-gray-100"} p-0 rounded-sm`}>
                                         <p className="px-1 cursor-pointer" onClick={() => {
-                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.min(element.quantity - 1, 0) } : element))
+                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.max(element.quantity - 1, 1) } : element))
                                         }}>-</p>
-                                        <p className="text-gray-200 px-2 bg-gray-800">{k.quantity}</p>
+                                        <p className="text-gray-200 px-2 bg-gray-800">{matchingItem === -1 ? k.quantity : selectedItems[matchingItem].quantity}</p>
                                         <p className="px-1 cursor-pointer" onClick={() => {
-                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.max(element.quantity + 1, k.quantity) } : element))
+                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.min(element.quantity + 1, k.quantity) } : element))
                                         }}>+</p>
                                     </div>
                                 </div>
