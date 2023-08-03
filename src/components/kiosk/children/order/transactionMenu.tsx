@@ -15,10 +15,14 @@ import queryOs from "@/src/utils/query-os";
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)
 
-    const [ customer, setCustomer ] = useState<Customer | null>();
     const [ activeTransaction, setActiveTransaction ] = useState<DbOrder | null>(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
-    const [ refChoices, setRefChoices ] = useState(transaction?.item.products);
+    const [ selectedItems, setSelectedItems ] = useState<{
+        product_id: string,
+        quantity: number
+    }[]>([]); 
     const [ selectorOpen, setSelectorOpen ] = useState(false);
+    const [ refChoices, setRefChoices ] = useState(transaction?.item.products);
+    const [ customer, setCustomer ] = useState<Customer | null>();
     
     useEffect(() => {
         setActiveTransaction(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
@@ -91,6 +95,7 @@ export default function TransactionMenu() {
                 }
             </div>
 
+            {/* Transaction History */}
             <div className="flex flex-col">
                 {
                     activeTransaction?.status_history.map((k, indx) => {
@@ -192,22 +197,51 @@ export default function TransactionMenu() {
                 }
             </div>
             
+            {/* Product List */}
             <div className="flex flex-col gap-2">
                 <p className="text-gray-400">PRODUCTS</p>
 
                 {
                     activeTransaction?.products.map(k => {
+                        const matchingItem = selectedItems.findIndex((elem) => elem.product_id === k.id)
+                        
                         return (
-                            <div key={`${k.id} ${k.product_code} ${k.quantity} ${k.product_variant_name}`} className="gap-8 px-8 items-center" style={{ display: "grid", gridTemplateColumns: "25px 1fr 75px" }}>
-                                <p className="text-gray-400">{k.quantity}</p>
-                                
-                                <div className="flex flex-col items-start">
-                                    <p className="text-white font-semibold">{k.product_name}</p>
-                                    <p className="text-gray-400">{k.product_code}</p>
+                            <div key={`${k.id} ${k.product_code} ${k.quantity} ${k.product_variant_name}`} className="gap-8 px-2 items-center" style={{ display: "grid", gridTemplateColumns: "65px 1fr 75px" }}>
+                                <div className="flex flex-row items-center gap-2 w-fit">
+                                    <div 
+                                        onClick={() => {
+                                            if (matchingItem !== -1) {
+                                                setSelectedItems(selectedBefore => selectedBefore.filter((element) => element.product_id !== k.id))
+                                            } else {
+                                                setSelectedItems([...selectedItems, {
+                                                    product_id: k.id,
+                                                    quantity: k.quantity
+                                                }])
+                                            }
+                                        }}
+                                        className={`min-h-[18px] min-w-[18px] rounded-md border-2 ${matchingItem !== -1 ? "border-gray-400 bg-gray-500" : "border-gray-600 bg-gray-800"}`}
+                                    ></div>
+                                    
+                                    <div className={`flex flex-row ${matchingItem === -1 ? "bg-gray-600" : "bg-gray-400"} p-0 rounded-sm`}>
+                                        <p className="px-1 cursor-pointer" onClick={() => {
+                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.min(element.quantity - 1, 0) } : element))
+                                        }}>-</p>
+                                        <p className="text-gray-200 px-2 bg-gray-800">{k.quantity}</p>
+                                        <p className="px-1 cursor-pointer" onClick={() => {
+                                            setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.max(element.quantity + 1, k.quantity) } : element))
+                                        }}>+</p>
+                                    </div>
                                 </div>
                                 
-                                {/* {JSON.stringify(k.discount)} */}
-                                <p className="text-white font-semibold">${applyDiscount(k.product_cost, fromDbDiscount(k.discount)).toFixed(2)}</p>
+                                <div className="flex flex-col items-start">
+                                    <p className="text-white font-semibold text-sm">{k.product_name}</p>
+                                    <p className="text-gray-400 text-sm">{k.product_code}</p>
+                                </div>
+                                
+                                <div className="flex flex-col items-center justify-center">
+                                    <p className="text-white font-semibold text-sm">${applyDiscount(k.product_cost, fromDbDiscount(k.discount)).toFixed(2)}</p>
+                                    <p className="text-gray-500 text-sm">(${k.product_cost})</p>
+                                </div>
                             </div>
                         )
                     })
@@ -215,12 +249,19 @@ export default function TransactionMenu() {
 
                 <hr className=" border-gray-600" />
 
-                <div className="gap-8 px-8 items-center" style={{ display: "grid", gridTemplateColumns: "25px 1fr 75px" }}>
+                <div className="gap-8 px-2 items-center" style={{ display: "grid", gridTemplateColumns: "65px 1fr 75px" }}>
                     <p className="text-gray-400"></p>
                     <p className="text-white font-semibold">Total</p>
-                    {/* {JSON.stringify(k.discount)} */}
                     <p className="text-white font-semibold">${activeTransaction?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, fromDbDiscount(k.discount)), 0).toFixed(2)}</p>
                 </div>
+            </div>
+
+            {/* Refund Selected */}
+            <div className="flex flex-row items-center">
+                <div className={`text-white px-4 py-2 rounded-md ${selectedItems.length > 0 ? "bg-gray-600" : "bg-gray-800"} cursor-pointer hover:bg-gray-700`} onClick={() => {
+                    // ... refund the order
+                }}>Refund Selected Items</div>
+                <div></div>
             </div>
 
             <div className="flex flex-col gap-2">
