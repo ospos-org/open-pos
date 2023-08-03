@@ -23,14 +23,14 @@ export function ProductPrice({ product }: ProductPriceProps) {
                         <>
                             <div className={`text-gray-500 text-sm ${max_disc.source == "loyalty" ? "text-gray-500" : max_disc.source == "promotion" ? "text-blue-500 opacity-75" : "text-red-500"} flex flex-row items-center gap-2`}>
                                 <p className="line-through">
-                                    ${(product.variant_information.retail_price * product.quantity * 1.15).toFixed(2)}
+                                    {(product.transaction_type === "In" ? "-" : "")}${(product.variant_information.retail_price * product.quantity * 1.15).toFixed(2)}
                                 </p> 
                                 
                                 {parseDiscount(max_disc.value)}
                             </div>
 
                             <p className={`${max_disc.source == "loyalty" ? "text-gray-300" : ""}`}>
-                                ${
+                                {(product.transaction_type === "In" ? "-" : "")}${
                                     (
                                         (
                                             (product.variant_information.retail_price * product.quantity) * 1.15
@@ -43,7 +43,6 @@ export function ProductPrice({ product }: ProductPriceProps) {
                                             aCustomerActive
                                         )
                                     ).toFixed(2)
-                                    // ((applyDiscount((e.variant_informatiocurrentOrder.retail_price * e.quantity) * 1.15, findMaxDiscount(e.discount, e.variant_informatiocurrentOrder.retail_price, !(!customerState))[0].value) ?? 1)).toFixed(2)
                                 }
                             </p>
                         </>

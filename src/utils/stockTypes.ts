@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { KioskAction } from "../atoms/kiosk";
 
 export type KioskState = {
     customer: Customer | null,
@@ -9,7 +10,8 @@ export type KioskState = {
     order_date: string | null,
     order_notes: Note[] | null,
     salesperson: string | null,
-    kiosk: string | null
+    kiosk: string | null,
+    perf: KioskAction
 };
 
 export type TransactionType = "In" | "Out" | "PendingIn" | "PendingOut" | "Saved" | "Quote"

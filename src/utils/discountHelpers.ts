@@ -31,14 +31,10 @@ export function applyDiscountsConsiderateOfQuantity(
     let savings = 0;
     let exhaustiblePromotions: DiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion" || b.source == "user")));
 
-    console.log("EXHAUSTABLES", exhaustiblePromotions)
-
     // While we have quantity to serve, and promotions to apply...
     while(currentQuantity > 0 && exhaustiblePromotions.length > 0)
     {
         const maximumDiscountFound = findMaxDiscount(exhaustiblePromotions, price, customerActive);
-
-        console.log(maximumDiscountFound)
 
         // While we can apply the promotion
         while(currentQuantity > 0 && maximumDiscountFound[0].applicable_quantity > 0 || maximumDiscountFound[0].applicable_quantity === -1) {

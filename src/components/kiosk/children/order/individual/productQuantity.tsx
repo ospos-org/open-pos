@@ -16,7 +16,7 @@ export function ProductQuantity({ currentOrder, product, totalStock }: ProductQu
         <div className="flex flex-row sm:flex-col gap-2 items-center justify-center">
             <Image
                 onClick={() => {
-                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock)) {
+                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock) || product.transaction_type == "In") {
                         const product_list_clone = currentOrder.products.map(k => {
                             if(k.id == product.id) {
                                 return {
@@ -39,9 +39,9 @@ export function ProductQuantity({ currentOrder, product, totalStock }: ProductQu
                     }
                 }} 
                 onMouseOver={(v) => {
-                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock))
+                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock) || product.transaction_type == "In")
                         v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                    else 
+                    else
                         v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
                 }}
                 onMouseLeave={(v) => {
@@ -55,11 +55,14 @@ export function ProductQuantity({ currentOrder, product, totalStock }: ProductQu
                 width="15" height="15" alt={''} style={{ filter: 
                     (currentOrder.products.reduce((t, i) => t += (i.variant_information.barcode == product.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                     <= 
-                    totalStock
+                    totalStock && product.transaction_type === "Out"
                     ? 
                     "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
                     :
+                    product.transaction_type === "Out" ?
                     "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)" 
+                    :
+                    "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
                 }} ></Image>
 
             <Image

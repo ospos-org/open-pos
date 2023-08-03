@@ -24,11 +24,6 @@ const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback,
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
 
-                            let new_price = parseFloat(e.currentTarget.value);
-
-                            // (new_price - GST) = new_pricing
-                            // delta<marginal_price, new_pricing> = discount
-
                             setDiscount({
                                 ...discount,
                                 value: parseFloat(e.currentTarget.value) ?? 0

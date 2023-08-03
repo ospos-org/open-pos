@@ -1,20 +1,30 @@
 import { useEffect, useState } from "react";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
 import Link from "next/link";
 import moment from "moment";
 
-import { applyDiscount, fromDbDiscount } from "@utils/discountHelpers";
-import { inspectingTransactionAtom } from "@/src/atoms/transaction";
-import { Customer, DbOrder } from "@utils/stockTypes";
-import { OPEN_STOCK_URL } from "@utils/environment";
+import { applyDiscount, fromDbDiscount, toAbsoluteDiscount } from "@utils/discountHelpers";
+import { inspectingTransactionAtom, ordersAtom } from "@/src/atoms/transaction";
+import { Customer, DbOrder, DbProductPurchase, Order, Product, ProductInstance, ProductPurchase, Promotion } from "@utils/stockTypes";
 
 import { NoteElement } from "@components/common/noteElement";
 import queryOs from "@/src/utils/query-os";
+import { addToCartAtom, defaultKioskAtom, kioskPanelLogAtom, perfAtom } from "@/src/atoms/kiosk";
+import { RESET } from "jotai/utils";
+import { customerAtom } from "@/src/atoms/customer";
+import { customAlphabet } from "nanoid";
 
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)
 
+    const addToCart = useSetAtom(addToCartAtom)
+    const setPerfState = useSetAtom(perfAtom)
+    const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const setKioskState = useSetAtom(defaultKioskAtom)
+    const setCustomerState = useSetAtom(customerAtom)
+    const [ orderState, setOrderState ] = useAtom(ordersAtom)
+    
     const [ activeTransaction, setActiveTransaction ] = useState<DbOrder | null>(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
     const [ selectedItems, setSelectedItems ] = useState<{
         product_id: string,
@@ -280,11 +290,71 @@ export default function TransactionMenu() {
             {/* Refund Selected */}
             <div className="flex flex-row items-center gap-2">
                 <div className={`text-white px-4 py-2 rounded-md ${selectedItems.length > 0 ? "bg-gray-600" : "bg-gray-800"} cursor-pointer hover:bg-gray-700`} onClick={() => {
-                    // ... refund the order
+                    if (!activeTransaction) return;
+                    // We will have to change the current order to reflect the active transaction.
+                    // Where the products being refunded with have a `TransactionType::In` status.
+                    // -- 
+                    //
+                    // Products list: activeTransaction?.products
+
+                    const products_being_returned = selectedItems.map((elem) => {
+                        const reference = activeTransaction?.products.find(element => element.id === elem.product_id)
+                        if (!reference) return undefined;
+
+                        reference.instances = reference?.instances.filter((_, index) => index < elem.quantity)
+                        return reference
+                    }).filter((elem) => (elem !== undefined)) as DbProductPurchase[]
+
+                    // We must restore the kiosk state to its default, upon which - we set the customer
+                    // to the customer of this transaction. Following which, we set the transaction information
+                    // to the active transaction, retaining the ID of the transaction, we will perform
+                    // an UPDATE, instead of a POST.
+                    setPerfState({ type: "continuative" as "continuative", transaction_id: activeTransaction.id })
+                    setKioskState(RESET)
+
+                    const conv_to_product_purchase = products_being_returned.map(async (product) => {
+                        const returned_product_set = await queryOs(`product/with_promotions/${product.product_sku}`, {
+                            method: "GET",
+                            credentials: "include",
+                            redirect: "follow"
+                        })
+
+                        const data: { product: Product, promotions: Promotion[] } = await returned_product_set.json()
+                        const variant_info = data.product.variants.find((element) => element.barcode === product.product_code)
+
+                        if (!variant_info) return undefined;
+
+                        return {
+                            ...product,
+                            product: data.product,
+                            transaction_type: "In",
+                            variant_information: variant_info,
+                            active_promotions: data.promotions,
+                            discount: [{ source: "user", value: fromDbDiscount(product.discount), applicable_quantity: -1 }]
+                        } as ProductPurchase
+                    });
+
+                    Promise.all(conv_to_product_purchase).then(fulfilled => {
+                        const products = fulfilled.filter(e => e !== undefined) as ProductPurchase[]
+
+                        const newOrder: Order = {
+                            ...activeTransaction,
+                            products: products,
+                            discount: "a|0",
+                            reference: `CT${customAlphabet(`1234567890abcdef`, 10)(8)}`
+                        }
+
+                        setOrderState([newOrder])
+                        console.log([newOrder])
+
+                        if (customer) setCustomerState(customer)
+                        setKioskPanel("cart")
+                    })
+
                 }}>Refund Selected Items</div>
 
                 <div className={`text-white px-4 py-2 rounded-md ${selectedItems.length > 0 ? "bg-gray-600" : "bg-gray-800"} cursor-pointer hover:bg-gray-700`} onClick={() => {
-                    // ... refund the order
+                    // ...
                 }}>Print Order</div>
             </div>
 

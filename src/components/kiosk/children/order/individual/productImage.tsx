@@ -16,7 +16,7 @@ export function ProductImage({ currentOrder, quantityHere, product }: ProductIma
                 currentOrder.order_type == "direct" ?
                     (currentOrder.products.reduce((t, i) => t += (i.variant_information.barcode == product.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                     >
-                    (quantityHere?.quantity.quantity_sellable ?? 0)
+                    (quantityHere?.quantity.quantity_sellable ?? 0) && product.transaction_type == "Out"
                     ?
                     <div className="bg-red-500 rounded-full flex items-center justify-center h-[30px] w-[minmax(30px, 100%)] px-1 min-h-[30px] min-w-[30px] absolute -top-3 -right-3 border-gray-900 border-4">{product.quantity}</div>
                     :
