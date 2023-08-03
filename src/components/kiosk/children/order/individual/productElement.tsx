@@ -40,7 +40,7 @@ export function ProductElement({ product, currentOrder }: ProductElementProps) {
                 <ProductTitle currentOrder={currentOrder} product={product} quantityHere={quantityHere} totalStock={totalStock} />
                     
                 <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
-                    <ProductDiscount />
+                    <ProductDiscount product={product} />
                     <ProductPrice product={product} />
                 </div>
             </div>

@@ -92,12 +92,12 @@ export function parseDiscount(discount: string) {
 
     if(d[0] == "a" || d[0] == "A") {
         // Absolute value
-        let discount_absolute = parseInt(d[1]);
-        return `$${discount_absolute}`;
+        let discount_absolute = parseFloat(d[1]);
+        return `$${discount_absolute.toFixed(2)}`;
     }else if (d[0] == "p" || d[0] == "P") {
         // Percentage value
-        let discount_percentage = parseInt(d[1]);
-        return `${discount_percentage}%`
+        let discount_percentage = parseFloat(d[1]);
+        return `${discount_percentage.toFixed(2)}%`
     }
 }
 

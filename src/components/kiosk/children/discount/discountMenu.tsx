@@ -10,19 +10,6 @@ const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback,
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);
     const click_ref = createRef<HTMLDivElement>();
 
-    const onEnterPress = useKeyPress(['Enter'])
-
-    const firstUpdate = useRef(0);
-
-    useEffect(() => {
-        if (firstUpdate.current < 1) {
-            firstUpdate.current += 1;
-            return;
-        }
-
-        click_ref.current?.click()
-    }, [onEnterPress, click_ref])
-    
     if (!discount) return <></>
     return (
         <>

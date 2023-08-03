@@ -231,10 +231,24 @@ export default function TransactionMenu() {
                                     
                                     <div className={`flex flex-row ${matchingItem === -1 ? "bg-gray-600" : "bg-gray-100"} p-0 rounded-sm`}>
                                         <p className="px-1 cursor-pointer" onClick={() => {
+                                            if (matchingItem === -1) {
+                                                setSelectedItems([...selectedItems, {
+                                                    product_id: k.id,
+                                                    quantity: k.quantity
+                                                }])
+                                            }
+
                                             setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.max(element.quantity - 1, 1) } : element))
                                         }}>-</p>
                                         <p className="text-gray-200 px-2 bg-gray-800">{matchingItem === -1 ? k.quantity : selectedItems[matchingItem].quantity}</p>
                                         <p className="px-1 cursor-pointer" onClick={() => {
+                                            if (matchingItem === -1) {
+                                                setSelectedItems([...selectedItems, {
+                                                    product_id: k.id,
+                                                    quantity: k.quantity
+                                                }])
+                                            }
+
                                             setSelectedItems(selectedBefore => selectedBefore.map((element) => element.product_id === k.id ? { ...element, quantity: Math.min(element.quantity + 1, k.quantity) } : element))
                                         }}>+</p>
                                     </div>
@@ -264,11 +278,14 @@ export default function TransactionMenu() {
             </div>
 
             {/* Refund Selected */}
-            <div className="flex flex-row items-center">
+            <div className="flex flex-row items-center gap-2">
                 <div className={`text-white px-4 py-2 rounded-md ${selectedItems.length > 0 ? "bg-gray-600" : "bg-gray-800"} cursor-pointer hover:bg-gray-700`} onClick={() => {
                     // ... refund the order
                 }}>Refund Selected Items</div>
-                <div></div>
+
+                <div className={`text-white px-4 py-2 rounded-md ${selectedItems.length > 0 ? "bg-gray-600" : "bg-gray-800"} cursor-pointer hover:bg-gray-700`} onClick={() => {
+                    // ... refund the order
+                }}>Print Order</div>
             </div>
 
             <div className="flex flex-col gap-2">
