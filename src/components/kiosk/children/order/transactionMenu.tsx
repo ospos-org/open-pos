@@ -301,6 +301,8 @@ export default function TransactionMenu() {
                         const reference = activeTransaction?.products.find(element => element.id === elem.product_id)
                         if (!reference) return undefined;
 
+                        reference.quantity = elem.quantity;
+
                         reference.instances = reference?.instances.filter((_, index) => index < elem.quantity)
                         return reference
                     }).filter((elem) => (elem !== undefined)) as DbProductPurchase[]
@@ -309,8 +311,8 @@ export default function TransactionMenu() {
                     // to the customer of this transaction. Following which, we set the transaction information
                     // to the active transaction, retaining the ID of the transaction, we will perform
                     // an UPDATE, instead of a POST.
-                    setPerfState({ type: "continuative" as "continuative", transaction_id: activeTransaction.id })
                     setKioskState(RESET)
+                    setPerfState({ type: "continuative" as "continuative", transaction_id: activeTransaction.id })
 
                     const conv_to_product_purchase = products_being_returned.map(async (product) => {
                         const returned_product_set = await queryOs(`product/with_promotions/${product.product_sku}`, {

@@ -67,6 +67,12 @@ const defaultKioskAtom = atom((get) => {
 
         // Reset transaction type to default.
         set(transactionTypeAtom, "Out")
+
+        // If the system is not in a creative 
+        // state, make it in one.
+        set(perfAtom, {
+            type: "creative"
+        })
     }
 })
 
