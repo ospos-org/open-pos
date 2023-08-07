@@ -25,7 +25,7 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
                 :
                 <div className="flex flex-col gap-4">
                     {
-                        deliverables?.map((b, indx) => {
+                        deliverables.map((b, indx) => {
                             let total_products = 0
                             let completed = 0;
 

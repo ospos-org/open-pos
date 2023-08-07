@@ -59,9 +59,11 @@ export default function Deliverables() {
             redirect: "follow"
         })
         .then(async b => {
-            const data: Order[] = await b.json();
-            setDeliverables(data);
-            setProductCategories(parseDeliverables(data))
+            if (b.ok) {
+                const data: Order[] = await b.json();
+                setDeliverables(data);
+                setProductCategories(parseDeliverables(data))
+            }
         })
     }, [masterState.store_id, setDeliverables, setProductCategories])
 
