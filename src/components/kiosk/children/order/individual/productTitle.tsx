@@ -33,7 +33,7 @@ export function ProductTitle({ currentOrder, product, quantityHere, totalStock }
                     > 
                     (quantityHere?.quantity.quantity_sellable ?? 0)
                     ?
-                        <p className="text-sm text-red-400">Out of stock - {(quantityHere?.quantity.quantity_sellable ?? 0)} here, {(totalStock - (quantityHere?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
+                        <p className="text-xs text-red-400">Out of stock - {(quantityHere?.quantity.quantity_sellable ?? 0)} here, {(totalStock - (quantityHere?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
                     :
                         <></>
                 :
