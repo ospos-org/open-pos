@@ -28,12 +28,12 @@ export function ProductTitle({ currentOrder, product, quantityHere, totalStock }
             <p className="text-sm text-gray-400">{product.variant_information.name}</p>
             
             {
-                currentOrder.order_type == "direct" ?
+                currentOrder.order_type == "direct" && product.transaction_type === "Out" ?
                     (currentOrder.products.reduce((t, i) => t += (i.variant_information.barcode == product.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
                     > 
                     (quantityHere?.quantity.quantity_sellable ?? 0)
                     ?
-                        <p className="text-sm text-red-400">Out of stock - {(quantityHere?.quantity.quantity_sellable ?? 0)} here, {(totalStock - (quantityHere?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
+                        <p className="text-xs text-red-400">Out of stock - {(quantityHere?.quantity.quantity_sellable ?? 0)} here, {(totalStock - (quantityHere?.quantity.quantity_sellable ?? 0)) ?? 0} in other stores</p>
                     :
                         <></>
                 :

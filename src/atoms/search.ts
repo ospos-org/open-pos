@@ -70,9 +70,10 @@ const querySearchTerm = atom(undefined,
             credentials: "include"
         });
 
-        const data = await fetchResult.json();
-
-        set(searchResultsAtomic, data)
+        if(fetchResult.ok) {
+            const data = await fetchResult.json();
+            set(searchResultsAtomic, data)
+        }
     })
 
 export { 

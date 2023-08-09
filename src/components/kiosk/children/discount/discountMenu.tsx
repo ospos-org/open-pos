@@ -10,19 +10,6 @@ const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback,
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);
     const click_ref = createRef<HTMLDivElement>();
 
-    const onEnterPress = useKeyPress(['Enter'])
-
-    const firstUpdate = useRef(0);
-
-    useEffect(() => {
-        if (firstUpdate.current < 1) {
-            firstUpdate.current += 1;
-            return;
-        }
-
-        click_ref.current?.click()
-    }, [onEnterPress, click_ref])
-    
     if (!discount) return <></>
     return (
         <>
@@ -36,11 +23,6 @@ const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback,
                         style={{ width: ((discount.value.toFixed(2).length ?? 1) + 'ch') }} autoFocus className="bg-transparent text-center outline-none font-semibold text-3xl" defaultValue={(discount.value !== 0) ? (discount.value).toFixed(2) : ""} placeholder={discount.value.toFixed(2)}
                         onChange={(e) => {
                             e.target.style.width = ((e.target.value.length ?? 1) + 'ch');
-
-                            let new_price = parseFloat(e.currentTarget.value);
-
-                            // (new_price - GST) = new_pricing
-                            // delta<marginal_price, new_pricing> = discount
 
                             setDiscount({
                                 ...discount,

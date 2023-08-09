@@ -11,13 +11,13 @@ export function TransactionScreen() {
 
     return (
         <div className="bg-gray-900 p-6 flex flex-col h-full gap-4" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-            <div className="flex flex-row justify-between cursor-pointer">
+            <div className="flex flex-row justify-between">
                 <div 
                     onClick={() => {
                         if(panelHistory[panelHistory.length-1] === "related-orders") setKioskPanel("related-orders")
                         else setKioskPanel("cart")
                     }}
-                    className="flex flex-row items-center gap-2"
+                    className="flex flex-row items-center gap-2 cursor-pointer"
                 >
                     <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                     <p className="text-gray-400">Back</p>

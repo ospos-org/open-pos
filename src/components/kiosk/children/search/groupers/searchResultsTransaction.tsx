@@ -16,13 +16,13 @@ export function SearchResultsTransaction() {
             {
                 (searchResults as Transaction[])
                     .map((result, index) => {
-                    return (
+                    return result.id ? (
                         <ItemTransaction 
                             key={`SEARCH_RESULT_PRODUCT_${result.id}`} 
                             notEnd={index == searchResults.length-1 || searchResults.length == 1} 
                             transaction={result} 
                         />
-                    )
+                    ) : (<></>)
                 })
             }
         </>

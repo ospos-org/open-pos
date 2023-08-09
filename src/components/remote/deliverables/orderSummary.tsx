@@ -10,7 +10,6 @@ import {
     deliverablesAtom
 } from "@atoms/deliverables";
 import { Order, ProductCategory, Transaction } from "@/src/utils/stockTypes";
-import { OPEN_STOCK_URL } from "@/src/utils/environment";
 import { Skeleton } from "@components/common/skeleton";
 import queryOs from "@/src/utils/query-os";
 

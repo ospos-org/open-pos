@@ -28,9 +28,9 @@ export function SearchResultsCustomers() {
             {
                 (searchResults as Customer[])
                     .map((result, index) => {
-                    return (
+                    return result.id ? (
                         <ItemCustomer key={`SEARCH_RESULT_CUSTOMER_${result.id}`} customer={result} index={index} />
-                    )
+                    ) : (<></>)
                 })
             }
         </>

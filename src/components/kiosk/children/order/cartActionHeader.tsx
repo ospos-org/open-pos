@@ -4,10 +4,11 @@ import { customerAtom } from "@atoms/customer"
 import Image from "next/image"
 import { searchTypeHandlerAtom } from "@/src/atoms/search"
 import { useResetAtom } from "jotai/utils"
-import { defaultKioskAtom } from "@/src/atoms/kiosk"
+import { defaultKioskAtom, perfAtom } from "@/src/atoms/kiosk"
 import { ordersAtom } from "@/src/atoms/transaction"
 
 export function CartActionHeader() {
+    const perfState = useAtomValue(perfAtom)
     const orderState = useAtomValue(ordersAtom)
 
     const setSearchType = useSetAtom(searchTypeHandlerAtom)
@@ -49,11 +50,23 @@ export function CartActionHeader() {
                     }
                 </div>
             </div>
+            
+            <div className="flex flex-row items-center gap-4">
+                { perfState.type === "continuative" ? 
+                        <div className="flex flex-row items-center gap-[0.75rem] bg-blue-800 py-1 px-3 rounded-md">
+                            <Image className="select-none svg cursor-pointer" width={15} height={15} src="/icons/coins-hand.svg" alt="" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }}></Image>
+                            <p className="text-white uppercase select-none font-bold text-sm">Refund</p>
+                        </div> 
+                    : 
+                        <></> 
+                }
+                
 
-            <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
-                <p className="text-white select-none" onClick={() => {
-                    resetCart()
-                }}>Clear Cart</p>
+                <div className="flex flex-row items-center gap-[0.75rem] bg-gray-800 p-2 px-4 rounded-md cursor-pointer">
+                    <p className="text-white select-none" onClick={() => {
+                        resetCart()
+                    }}>Clear Cart</p>
+                </div>
             </div>
         </div> 
     )

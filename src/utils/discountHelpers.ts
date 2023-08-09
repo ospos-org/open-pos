@@ -37,7 +37,7 @@ export function applyDiscountsConsiderateOfQuantity(
         const maximumDiscountFound = findMaxDiscount(exhaustiblePromotions, price, customerActive);
 
         // While we can apply the promotion
-        while(currentQuantity > 0 && maximumDiscountFound[0].applicable_quantity > 0) {
+        while(currentQuantity > 0 && maximumDiscountFound[0].applicable_quantity > 0 || maximumDiscountFound[0].applicable_quantity === -1) {
             // Reduce both applicable and current quantities
             maximumDiscountFound[0].applicable_quantity -= 1;
             currentQuantity -= 1;
@@ -92,12 +92,12 @@ export function parseDiscount(discount: string) {
 
     if(d[0] == "a" || d[0] == "A") {
         // Absolute value
-        let discount_absolute = parseInt(d[1]);
-        return `$${discount_absolute}`;
+        let discount_absolute = parseFloat(d[1]);
+        return `$${discount_absolute.toFixed(2)}`;
     }else if (d[0] == "p" || d[0] == "P") {
         // Percentage value
-        let discount_percentage = parseInt(d[1]);
-        return `${discount_percentage}%`
+        let discount_percentage = parseFloat(d[1]);
+        return `${discount_percentage.toFixed(2)}%`
     }
 }
 
@@ -130,7 +130,8 @@ export function toDbDiscount(discount: string): { Absolute?: number, Percentage?
 export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean): [DiscountValue, number] {
     let max_discount = {
         value: "a|0",
-        source: "user"
+        source: "user",
+        applicable_quantity: -1,
     } as DiscountValue;
 
     let index = 0;

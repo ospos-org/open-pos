@@ -58,7 +58,8 @@ export function DiscountScreen() {
                                             }),
                                             {
                                                 source: "user",
-                                                value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+                                                applicable_quantity: -1,
                                             } as DiscountValue
                                         ]
                                     };
@@ -141,7 +142,8 @@ export function DiscountScreen() {
                                     && isEquivalentDiscount(
                                         findMaxDiscount([{
                                             source: "user",
-                                            value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                            value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+                                            applicable_quantity: -1,
                                         } as DiscountValue], a.product_cost, customerActive)[0], 
                                         findMaxDiscount(e.discount, e.product_cost, customerActive)[0],
                                         e.product_cost
@@ -165,7 +167,8 @@ export function DiscountScreen() {
                                             }),
                                             {
                                                 source: "user",
-                                                value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}` 
+                                                value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+                                                applicable_quantity: -1,
                                             } as DiscountValue
                                         ]
                                     };

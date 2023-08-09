@@ -9,7 +9,7 @@ function OTooltip({ children, name }: { children: React.ReactElement, name: stri
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
                     <Tooltip.Content className="TooltipContent" sideOffset={25} side="right">
-                        <div className="bg-gray-700 p-2 px-4 rounded-md font-medium text-gray-200">
+                        <div className="bg-gray-700 border-[1px] border-gray-600 shadow-lg shadow-gray-800 p-2 px-4 rounded-md font-medium text-gray-200">
                             { name }
                         </div>
                     </Tooltip.Content>

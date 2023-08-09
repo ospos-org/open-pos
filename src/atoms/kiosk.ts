@@ -19,6 +19,25 @@ import { fromDbDiscount } from "../utils/discountHelpers";
 import queryOs from "../utils/query-os";
 import { toast } from "sonner";
 
+type KioskActionContinuative = {
+    type: "continuative",
+    transaction_id: string,
+}
+
+type KioskActionCreative = {
+    type: "creative"
+}
+
+type KioskAction =
+    // A continuative type, like a refund, refers to
+    // when a kiosk is continuing a previously inserted
+    // transaction as opposed to creating a new one
+    KioskActionContinuative | KioskActionCreative;
+
+const perfAtom = atom<KioskAction>({
+    type: "creative"
+})
+
 const defaultKioskAtom = atom((get) => {
     return {
         customer: get(customerAtom),
@@ -29,7 +48,8 @@ const defaultKioskAtom = atom((get) => {
         order_date: getDate(),
         order_notes: [],
         salesperson: get(masterStateAtom).employee?.id,
-        kiosk: get(masterStateAtom).kiosk_id
+        kiosk: get(masterStateAtom).kiosk_id,
+        perf: get(perfAtom)
     } as KioskState
 }, (_, set, resetKey: typeof RESET) => {
     if(resetKey === RESET) {
@@ -47,6 +67,12 @@ const defaultKioskAtom = atom((get) => {
 
         // Reset transaction type to default.
         set(transactionTypeAtom, "Out")
+
+        // If the system is not in a creative 
+        // state, make it in one.
+        set(perfAtom, {
+            type: "creative"
+        })
     }
 })
 
@@ -235,5 +261,8 @@ export {
     kioskPanelAtom, 
     kioskPanelHistory, 
     selectionAtom, 
+    perfAtom,
     activeDiscountAtom 
 }
+
+export type { KioskAction }

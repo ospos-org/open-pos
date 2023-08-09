@@ -124,7 +124,7 @@ export function DesktopNavigationElement() {
 
             <div className="flex flex-col gap-4">
                 <OTooltip name={`Clock ${clockedOut === 1 ? "in" : "out"}`}>
-                    <div>
+                    <div className="flex items-center justify-center">
                         {
                             clockedOut > 0 ?
                                 clockedOut === 2 ? 

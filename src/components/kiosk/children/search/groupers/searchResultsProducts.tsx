@@ -16,14 +16,14 @@ export function SearchResultsProducts() {
             {
                 (searchResults as { product: Product, promotions: Promotion[]}[])
                     .map((result, index) => {
-                    return (
+                    return result.product ? (
                         <ItemProduct 
                             key={`SEARCH_RESULT_PRODUCT_${result.product.sku}`} 
                             promotions={result.promotions} 
                             product={result.product} 
                             index={index} 
                         />
-                    )
+                    ) : (<></>)
                 })
             }
         </>
