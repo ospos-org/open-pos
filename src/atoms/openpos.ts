@@ -16,7 +16,7 @@ const passwordInputAtom = atom<string[]>(["","","","", "", "", "", ""]);
 
 const rawMasterStateAtom = atomWithStorage<MasterState>("openstock-master-state", {
     store_lut: [],
-    store_id: localStorage.getItem("openstock-storeid"), // "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
+    store_id: "628f74d7-de00-4956-a5b6-2031e0c72128", // "c4a1d88b-e8a0-4dcd-ade2-1eea82254816", //
     store_code: "001",
     store_contact: {
         name: "Torpedo7",
@@ -41,7 +41,7 @@ const rawMasterStateAtom = atomWithStorage<MasterState>("openstock-master-state"
         },
     },
     employee: null,
-    kiosk_id: localStorage.getItem("openstock-kioskid"), // "adbd48ab-f4ca-4204-9c88-3516f3133621",
+    kiosk_id: "adbd48ab-f4ca-4204-9c88-3516f3133621",
     kiosk: "NEW",
     availableTerminals: [],
     activeTerminal: null
