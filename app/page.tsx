@@ -65,31 +65,35 @@ export default function App() {
 
 			<Toaster position="top-center" />
 
-			{ !user && <PasswordInput inputRef={input_ref} />	}
+			{!user ? (
+				<PasswordInput inputRef={input_ref} />	
+			) : (
+				<>
+					<div className="flex flex-row sm:h-[calc(100dvh-18px)] h-[calc(100dvh-58px)] flex-shrink-0">
+						{/* Menu Selector */}
+						<DesktopNavigationElement />
 
-			<div className="flex flex-row sm:h-[calc(100dvh-18px)] h-[calc(100dvh-58px)] flex-shrink-0">
-				{/* Menu Selector */}
-				<DesktopNavigationElement />
+						{/* Content for Menu */}
+						<ContentSwitcher />	
+					</div>
 
-				{/* Content for Menu */}
-				<ContentSwitcher />	
-			</div>
+					<MobileMenu />	
+					
+					{
+						menuOpen && (windowSize.height ?? 0 <= 640) && (
+							<>
+								<div 
+									onClick={() => { setMenuOpen(false) }} 
+									className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"
+									>
+								</div>
 
-			<MobileMenu />	
-			
-			{
-				menuOpen && (windowSize.height ?? 0 <= 640) && (
-					<>
-						<div 
-							onClick={() => { setMenuOpen(false) }} 
-							className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"
-							>
-						</div>
-
-						<MobileNavigationElement />
-					</>
-				)
-			}
+								<MobileNavigationElement />
+							</>
+						)
+					}
+				</>
+			)}
 		</div>
 	)
 }
