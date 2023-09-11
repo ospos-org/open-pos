@@ -2,7 +2,7 @@ FROM oven/bun AS deps
 
 WORKDIR /app
 COPY package.json .
-COPY pnpm-lock.yaml .
+COPY bun.lockb .
 
 RUN bun install
 
