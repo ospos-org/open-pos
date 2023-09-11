@@ -16,7 +16,7 @@ COPY . .
 RUN NEXT_PUBLIC_API_URL=APP_NEXT_PUBLIC_API_URL NEXT_PUBLIC_DEMO=APP_NEXT_PUBLIC_DEMO bun run build
 
 RUN rm -rf node_modules
-RUN bun install --production  --ignore-scripts --prefer-offline
+RUN bun install --production
 
 FROM oven/bun
 
