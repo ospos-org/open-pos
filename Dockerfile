@@ -1,14 +1,12 @@
-FROM node:20-alpine AS deps
-RUN corepack enable
+FROM oven/bun AS deps
 
 WORKDIR /app
 COPY package.json .
 COPY pnpm-lock.yaml .
 
-RUN pnpm install
+RUN bun install
 
-FROM node:20-alpine AS BUILD_IMAGE
-RUN corepack enable
+FROM oven/bun AS BUILD_IMAGE
 
 WORKDIR /app
 
@@ -18,11 +16,9 @@ COPY . .
 RUN NEXT_PUBLIC_API_URL=APP_NEXT_PUBLIC_API_URL NEXT_PUBLIC_DEMO=APP_NEXT_PUBLIC_DEMO pnpm build
 
 RUN rm -rf node_modules
-RUN pnpm install --production  --ignore-scripts --prefer-offline
+RUN bun install --production  --ignore-scripts --prefer-offline
 
-FROM node:20-alpine
-RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
+FROM oven/bun
 
 ARG PORT=8080
 ARG DEFAULT_PORT=3000
@@ -40,4 +36,4 @@ EXPOSE ${DEFAULT_PORT}
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-CMD [ "pnpm", "start" ]
+CMD [ "bun", "start" ]
