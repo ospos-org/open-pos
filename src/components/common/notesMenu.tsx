@@ -6,11 +6,11 @@ import Image from "next/image"
 import { NoteOrderItem } from "@components/common/noteOrderItem"
 import { NoteElement } from "@components/common/noteElement"
 import { ordersAtom } from "@atoms/transaction"
-import { Order } from "@utils/stockTypes"
+import {ContextualOrder} from "@utils/stockTypes";
 
 const NotesMenu: FC<{ callback: (activeOrder: string, noteContent: string) => void, autoFocus?: boolean }> = ({ callback, autoFocus }) => {
     const orderState = useAtomValue(ordersAtom)
-    const [ activeOrder, setActiveOrder ] = useState<Order | null>(orderState[0] ?? null)
+    const [ activeOrder, setActiveOrder ] = useState<ContextualOrder | null>(orderState[0] ?? null)
 
     const input_ref = createRef<HTMLInputElement>();
     const [ selectorOpen, setSelectorOpen ] = useState(false);

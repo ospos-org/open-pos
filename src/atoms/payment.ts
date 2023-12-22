@@ -5,6 +5,7 @@ import { PaymentIntent } from "@utils/stockTypes";
 
 import { aCustomerActiveAtom } from "@atoms/customer";
 import { ordersAtomsAtom } from "@atoms/transaction";
+import {Payment} from "@/generated/stock/Api";
 
 const paymentHistoryAtom = atom<PriceModification[]>([])
 const currentPaidAmountAtom = atom<number>(
@@ -80,6 +81,6 @@ const priceAtom = atom(
 /// The amount the user is trying to pay in the current instance.
 const probingPricePayableAtom = atom<number | null>(null)
 
-const paymentIntentsAtom = atom<PaymentIntent[]>([])
+const paymentIntentsAtom = atom<Payment[]>([])
 
 export { priceAtom, paymentIntentsAtom, probingPricePayableAtom }

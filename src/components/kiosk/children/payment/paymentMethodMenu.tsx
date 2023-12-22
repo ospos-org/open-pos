@@ -1,14 +1,14 @@
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { useEffect, useRef, useState } from "react"
+import {useAtom, useAtomValue, useSetAtom} from "jotai"
+import {useEffect, useRef, useState} from "react"
 import Image from "next/image"
 
-import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, perfAtom, transactionTypeAtom } from "@atoms/kiosk"
-import { probingPricePayableAtom } from "@atoms/payment"
-import { OPEN_STOCK_URL} from "@utils/environment"
-import { ordersAtom } from "@atoms/transaction"
+import {defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, perfAtom, transactionTypeAtom} from "@atoms/kiosk"
+import {probingPricePayableAtom} from "@atoms/payment"
+import {ordersAtom} from "@atoms/transaction"
 import useKeyPress from "@hooks/useKeyPress"
-import queryOs from "@/src/utils/query-os"
-import { toast } from "sonner"
+import {toast} from "sonner"
+import {TransactionType} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 export function PaymentMethod() {
     const generateTransaction = useAtomValue(generateTransactionAtom)
@@ -57,22 +57,13 @@ export function PaymentMethod() {
             return;
         }
 
-        setTransactionType("Quote")
+        setTransactionType(TransactionType.Quote)
 
-        queryOs(`transaction`, {
-            method: "POST",
-            body: JSON.stringify(generateTransaction),
-            credentials: "include",
-            redirect: "follow"
-        }).then(async k => {
-            if(k.ok) {
-                setKioskPanel("completed");
-            }else {
-                toast.message('Failed to save transaction', {
-                    description: `Server gave: ${await k.json()}`,
-                })
-            }
-        })
+        openStockClient.transaction.create(generateTransaction)
+            .then(data => {
+                if (data.ok) setKioskPanel("completed")
+                else toast.message("Failed to save transaction", { description: `Server gave ${data.error}` })
+            })
     }, [f6Pressed, generateTransaction, setKioskPanel, setTransactionType]);
 
     useEffect(() => {
@@ -244,22 +235,13 @@ export function PaymentMethod() {
                     </div>
                     <div
                         onClick={() => {
-                            setTransactionType("Quote")
+                            setTransactionType(TransactionType.Quote)
 
-                            queryOs(`transaction`, {
-                                method: "POST",
-                                body: JSON.stringify(generateTransaction),
-                                credentials: "include",
-                                redirect: "follow"
-                            }).then(async k => {
-                                if(k.ok) {
-                                    setKioskPanel("completed");
-                                }else {
-                                    toast.message('Failed to save transaction', {
-                                        description: `Server gave: ${await k.json()}`,
-                                    })
-                                }
-                            })
+                            openStockClient.transaction.create(generateTransaction)
+                                .then(data => {
+                                    if (data.ok) setKioskPanel("completed")
+                                    else toast.message("Failed to save transaction", { description: `Server gave ${data.error}` })
+                                })
                         }} 
                         className="flex flex-row items-end gap-2 cursor-pointer">
                         <p className="text-white font-semibold text-2xl">Save as Quote</p>

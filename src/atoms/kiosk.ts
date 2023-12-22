@@ -1,23 +1,31 @@
-import { atomWithReset, RESET } from "jotai/utils";
-import { createRef, RefObject } from "react";
-import { customAlphabet } from "nanoid";
-import { atom } from "jotai";
-import { v4 } from "uuid";
+import {atomWithReset, RESET} from "jotai/utils";
+import {customAlphabet} from "nanoid";
+import {atom} from "jotai";
+import {v4} from "uuid";
 
-import { Customer, KioskState, Order, Product, ProductPurchase, Transaction, TransactionInput, TransactionType, VariantInformation } from "@utils/stockTypes";
-import { OPEN_STOCK_URL } from "@utils/environment";
-import { PAD_MODES } from "@utils/kioskTypes";
+import {PAD_MODES} from "@utils/kioskTypes";
 
-import { paymentIntentsAtom, priceAtom } from "@atoms/payment";
-import { ordersAtom } from "@atoms/transaction";
-import { computeDatabaseOrderFormat } from "@atoms/conversion";
-import { masterStateAtom } from "@atoms/openpos";
-import { customerAtom } from "@atoms/customer";
-import { getDate } from "../utils/utils";
-import { inspectingProductAtom } from "./product";
-import { fromDbDiscount } from "../utils/discountHelpers";
-import queryOs from "../utils/query-os";
-import { toast } from "sonner";
+import {paymentIntentsAtom, priceAtom} from "@atoms/payment";
+import {ordersAtom} from "@atoms/transaction";
+import {computeDatabaseOrderFormat} from "@atoms/conversion";
+import {masterStateAtom} from "@atoms/openpos";
+import {customerAtom} from "@atoms/customer";
+import {getDate} from "@utils/utils";
+import {inspectingProductAtom} from "./product";
+import {fromDbDiscount} from "@utils/discountHelpers";
+import {toast} from "sonner";
+import {openStockClient} from "~/query/client";
+import {
+    Customer,
+    OrderType,
+    Product,
+    Transaction,
+    TransactionInit,
+    TransactionInput,
+    TransactionType,
+    VariantInformation
+} from "@/generated/stock/Api";
+import {ContextualOrder, ContextualProductPurchase, KioskState} from "@utils/stockTypes";
 
 type KioskActionContinuative = {
     type: "continuative",
@@ -66,7 +74,7 @@ const defaultKioskAtom = atom((get) => {
         set(kioskPanelLogAtom, "cart")
 
         // Reset transaction type to default.
-        set(transactionTypeAtom, "Out")
+        set(transactionTypeAtom, TransactionType.Out)
 
         // If the system is not in a creative 
         // state, make it in one.
@@ -76,9 +84,9 @@ const defaultKioskAtom = atom((get) => {
     }
 })
 
-const transactionTypeAtom = atom<TransactionType>("Out")
+const transactionTypeAtom = atom<TransactionType>(TransactionType.Out)
 
-const currentOrderAtom = atomWithReset<Order>({
+const currentOrderAtom = atomWithReset<ContextualOrder>({
     id: v4(),
     destination: null,
     origin: null,
@@ -97,7 +105,7 @@ const currentOrderAtom = atomWithReset<Order>({
     reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
     creation_date: getDate(),
     discount: "a|0",
-    order_type: "direct",
+    order_type: OrderType.Direct,
     previous_failed_fulfillment_attempts: []
 })
 
@@ -161,28 +169,23 @@ const parkSaleAtom = atom(undefined, (get, set) => {
     if((get(ordersAtom)?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
         const transaction = get(generateTransactionAtom)
 
-        queryOs(`transaction`, {
-            method: "POST",
-            body: JSON.stringify(transaction),
-            credentials: "include",
-            redirect: "follow"
-        }).then(async k => {
-            if(k.ok) {
+        openStockClient.transaction.create(transaction as unknown as TransactionInit)
+            .then(data => {
                 set(defaultKioskAtom, RESET)
-            }else {
-                toast.message('Failed to save transaction', {
-                    description: `Server gave: ${await k.json()}`,
+            })
+            .catch(error => {
+                toast.message("Failed to save transaction", {
+                    description: `Server gave: ${error.error.message}`
                 })
-            }
-        })
+            });
     }
 })
 
-const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[]) => {
+const addToCartAtom = atom(undefined, (get, set, orderProducts: ContextualProductPurchase[]) => {
     const { activeProduct: product, activeProductPromotions: promotions, activeProductVariant: variant } = get(inspectingProductAtom)
 
     const existing_product = orderProducts.find(k => k.product_code == variant?.barcode ); // && isEqual(k.variant, variant?.variant_code)
-    let new_order_products_state: ProductPurchase[] = [];
+    let new_order_products_state: ContextualProductPurchase[] = [];
 
     if(existing_product && variant && product) {
         const matching_product = orderProducts.find(e => e.product_code == variant?.barcode); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
@@ -196,7 +199,7 @@ const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[
                 return e.product_code == variant.barcode ? { ...e, quantity: e.quantity+1 } : e  //  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
             });
         }else {
-            const po: ProductPurchase = {
+            const po: ContextualProductPurchase = {
                 id: v4(),
                 product_code: variant.barcode ?? product.sku ?? "",
                 discount: [{
@@ -209,7 +212,8 @@ const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[
                 product_variant_name: variant.name,
                 product_sku: product.sku,
                 quantity: 1,
-                transaction_type: "Out",
+                transaction_type: TransactionType.Out,
+                instances: [],
 
                 product: product,
                 variant_information: variant ?? product.variants[0],
@@ -222,7 +226,7 @@ const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[
         }
     }else if(product && variant){
         // Creating a new product in the order.
-        const po: ProductPurchase = {
+        const po: ContextualProductPurchase = {
             id: v4(),
             product_code: variant.barcode ?? product.sku ?? "",
             discount: [{
@@ -230,12 +234,13 @@ const addToCartAtom = atom(undefined, (get, set, orderProducts: ProductPurchase[
                 value: fromDbDiscount(variant.loyalty_discount),
                 applicable_quantity: -1
             }],
+            instances: [],
             product_cost: variant?.retail_price ?? 0,
             product_name: product.company + " " + product.name,
             product_variant_name: variant.name,
             product_sku: product.sku,
             quantity: 1,
-            transaction_type: "Out",
+            transaction_type: TransactionType.Out,
 
             product: product,
             variant_information: variant ?? product.variants[0],

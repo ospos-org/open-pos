@@ -5,14 +5,14 @@ import { debounce } from "lodash"
 import { v4 } from "uuid"
 import Image from "next/image"
 
-import { Order, ProductPurchase, StockInfo, Store } from "@utils/stockTypes"
 import { kioskPanelLogAtom } from "@atoms/kiosk"
 import { masterStateAtom } from "@atoms/openpos"
-import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
 import { getDate } from "@utils/utils"
-import queryOs from "@/src/utils/query-os"
+import {Stock, Store} from "@/generated/stock/Api";
+import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
+import {openStockClient} from "~/query/client";
 
 export function PickupMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
@@ -20,8 +20,8 @@ export function PickupMenu() {
 
     const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
-    const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
+    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ContextualProductPurchase | undefined, store: string, alt_stores: Stock[], ship: boolean, quantity: number }[]>([]);
+    const [ productMap, setProductMap ] = useState<ContextualProductPurchase[]>();
 
     const [ suggestions, setSuggestions ] = useState<Store[]>([]);
     const [ searching, setSearching ] = useState(false);
@@ -34,19 +34,14 @@ export function PickupMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await queryOs(`helpers/distance/store/${currentStore.store_id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })?.then(async e => {
-            return await e.json();
-        })
-
-        return distance_data;
+        if (currentStore.store_id)
+             return (await openStockClient.helpers.distanceToStoresFromStore(currentStore.store_id)).data
     }, [currentStore]);
 
     useEffect(() => {
         fetchDistanceData().then(data => {
+            if (!data) return
+
             const ord = generateOrders(generateProductMap(orderState), data, currentStore.store_id ?? "");
 
             setGeneratedOrder(ord.assignment_sheet);
@@ -65,7 +60,8 @@ export function PickupMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const matches: Store[] = currentStore.store_lut ? currentStore.store_lut.filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
+            const matches: Store[] = currentStore.store_lut ? currentStore.store_lut
+                .filter(k => JSON.stringify(k).toLowerCase().includes(address.toLowerCase())) : [];
 
             setSuggestions(matches);
             setLoading(false);
@@ -218,7 +214,7 @@ export function PickupMenu() {
                                                 onClick={async () => {
                                                     if(generatedOrder.length < 1) return 
                                                     
-                                                    let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" | "pickup" }[] = [];
+                                                    let inverse_order: { store: string, store_code: string, items: ContextualProductPurchase[], type: "direct" | "shipment" | "pickup" }[] = [];
 
                                                     generatedOrder.map(k => {
                                                         const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "pickup" : k.ship && k.store != currentStore.store_id ? "shipment" : "direct"));
@@ -236,45 +232,43 @@ export function PickupMenu() {
                                                     })
 
                                                     Promise.all(inverse_order.map(async k => {
-                                                        const data: Store = await (await queryOs(`store/${k.store}`, {
-                                                            method: "GET",
-                                                            credentials: "include",
-                                                            redirect: "follow"
-                                                        })).json();
+                                                        const data = await openStockClient.store.get(k.store)
 
-                                                        return {
-                                                            id: v4(),
-                                                            destination: k.type == "pickup" ? {
-                                                                store_code: pickupStore?.code,
-                                                                store_id: pickupStore?.id,
-                                                                contact: pickupStore?.contact!
-                                                            } : { code: "000", contact: customerState?.contact },
-                                                            origin:  {
-                                                                store_code: k.store_code,
-                                                                store_id: k.store,
-                                                                contact: data.contact 
-                                                            },
-                                                            products: k.items,
-                                                            status: {
-                                                                status: {
-                                                                    type: "queued",
-                                                                    value: getDate()
+                                                        if (data.ok)
+
+                                                            return {
+                                                                id: v4(),
+                                                                destination: k.type == "pickup" ? {
+                                                                    store_code: pickupStore?.code,
+                                                                    store_id: pickupStore?.id,
+                                                                    contact: pickupStore?.contact!
+                                                                } : { code: "000", contact: customerState?.contact },
+                                                                origin:  {
+                                                                    store_code: k.store_code,
+                                                                    store_id: k.store,
+                                                                    contact: data.data.contact
                                                                 },
-                                                                assigned_products: k.items.map(b => b.id),
-                                                                timestamp: getDate()
-                                                            },
-                                                            previous_failed_fulfillment_attempts: [],
-                                                            status_history: [],
-                                                            order_history: [],
-                                                            order_notes: orderState.map(b => b.order_notes).flat(),
-                                                            reference: `PU${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-                                                            creation_date: getDate(),
-                                                            discount: "a|0",
-                                                            order_type: k.type
-                                                        } as Order;
+                                                                products: k.items,
+                                                                status: {
+                                                                    status: {
+                                                                        type: "queued",
+                                                                        value: getDate()
+                                                                    },
+                                                                    assigned_products: k.items.map(b => b.id),
+                                                                    timestamp: getDate()
+                                                                },
+                                                                previous_failed_fulfillment_attempts: [],
+                                                                status_history: [],
+                                                                order_history: [],
+                                                                order_notes: orderState.map(b => b.order_notes).flat(),
+                                                                reference: `PU${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                                creation_date: getDate(),
+                                                                discount: "a|0",
+                                                                order_type: k.type
+                                                            } as ContextualOrder;
                                                     })).then((k) => {
                                                         const job = orderState.filter(k => k.order_type != "direct")
-                                                        k.map(b => job.push(b as Order));
+                                                        k.map(b => job.push(b as ContextualOrder));
                                                         
                                                         setOrderState(job);
                                                         setKioskPanel("cart")
@@ -321,12 +315,8 @@ export function PickupMenu() {
                                             </div>
                                         </div>
 
-                                        <div
-                                            onClick={async () => {
-                                                
-                                            }}
-                                            className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-white font-semibold ${""}`}>Complete</p>
+                                        <div className="bg-blue-700 cursor-pointer w-full rounded-md p-4 flex items-center justify-center">
+                                            <p className="text-white font-semibold">Complete</p>
                                         </div>
                                     </>
                                 )
@@ -484,8 +474,8 @@ export function PickupMenu() {
     )
 }
 
-function generateProductMap(orders: Order[]) {
-    let pdt_map: ProductPurchase[] = [];
+function generateProductMap(orders: ContextualOrder[]) {
+    let pdt_map: ContextualProductPurchase[] = [];
 
     for(let i = 0; i < orders.length; i++) {
         if(orders[i].order_type == "direct") {
@@ -498,7 +488,24 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[], currentStore: string): { assignment_sheet: { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[], product_map: ProductPurchase[] } {
+function generateOrders(
+    product_map: ContextualProductPurchase[],
+    distance_data: {
+        store_id: string,
+        store_code: string,
+        distance: number
+    }[],
+    currentStore: string
+): {
+    assignment_sheet: {
+        item: ContextualProductPurchase | undefined,
+        store: string,
+        alt_stores: Stock[],
+        ship: boolean,
+        quantity: number
+    }[],
+    product_map: ContextualProductPurchase[]
+} {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.
@@ -586,7 +593,7 @@ function generateOrders(product_map: ProductPurchase[], distance_data: { store_i
     weighted_vector.map(k => {
         k.items.map(b => {
             const required_quantity = product_map.find(n => n.id == b.item_id)?.quantity ?? 0;
-            const fulfilled = product_assignment.reduce((p,c) => c[0] == b.item_id ? p + c[2] : p + 0, 0);
+            const fulfilled = product_assignment.reduce((p,c) => c[0] == b.item_id ? p + c[2] : p, 0);
             const net_required = required_quantity - fulfilled;
 
             if(b.quantity >= net_required && net_required > 0) {

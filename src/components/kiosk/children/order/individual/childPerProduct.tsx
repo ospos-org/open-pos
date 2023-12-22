@@ -1,9 +1,9 @@
-import { Order } from "@utils/stockTypes"
+import { ContextualOrder } from "@utils/stockTypes"
 
 import { ProductElement } from "./productElement"
 
 interface ChildPerProductProps {
-    currentOrder: Order 
+    currentOrder: ContextualOrder
 }
 
 export function ChildPerProduct({ currentOrder }: ChildPerProductProps) {

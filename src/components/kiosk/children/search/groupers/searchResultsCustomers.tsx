@@ -3,7 +3,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { searchResultsAtomic } from "@atoms/search";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
 import { ItemCustomer } from "../results/itemCustomer";
-import { Customer } from "@utils/stockTypes";
+import {Customer} from "@/generated/stock/Api";
 
 export function SearchResultsCustomers() {
     const searchResults = useAtomValue(searchResultsAtomic)

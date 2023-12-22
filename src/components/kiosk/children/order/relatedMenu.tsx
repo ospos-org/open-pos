@@ -6,9 +6,8 @@ import moment from "moment";
 import { inspectingTransactionAtom } from "@atoms/transaction";
 import { inspectingProductAtom } from "@atoms/product";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
-import { OPEN_STOCK_URL } from "@utils/environment";
-import { Transaction } from "@utils/stockTypes";
-import queryOs from "@/src/utils/query-os";
+import {Transaction} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 export function RelatedOrders() {
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
@@ -19,14 +18,11 @@ export function RelatedOrders() {
     const [ suggestions, setSuggestions ] = useState<Transaction[]>([]);
 
     useEffect(() => {
-        queryOs(`transaction/product/${inspectingProduct.activeProductVariant?.barcode}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })?.then(async e => {
-            const data: Transaction[] = await e.json();
-            setSuggestions(data);
-        });
+        if (inspectingProduct.activeProductVariant?.barcode)
+            openStockClient
+                .transaction
+                .getByProductSku(inspectingProduct.activeProductVariant?.barcode)
+                .then(data => data.ok && setSuggestions(data.data))
     }, [inspectingProduct.activeProductVariant]);
 
     return (
@@ -44,8 +40,7 @@ export function RelatedOrders() {
                 <p className="text-gray-400">Related Orders</p>
             </div>
 
-            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
-            }}>
+            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
                 {
                     suggestions.length == 0 ? 
                     <div className="flex flex-col flex-1 items-center justify-center">

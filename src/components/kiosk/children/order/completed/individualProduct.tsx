@@ -1,9 +1,9 @@
 import { PrimitiveAtom, useAtomValue } from "jotai"
 
 import { applyDiscount, findMaxDiscount } from "@utils/discountHelpers"
-import { Order } from "@utils/stockTypes"
+import { ContextualOrder } from "@utils/stockTypes"
 
-export function IndividualProduct({ productAtom, customerActive }: { productAtom: PrimitiveAtom<Order>, customerActive: boolean }) {
+export function IndividualProduct({ productAtom, customerActive }: { productAtom: PrimitiveAtom<ContextualOrder>, customerActive: boolean }) {
     const order = useAtomValue(productAtom)
 
     return (

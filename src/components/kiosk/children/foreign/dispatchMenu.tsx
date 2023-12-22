@@ -5,14 +5,14 @@ import { debounce } from "lodash"
 import { v4 } from "uuid"
 import Image from "next/image"
 
-import { Address, Customer, Order, ProductPurchase, StockInfo, Store } from "@utils/stockTypes"
 import { kioskPanelLogAtom } from "@atoms/kiosk"
 import { masterStateAtom } from "@atoms/openpos"
-import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
 import { getDate } from "@utils/utils"
-import queryOs from "@/src/utils/query-os"
+import {openStockClient} from "~/query/client";
+import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
+import {Stock, Address, Store} from "@/generated/stock/Api";
 
 export function DispatchMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
@@ -20,8 +20,8 @@ export function DispatchMenu() {
 
     const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
     const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[]>([]);
-    const [ productMap, setProductMap ] = useState<ProductPurchase[]>();
+    const [ generatedOrder, setGeneratedOrder ] = useState<{ item: ContextualProductPurchase | undefined, store: string, alt_stores: Stock[], ship: boolean, quantity: number }[]>([]);
+    const [ productMap, setProductMap ] = useState<ContextualProductPurchase[]>();
 
     const [ error, setError ] = useState<string | null>(null);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
@@ -32,30 +32,29 @@ export function DispatchMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
 
     const fetchDistanceData = useCallback(async () => {
-        const distance_data: { store_id: string, store_code: string, distance: number }[] = await queryOs(`helpers/distance/${customerState?.id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })?.then(async e => {
-            return await e.json();
-        })
-
-        return distance_data;
+        if (customerState?.id)
+            return (await openStockClient.helpers.distanceToStores(customerState?.id)).data
     }, [customerState?.id]);
 
     useEffect(() => {
         fetchDistanceData().then(data => {
-            const ord = generateOrders(generateProductMap(orderState), data, currentStore.kiosk_id ?? "");
+            if (data) {
+                const ord = generateOrders(
+                    generateProductMap(orderState),
+                    data,
+                    currentStore.kiosk_id ?? ""
+                );
 
-            setGeneratedOrder(ord.assignment_sheet);
-            setProductMap(ord.product_map);
-            setSelectedItems(ord.assignment_sheet.map(e => {
-                return {
-                    item_id: e.item?.id ?? "", 
-                    store_id: e.store ?? "", 
-                    selected: false 
-                }
-            }))
+                setGeneratedOrder(ord.assignment_sheet);
+                setProductMap(ord.product_map);
+                setSelectedItems(ord.assignment_sheet.map(e => {
+                    return {
+                        item_id: e.item?.id ?? "",
+                        store_id: e.store ?? "",
+                        selected: false
+                    }
+                }))
+            }
         });
     }, [orderState, currentStore, fetchDistanceData])
 
@@ -63,18 +62,9 @@ export function DispatchMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await queryOs(`helpers/suggest/`, {
-                method: "POST",
-                credentials: "include",
-                redirect: "follow",
-                body: address
-            })?.then(async e => {
-                const data: Address[] = await e.json();
-    
-                return data;
-            });
+            const suggestions = await openStockClient.helpers.suggestAddr(address)
 
-            setSuggestions(data);
+            setSuggestions(suggestions.data ?? []);
             setLoading(false);
         }, 250);
     }, []);
@@ -103,29 +93,13 @@ export function DispatchMenu() {
                 <p className="text-gray-400">Ship Order to Customer</p>
             </div>
 
-            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden" onClick={(e) => {
-                // let sel = selectedItems.find(k => k.selected);
-                // if(sel) {
-                //     setSelectedItems(selectedItems.map(k => {
-                //         return {
-                //             ...k,
-                //             selected: false
-                //         }
-                //     }))
-                // }
-            }}>
+            <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
                 {
                     (() => {
                         switch(pageState) {
                             case "origin":
                                 return (
                                     <>
-                                        {/* <div className="flex flex-row items-center gap-4 self-center text-white w-full">
-                                            <p className="">Overview</p>
-                                            <hr className="flex-1 border-gray-800 h-[3px] border-[2px] bg-gray-800 rounded-md" />
-                                            <p className="text-gray-600">Shipping Rate</p>
-                                        </div> */}
-
                                         <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full pr-2">
                                             <div className="flex flex-1 flex-col gap-4">
                                                 <div className="flex flex-row items-center gap-2 text-gray-400">
@@ -286,7 +260,7 @@ export function DispatchMenu() {
 
                                         <div
                                             onClick={async () => {
-                                                let inverse_order: { store: string, store_code: string, items: ProductPurchase[], type: "direct" | "shipment" }[] = [];
+                                                let inverse_order: { store: string, store_code: string, items: ContextualProductPurchase[], type: "direct" | "shipment" }[] = [];
 
                                                 generatedOrder.map(k => {
                                                     const found = inverse_order.find(e => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"));
@@ -304,52 +278,49 @@ export function DispatchMenu() {
                                                 })
 
                                                 Promise.all(inverse_order.map(async k => {
-                                                    const data: Store = await (await queryOs(`store/${k.store}`, {
-                                                        method: "GET",
-                                                        credentials: "include",
-                                                        redirect: "follow"
-                                                    })).json();
+                                                    const data = await openStockClient.store.get(k.store)
 
-                                                    return {
-                                                        id: v4(),
-                                                        destination: {
-                                                            store_code: "000",
-                                                            store_id: customerState?.id,
-                                                            contact: customerState?.contact!
-                                                        },
-                                                        origin: {
-                                                            store_code: k.store_code,
-                                                            store_id: k.store,
-                                                            contact: data.contact 
-                                                        },
-                                                        products: k.items,
-                                                        status: {
-                                                            status: {
-                                                                type: "queued",
-                                                                value: getDate()
+                                                    if (data.ok)
+                                                        return {
+                                                            id: v4(),
+                                                            destination: {
+                                                                store_code: "000",
+                                                                store_id: customerState?.id,
+                                                                contact: customerState?.contact!
                                                             },
-                                                            assigned_products: k.items.map(b => b.id),
-                                                            timestamp: getDate()
-                                                        },
-                                                        previous_failed_fulfillment_attempts: [],
-                                                        status_history: [],
-                                                        order_history: [],
-                                                        order_notes: orderState.map(b => b.order_notes).flat(),
-                                                        reference: `DP${customAlphabet(`1234567890abcdef`, 10)(8)}`,
-                                                        creation_date: getDate(),
-                                                        discount: "a|0",
-                                                        order_type: k.type
-                                                    };
+                                                            origin: {
+                                                                store_code: k.store_code,
+                                                                store_id: k.store,
+                                                                contact: data.data.contact
+                                                            },
+                                                            products: k.items,
+                                                            status: {
+                                                                status: {
+                                                                    type: "queued",
+                                                                    value: getDate()
+                                                                },
+                                                                assigned_products: k.items.map(b => b.id),
+                                                                timestamp: getDate()
+                                                            },
+                                                            previous_failed_fulfillment_attempts: [],
+                                                            status_history: [],
+                                                            order_history: [],
+                                                            order_notes: orderState.map(b => b.order_notes).flat(),
+                                                            reference: `DP${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+                                                            creation_date: getDate(),
+                                                            discount: "a|0",
+                                                            order_type: k.type
+                                                        };
                                                 })).then((k) => {
                                                     const job = orderState.filter(k => k.order_type != "direct")
-                                                    k.map(b => job.push(b as Order));
+                                                    k.map(b => job.push(b as ContextualOrder));
                                                     
                                                     setOrderState(job);
                                                     setKioskPanel("cart")
                                                 });
                                             }}
-                                            className={`${true ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                                            <p className={`text-white font-semibold ${""}`}>Complete</p>
+                                            className="bg-blue-700 cursor-pointer w-full rounded-md p-4 flex items-center justify-center">
+                                            <p className="text-white font-semibold">Complete</p>
                                         </div>
                                     </>
                                 )
@@ -374,12 +345,7 @@ export function DispatchMenu() {
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>
@@ -402,12 +368,7 @@ export function DispatchMenu() {
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>
@@ -431,12 +392,7 @@ export function DispatchMenu() {
                                                                     }
                                                                 }) 
                                                         }}
-                                                        onFocus={(e) => {
-                                                        }}
                                                         tabIndex={0}
-                                                        // onBlur={() => setSearchFocused(false)}
-                                                        onKeyDown={(e) => {
-                                                        }}
                                                         />
                                                 </div>
                                             </div>
@@ -514,29 +470,32 @@ export function DispatchMenu() {
                                                 if(!loading) {
                                                     setLoading(true);
 
-                                                    queryOs(`customer/contact/${customerState?.id}`, {
-                                                        method: "POST",
-                                                        body: JSON.stringify(customerState?.contact),
-                                                        credentials: "include",
-                                                        redirect: "follow"
-                                                    })?.then(async e => {
-                                                        const data: Customer = await e.json();
-                                                        setCustomerState(data);
-        
-                                                        if(e.ok) {
-                                                            fetchDistanceData().then(data => {
-                                                                const ord = generateOrders(generateProductMap(orderState), data, currentStore.store_id ?? "");
-                                                                setGeneratedOrder(ord.assignment_sheet);
-                                                                setProductMap(ord.product_map);
-                                                                setLoading(false);
-                                                            });
-        
-                                                            setError(null);
-                                                            setPageState("origin");
-                                                        }else {
-                                                            setError("Malformed Street Address")
-                                                        }
-                                                    })
+                                                    if (customerState?.id && customerState?.contact)
+                                                        openStockClient.customer.updateContactInfo(customerState.id, customerState.contact)
+                                                            .then(data => {
+                                                                if (data.ok) {
+                                                                    setCustomerState(data.data);
+
+                                                                    fetchDistanceData()
+                                                                        .then(data => {
+                                                                            if (data) {
+                                                                                const ord = generateOrders(
+                                                                                    generateProductMap(orderState),
+                                                                                    data,
+                                                                                    currentStore.store_id ?? ""
+                                                                                );
+                                                                                setGeneratedOrder(ord.assignment_sheet);
+                                                                                setProductMap(ord.product_map);
+                                                                                setLoading(false);
+                                                                            }
+                                                                        });
+
+                                                                    setError(null);
+                                                                    setPageState("origin");
+                                                                } else {
+                                                                    setError("Malformed Street Address")
+                                                                }
+                                                            })
                                                 }
                                             }}
                                             className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
@@ -553,8 +512,8 @@ export function DispatchMenu() {
     )
 }
 
-function generateProductMap(orders: Order[]) {
-    let pdt_map: ProductPurchase[] = [];
+function generateProductMap(orders: ContextualOrder[]) {
+    let pdt_map: ContextualProductPurchase[] = [];
 
     for(let i = 0; i < orders.length; i++) {
         if(orders[i].order_type == "direct") {
@@ -567,7 +526,7 @@ function generateProductMap(orders: Order[]) {
     return pdt_map;
 }
 
-function generateOrders(product_map: ProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[], currentStore: string): { assignment_sheet: { item: ProductPurchase | undefined, store: string, alt_stores: StockInfo[], ship: boolean, quantity: number }[], product_map: ProductPurchase[] } {
+function generateOrders(product_map: ContextualProductPurchase[], distance_data: { store_id: string, store_code: string, distance: number }[], currentStore: string): { assignment_sheet: { item: ContextualProductPurchase | undefined, store: string, alt_stores: Stock[], ship: boolean, quantity: number }[], product_map: ContextualProductPurchase[] } {
     /// 1. Determine the best location for each product.
     /// 2. Ensure as many products are in the same location as possible.
     /// 3. Ensure it is close to the destination.

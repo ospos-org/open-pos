@@ -5,10 +5,10 @@ import Image from "next/image";
 
 import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment";
 import { defaultKioskAtom, kioskPanelLogAtom } from "@atoms/kiosk";
-import { PaymentIntent } from "@utils/stockTypes";
 import { getDate } from "@utils/utils";
 
 import CashSelect from "./cashSelect";
+import {Payment, PaymentAction} from "@/generated/stock/Api";
 
 export function CashPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -41,9 +41,9 @@ export function CashPayment() {
                 <div
                     className={`${cashContinuable ? "bg-white" : "bg-blue-400"} w-full rounded-md p-4 flex items-center justify-center`}
                     onClick={() => {
-                        const new_payment: PaymentIntent[] = [ ...kioskState.payment, {
+                        const new_payment: Payment[] = [ ...kioskState.payment, {
                             amount: {quantity: probingPrice ?? 0, currency: 'NZD'},
-                            delay_action: "Cancel",
+                            delay_action: PaymentAction.Cancel,
                             delay_duration: "PT12H",
                             fulfillment_date: getDate(),
                             id: v4(),

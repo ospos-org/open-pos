@@ -1,4 +1,10 @@
-import { DiscountValue, Product, ProductPurchase, Promotion, StrictVariantCategory } from "./stockTypes";
+import { Product } from "@/generated/stock/Api";
+import {
+    ContextualDiscountValue,
+    ContextualProductPurchase,
+    Promotion,
+    StrictVariantCategory
+} from "./stockTypes";
 
 export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {
@@ -15,7 +21,7 @@ export function isValidVariant(activeProduct: Product, activeVariant: StrictVari
 
 export function applyDiscountsConsiderateOfQuantity(
     currentQuantity: number, 
-    discounts: DiscountValue[], 
+    discounts: ContextualDiscountValue[],
     price: number, 
     customerActive: boolean
 ) {
@@ -29,7 +35,7 @@ export function applyDiscountsConsiderateOfQuantity(
     // and removing each discount when it has been "exhausted".
 
     let savings = 0;
-    let exhaustiblePromotions: DiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion" || b.source == "user")));
+    let exhaustiblePromotions: ContextualDiscountValue[] = JSON.parse(JSON.stringify(discounts.filter(b => b.source == "promotion" || b.source == "user")));
 
     // While we have quantity to serve, and promotions to apply...
     while(currentQuantity > 0 && exhaustiblePromotions.length > 0)
@@ -127,12 +133,16 @@ export function toDbDiscount(discount: string): { Absolute?: number, Percentage?
     }
 }
 
-export function findMaxDiscount(discountValues: DiscountValue[], productValue: number, loyalty: boolean): [DiscountValue, number] {
+export function findMaxDiscount(
+    discountValues: ContextualDiscountValue[],
+    productValue: number,
+    loyalty: boolean
+): [ContextualDiscountValue, number] {
     let max_discount = {
         value: "a|0",
         source: "user",
         applicable_quantity: -1,
-    } as DiscountValue;
+    } as ContextualDiscountValue;
 
     let index = 0;
 
@@ -190,7 +200,7 @@ export function toAbsoluteDiscount(discount: string, price: number) {
     }
 }
 
-export function applyPromotion(promo: Promotion, pdt: ProductPurchase, pdt_map: Map<string, ProductPurchase>): number {
+export function applyPromotion(promo: Promotion, pdt: ContextualProductPurchase, pdt_map: Map<string, ContextualProductPurchase>): number {
     let total_quantity = 0;
     pdt_map.forEach(b => total_quantity += b.quantity);
 
@@ -251,7 +261,7 @@ export function discountFromPromotion(promo: Promotion): { Absolute?: number | u
     return discount;
 }
 
-export const isEquivalentDiscount = (a: DiscountValue, b: DiscountValue, product_cost: number) => {
+export const isEquivalentDiscount = (a: ContextualDiscountValue, b: ContextualDiscountValue, product_cost: number) => {
     if(a.value == b.value && applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value)) {
         return true;
     }

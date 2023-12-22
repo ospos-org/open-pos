@@ -4,11 +4,11 @@ import Image from "next/image"
 
 import { findMaxDiscount, isEquivalentDiscount } from "@utils/discountHelpers"
 import { ActiveDiscountApplication, kioskPanelLogAtom } from "@atoms/kiosk"
-import { DiscountValue, ProductPurchase } from "@utils/stockTypes"
 import { aCustomerActiveAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
 
 import DiscountMenu from "./discountMenu"
+import {ContextualDiscountValue, ContextualProductPurchase} from "@utils/stockTypes";
 
 export function DiscountScreen() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -37,7 +37,7 @@ export function DiscountScreen() {
                 if(dcnt.for == "product") {
                     if(dcnt.exclusive) {
                         let overflow_quantity = 0;
-                        let overflow_product: (ProductPurchase | null) = null;
+                        let overflow_product: (ContextualProductPurchase | null) = null;
 
                         const new_state = orderState.map(n => {
                             //?? impl! Add option to only apply to a product in a SINGLE order, as opposed to the same item mirrored across multiple orders...?
@@ -60,7 +60,7 @@ export function DiscountScreen() {
                                                 source: "user",
                                                 value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
                                                 applicable_quantity: -1,
-                                            } as DiscountValue
+                                            } as ContextualDiscountValue
                                         ]
                                     };
                                 } else return e;
@@ -114,7 +114,7 @@ export function DiscountScreen() {
                                     merged[indx].quantity += overflow_quantity;
                                 }else {
                                     merged.push({
-                                        ...overflow_product as ProductPurchase,
+                                        ...overflow_product as ContextualProductPurchase,
                                         quantity: overflow_quantity,
                                         id: v4()
                                     })
@@ -123,14 +123,14 @@ export function DiscountScreen() {
 
                             return {
                                 ...n,
-                                products: merged.filter(b => b !== null) as ProductPurchase[]
+                                products: merged.filter(b => b !== null) as ContextualProductPurchase[]
                             }
                         })
 
                         setOrderState(new_state)
                     }else {
                         const new_state = orderState.map(n => {
-                            let clone = [...n.products] as ProductPurchase[];
+                            let clone = [...n.products] as ContextualProductPurchase[];
 
                             for(let i = 0; i < clone.length; i++) {
                                 let e = clone[i];
@@ -144,7 +144,7 @@ export function DiscountScreen() {
                                             source: "user",
                                             value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
                                             applicable_quantity: -1,
-                                        } as DiscountValue], a.product_cost, customerActive)[0], 
+                                        } as ContextualDiscountValue], a.product_cost, customerActive)[0],
                                         findMaxDiscount(e.discount, e.product_cost, customerActive)[0],
                                         e.product_cost
                                     )
@@ -169,7 +169,7 @@ export function DiscountScreen() {
                                                 source: "user",
                                                 value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
                                                 applicable_quantity: -1,
-                                            } as DiscountValue
+                                            } as ContextualDiscountValue
                                         ]
                                     };
                                 }
@@ -177,7 +177,7 @@ export function DiscountScreen() {
 
                             return {
                                 ...n,
-                                products: clone.filter(b => b != null) as ProductPurchase[]
+                                products: clone.filter(b => b != null) as ContextualProductPurchase[]
                             }
                         });
 

@@ -21,7 +21,7 @@ export function SearchBar() {
 
     const debouncedSearch = useRef(
         debounce(async () => {
-            querySearchResults();
+            await querySearchResults();
         }, 300)
     ).current;
 

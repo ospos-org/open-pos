@@ -10,11 +10,10 @@ import {
     receivablesAtom, 
 } from "@/src/atoms/receivables"
 import { masterStateAtom, mobileLowModeAtom } from "@atoms/openpos"
-import { Order, Product } from "@utils/stockTypes"
 import { useWindowSize } from "@hooks/useWindowSize"
 
 import OrderView from "./orderView"
-import queryOs from "@/src/utils/query-os"
+import {openStockClient} from "~/query/client";
 
 export default function Receivables() {
     const masterState = useAtomValue(masterStateAtom)
@@ -30,26 +29,22 @@ export default function Receivables() {
 
     useEffect(() => {
         if(menuState != null)
-            queryOs(`product/${menuState?.product}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const data: Product = await k.json();
-                setMenuInformation(data);
-            })
+            openStockClient.product.get(parseInt(menuState?.product))
+                .then(async k => {
+                    if (k.ok) setMenuInformation(k.data)
+                })
     }, [menuState, setMenuInformation])
 
     useEffect(() => {
-        queryOs(`transaction/receivables/${masterState.store_id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })
-        .then(async b => {
-            const data: Order[] = await b.json();
-            setReceivables(data);
-        })
+        // queryOs(`transaction/receivables/${masterState.store_id}`, {
+        //     method: "GET",
+        //     credentials: "include",
+        //     redirect: "follow"
+        // })
+        // .then(async b => {
+        //     const data: Order[] = await b.json();
+        //     setReceivables(data);
+        // })
     }, [masterState.store_id, setReceivables])
 
     return (

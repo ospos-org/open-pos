@@ -8,10 +8,9 @@ import { searchFocusedAtom, searchResultsAtom, searchTypeHandlerAtom } from "@at
 import { customerAtom, inspectingCustomerAtom } from "@atoms/customer";
 import { inspectingTransactionAtom } from "@atoms/transaction";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
-import { Transaction } from "@utils/stockTypes";
 import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
-import { OPEN_STOCK_URL } from "@/src/utils/environment";
-import queryOs from "@/src/utils/query-os";
+import {openStockClient} from "~/query/client";
+import {Transaction} from "@/generated/stock/Api";
 
 
 export function ExpandedCustomer() {
@@ -28,18 +27,9 @@ export function ExpandedCustomer() {
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
 
     useEffect(() => {
-        if(inspectingCustomer) {
-            queryOs(`customer/transactions/${inspectingCustomer.id}`, {
-                method: "GET",
-				credentials: "include",
-				redirect: "follow"
-            }).then(async k => {
-                if(k.ok) {
-                    const data: Transaction[] = await k.json();
-
-                    setActiveCustomerTransactions(data)
-                }
-            })
+        if (inspectingCustomer) {
+            openStockClient.customer.findRelatedTransactions(inspectingCustomer.id)
+                .then(data => data.ok && setActiveCustomerTransactions(data.data))
         }
     }, [inspectingCustomer]);
 

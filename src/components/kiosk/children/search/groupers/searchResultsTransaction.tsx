@@ -2,7 +2,7 @@ import { useAtomValue } from "jotai";
 
 import { searchResultsAtomic } from "@atoms/search";
 import { ItemTransaction } from "../results/itemTransaction";
-import { Transaction } from "@utils/stockTypes";
+import {Transaction} from "@/generated/stock/Api";
 
 export function SearchResultsTransaction() {
     const searchResults = useAtomValue(searchResultsAtomic)

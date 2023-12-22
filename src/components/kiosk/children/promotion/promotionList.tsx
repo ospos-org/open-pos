@@ -1,6 +1,6 @@
 import { fromDbDiscount, parseDiscount } from "@utils/discountHelpers";
-import { Promotion } from "@utils/stockTypes";
 import moment from "moment";
+import {Promotion} from "@/generated/stock/Api";
 
 interface PromotionListProps {
     promotions: Promotion[] | undefined
@@ -30,7 +30,7 @@ export default function PromotionList({ promotions }: PromotionListProps) {
 }
 
 function formatPromotion(promo: Promotion) {
-    if(promo.get.SoloThis) {
+    if(promo.get?.SoloThis) {
         return `${promo.name} - Get ${parseDiscount(fromDbDiscount(promo.get.SoloThis)) + " off."}`
     }
 

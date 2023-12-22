@@ -3,11 +3,10 @@ import { useAtom, useSetAtom } from "jotai"
 import { debounce } from "lodash"
 import Image from "next/image"
 
-import { Address, ContactInformation, Customer } from "@utils/stockTypes"
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
-import { OPEN_STOCK_URL } from "@utils/environment"
 import { customerAtom } from "@/src/atoms/customer"
-import queryOs from "@/src/utils/query-os"
+import {Customer, Address, CustomerWithTransactionsOut, ContactInformation} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 function CustomerMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -17,7 +16,7 @@ function CustomerMenu() {
     const [ searching, setSearching ] = useState(false);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
 
-    const [ customerStateInternal, setCustomerStateInternal ] = useState<Customer | null>(customerState != null ? customerState : {
+    const [ customerStateInternal, setCustomerStateInternal ] = useState<CustomerWithTransactionsOut | null>(customerState != null ? customerState : {
         id: "",
         name: "",
         contact: {
@@ -43,7 +42,6 @@ function CustomerMenu() {
             }
         },
         transactions: "",
-        order_history: [],
         customer_notes: [],
         special_pricing: "",
         accepts_marketing: false,
@@ -56,18 +54,9 @@ function CustomerMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await queryOs(`helpers/suggest/`, {
-                method: "POST",
-                credentials: "include",
-                redirect: "follow",
-                body: address
-            })?.then(async e => {
-                const data: Address[] = await e.json();
-    
-                return data;
-            });
+            const data = await openStockClient.helpers.suggestAddr(address)
 
-            setSuggestions(data);
+            setSuggestions(data.data);
             setLoading(false);
         }, 250);
     }, []);
@@ -234,25 +223,37 @@ function CustomerMenu() {
                     <div
                         onClick={() => {
                             if(!loading) {
+                                if (!customerStateInternal?.contact || !customerStateInternal?.name) return
                                 setLoading(true);
 
-                                queryOs(customerState === null ? `customer` : `customer/${customerStateInternal?.id}`, {
-                                    method: "POST",
-                                    body: JSON.stringify({ ...customerStateInternal, contact: customerStateInternal?.contact, name: customerStateInternal?.contact.name }),
-                                    credentials: "include",
-                                    redirect: "follow"
-                                })?.then(async e => {
-                                    const data: Customer = await e.json();
+                                const customerObject = {
+                                    ...customerStateInternal,
+                                    contact: customerStateInternal.contact,
+                                    name: customerStateInternal.contact.name
+                                }
 
-                                    setCustomerState({ ...data });
-
-                                    if(e.ok) {
-                                        setLoading(false);
-                                        setKioskPanel("cart")
-                                    }else {
-                                        setLoading(false);
-                                    }
-                                })
+                                if (customerStateInternal?.id)
+                                    openStockClient.customer.update(customerStateInternal.id, customerObject)
+                                        .then(data => {
+                                            if(data.ok) {
+                                                setCustomerState(data.data);
+                                                setLoading(false);
+                                                setKioskPanel("cart")
+                                            }else {
+                                                setLoading(false);
+                                            }
+                                        })
+                                else if (customerStateInternal?.contact && customerStateInternal?.name)
+                                    openStockClient.customer.create(customerObject)
+                                        .then(data => {
+                                            if(data.ok) {
+                                                setCustomerState(data.data);
+                                                setLoading(false);
+                                                setKioskPanel("cart")
+                                            }else {
+                                                setLoading(false);
+                                            }
+                                        })
                             }
                         }}
                         className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>

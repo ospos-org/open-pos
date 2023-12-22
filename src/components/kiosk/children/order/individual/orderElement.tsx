@@ -1,13 +1,13 @@
 import { PrimitiveAtom, useAtomValue } from "jotai"
 
-import { Order } from "@utils/stockTypes"
+import {ContextualOrder} from "@utils/stockTypes";
 
 import { ChildPerProduct } from "./childPerProduct"
 import { PromotionLabel } from "./promotionLabel"
 import { OrderTitle } from "./orderTitle"
 
 interface OrderElementProps {
-    orderAtom: PrimitiveAtom<Order>,
+    orderAtom: PrimitiveAtom<ContextualOrder>,
     index: number
 }
 

@@ -1,8 +1,8 @@
 import { parseDiscount } from "@/src/utils/discountHelpers";
-import { Order } from "@/src/utils/stockTypes";
+import {ContextualOrder} from "@utils/stockTypes";
 
 interface PromotionLabelProps {
-    currentOrder: Order
+    currentOrder: ContextualOrder
 }
 
 export function PromotionLabel({ currentOrder }: PromotionLabelProps) {

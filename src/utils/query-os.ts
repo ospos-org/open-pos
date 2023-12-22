@@ -1,16 +1,6 @@
-import { OPEN_STOCK_URL, SELF_URL } from "./environment"
+import { SELF_URL } from "./environment"
 
-const queryOs = async (query_url: string, options: RequestInit) => {
-    const data = await fetch(`${OPEN_STOCK_URL}/${query_url}`, options)
+const queryKiosk = async (query_url: string, options: RequestInit) =>
+    await fetch(`${SELF_URL}/api/${query_url}`, options)
 
-    return data
-}
-
-const queryKiosk = async (query_url: string, options: RequestInit) => {
-    const data = await fetch(`${SELF_URL}/api/${query_url}`, options)
-
-    return data
-}
-
-export default queryOs
 export { queryKiosk }

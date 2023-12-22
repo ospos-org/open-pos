@@ -39,7 +39,7 @@ export function BatchGroupView() {
                                     <div className="flex flex-col gap-2">
                                         {
                                             b.items.sort((a, b) => { return a.name.localeCompare(b.name) }).map(k => {
-                                                const b = k.instances.filter(n => n.state.fulfillment_status.pick_status.toLowerCase() == "picked")
+                                                const b = k.instances.filter(n => n.state.fulfillment_status?.pick_status == "Picked")
                                                 return (
                                                     <div
                                                         key={`ITEM: ${k.barcode}-${k.sku}`}

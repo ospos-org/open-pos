@@ -1,6 +1,7 @@
 import { atom } from "jotai"
+import {Order, Product, ProductInstance} from "@/generated/stock/Api";
+import {ProductCategory} from "@utils/stockTypes";
 
-import { Order, Product, ProductCategory, ProductInstance } from "@utils/stockTypes"
 
 const deliverablesAtom = atom<Order[]>([])
 const productCategoriesAtom = atom<ProductCategory[]>([])

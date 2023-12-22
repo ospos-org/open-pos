@@ -1,8 +1,6 @@
-import { PrimitiveAtom, useAtomValue } from "jotai"
+import {ContextualOrder} from "@utils/stockTypes";
 
-import { Order } from "@utils/stockTypes"
-
-export function NoteOrderItem({ order, callback }: { order: Order, callback: (orderAtom: Order) => void }) {
+export function NoteOrderItem({ order, callback }: { order: ContextualOrder, callback: (orderAtom: ContextualOrder) => void }) {
     return (
         <div key={order.id} className="hover:bg-gray-600 cursor-pointer px-4 py-2 w-full text-center" onClick={() => {
             callback(order)

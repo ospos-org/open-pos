@@ -1,15 +1,14 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useState } from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import Image from 'next/image';
 import moment from 'moment';
 
 import { inspectingTransactionAtom } from '@atoms/transaction';
-import { Customer, Transaction } from '@utils/stockTypes'
 import { kioskPanelLogAtom } from '@atoms/kiosk';
-import { OPEN_STOCK_URL } from "@utils/environment";
 import { searchTermAtom } from '@atoms/search';
 import { useWindowSize } from '@hooks/useWindowSize';
-import queryOs from '@/src/utils/query-os';
+import {Customer, Store, Transaction} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 interface ItemTransactionProps {
     transaction: Transaction,
@@ -22,38 +21,34 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
 
-    const n = transaction.products.filter(k => k.reference.toLowerCase().includes(searchTermState.toLowerCase()));
+    const filteredOrders = useMemo(() =>
+        transaction.products.filter(
+            k => k.reference
+                .toLowerCase()
+                .includes(searchTermState.toLowerCase())
+        ),
+        [transaction]
+    );
 
-    const [ customer, setCustomer ] = useState<Customer | null>();
+    const [ customer, setCustomer ] = useState<Customer | Store | null>();
     const windowSize = useWindowSize();
 
     useEffect(() => {
         if(transaction.customer.customer_type != "Store") {
-            queryOs(`customer/${transaction.customer.customer_id}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const n = await k.json();
-                setCustomer(n);
-            })
+            openStockClient.customer.get(transaction.customer.customer_id)
+                .then(data => data.ok && setCustomer(data.data))
         }else {
-            queryOs(`store/code/${transaction.customer.customer_id}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const n = await k.json();
-                setCustomer(n);
-            })
+            openStockClient.store.getByCode(transaction.customer.customer_id)
+                .then(data => data.ok && setCustomer(data.data))
         }
     }, [transaction]);
 
-    if(!n) return (<></>);
+    if(!filteredOrders) return (<></>);
+
     else return (
         <div>
             {
-                n.map((b, indx) => 
+                filteredOrders.map(b =>
                     <div
                         key={b.id}
                         onClick={() => {

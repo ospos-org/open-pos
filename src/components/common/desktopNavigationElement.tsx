@@ -1,15 +1,15 @@
-import { useAtom, useAtomValue } from "jotai";
+import {useAtom, useAtomValue} from "jotai";
 import Image from "next/image";
 
-import { activeEmployeeAtom, masterStateAtom, pageAtom } from "@atoms/openpos";
-import { useCallback, useEffect, useState } from "react";
-import { Attendant, History } from "@/src/utils/stockTypes";
-import { ICON_SIZE } from "@utils/utils";
+import {activeEmployeeAtom, masterStateAtom, pageAtom} from "@atoms/openpos";
+import {useCallback, useEffect, useState} from "react";
+import {ICON_SIZE} from "@utils/utils";
 
-import { Skeleton } from "./skeleton";
-import { toast } from "sonner";
-import queryOs from "@/src/utils/query-os";
+import {Skeleton} from "./skeleton";
+import {toast} from "sonner";
 import OTooltip from "./tooltip";
+import {TrackType} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 export function DesktopNavigationElement() {
     // 0: Not set, 1: Out, 2: In, 3: Pending
@@ -19,44 +19,39 @@ export function DesktopNavigationElement() {
     const kiosk = useAtomValue(masterStateAtom)
     const [ page, setPage ] = useAtom(pageAtom)
 
-    useEffect(() => {
-        queryOs(`employee/log/${employee?.id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async data => {
-            if (!data.ok) return;
+    const getEmployeeStatus = useCallback(async () => {
+        if (employee?.id) {
+            const status =
+                await openStockClient.employee.getStatus(employee.id)
 
-            const value: History<Attendant> = await data.json()
-
-            if(value.item.track_type.toLowerCase() === "in") {
-                setClockedOut(2)
-            }else {
-                setClockedOut(1)
+            if (status.ok) {
+                if (status.data.item.track_type === TrackType.In) {
+                    setClockedOut(2)
+                } else {
+                    setClockedOut(1)
+                }
             }
-        })
+        }
     }, [employee])
 
-    const toggleClockStatus = useCallback(() => {
-        toast.promise(queryOs(`employee/log/${employee?.id}`, {
-            method: "POST",
-            credentials: "include",
-            redirect: "follow",
-            body: JSON.stringify({
-                kiosk: kiosk.kiosk_id,
-                reason: "User-Requested Change",
-                in_or_out: clockedOut === 1 ? "in" : "out"
-            })
-        }).then(async data => {
-            if (!data.ok) {
-                throw data.status
-            }
+    useEffect(() => {
+        void getEmployeeStatus()
+    }, [employee, getEmployeeStatus])
 
-            setClockedOut(clockedOut === 1 ? 2 : 1)
-        }), {
+    const toggleClockStatus = useCallback(async () => {
+        if (!employee?.id || !kiosk.kiosk_id) return
+
+        const changeRequest = {
+            kiosk: kiosk.kiosk_id,
+            reason: "User-Requested Change",
+            in_or_out: clockedOut === 1 ? "in" : "out"
+        };
+
+        toast.promise(openStockClient.employee.log(employee.id, changeRequest), {
             loading: `Clocking ${clockedOut === 1 ? "in" : "out"}...`,
             error: `Failed to clock ${clockedOut === 1 ? "in" : "out"}.`,
-            success: (data) => { // re_e1mj4AcX_NTTqHz5FAuf4VQqf5nsH9wKX
+            success: (data) => {
+                setClockedOut(clockedOut === 1 ? 2 : 1)
                 return `Clocked ${clockedOut === 1 ? "in" : "out"} successfully.`
             }
         })

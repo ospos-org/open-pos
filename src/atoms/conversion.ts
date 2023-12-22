@@ -1,13 +1,14 @@
-import { atom } from "jotai";
+import {atom} from "jotai";
 
-import { DbOrder, DbProductPurchase, StatusHistory } from "@utils/stockTypes";
-import { findMaxDiscount, toDbDiscount } from "@utils/discountHelpers";
-import { getDate } from "@utils/utils";
+import {findMaxDiscount, toDbDiscount} from "@utils/discountHelpers";
+import {getDate} from "@utils/utils";
 
-import { transactionTypeAtom } from "@atoms/kiosk";
-import { masterStateAtom } from "@atoms/openpos";
-import { customerAtom } from "@atoms/customer";
-import { ordersAtom } from "@atoms/transaction";
+import {transactionTypeAtom} from "@atoms/kiosk";
+import {masterStateAtom} from "@atoms/openpos";
+import {customerAtom} from "@atoms/customer";
+import {ordersAtom} from "@atoms/transaction";
+import {Order, ProductPurchase} from "@/generated/stock/Api";
+import {StatusHistory} from "@utils/stockTypes";
 
 const computeDatabaseOrderFormat = atom((get) => {
     const date = getDate()
@@ -16,8 +17,8 @@ const computeDatabaseOrderFormat = atom((get) => {
     const customerState = get(customerAtom)
     const transactionType = get(transactionTypeAtom)
 
-    const new_state: DbOrder[] = orderState.map(e => {
-        if(e.order_type == "direct") {
+    return orderState.map(e => {
+        if (e.order_type == "direct") {
             return {
                 ...e,
                 discount: toDbDiscount(e.discount),
@@ -31,129 +32,141 @@ const computeDatabaseOrderFormat = atom((get) => {
                     store_id: customerState?.id ?? "",
                     contact: customerState?.contact ?? masterState.store_contact
                 },
-                products: e.products.map(k => { 
-                    return { 
-                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value), 
-                        product_cost: k.variant_information.retail_price * 1.15, 
-                        product_code: k.product_code, 
-                        product_name: k.product.company + " " + k.product.name, 
-                        product_variant_name: k.variant_information.name, 
+                products: e.products.map(k => {
+                    return {
+                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value),
+                        product_cost: k.variant_information.retail_price * 1.15,
+                        product_code: k.product_code,
+                        product_name: k.product.company + " " + k.product.name,
+                        product_variant_name: k.variant_information.name,
                         product_sku: k.product_sku,
-                        quantity: k.quantity, 
+                        quantity: k.quantity,
                         id: k.id,
                         transaction_type: k.transaction_type,
                         tags: k.tags
-                    } as DbProductPurchase
-                }) as DbProductPurchase[],
-                status: (!(transactionType == "Saved" || transactionType == "Quote") ? {   
+                    } as ProductPurchase
+                }) as ProductPurchase[],
+                status: (!(transactionType == "Saved" || transactionType == "Quote") ? {
                     status: {
                         type: "fulfilled",
                         value: date
                     },
-                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                    assigned_products: e.products.map<string>(e => {
+                        return e.id
+                    }) as string[],
                     timestamp: date
-                }  : {   
+                } : {
                     status: {
                         type: "queued",
                         value: date
                     },
-                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                    assigned_products: e.products.map<string>(e => {
+                        return e.id
+                    }) as string[],
                     timestamp: date
                 }),
-                status_history: 
-                !(transactionType == "Saved" || transactionType == "Quote") ? 
+                status_history:
+                    !(transactionType == "Saved" || transactionType == "Quote") ?
 
-                [
-                    ...e.status_history as StatusHistory[],
-                    {
-                        item: {   
-                            status: {
-                                type: "queued",
-                                value: date
-                            },
-                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                            timestamp: date
-                        },
-                        reason: "Payment Intent Created",
-                        timestamp: date
-                    } as StatusHistory,
-                    {
-                        item: {   
-                            status: {
-                                type: "fulfilled",
-                                value: date
-                            },
-                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                            timestamp: date
-                        },
-                        reason: "Instore Purchase",
-                        timestamp: date
-                    } as StatusHistory
-                ]
+                        [
+                            ...e.status_history as StatusHistory[],
+                            {
+                                item: {
+                                    status: {
+                                        type: "queued",
+                                        value: date
+                                    },
+                                    assigned_products: e.products.map<string>(e => {
+                                        return e.id
+                                    }) as string[],
+                                    timestamp: date
+                                },
+                                reason: "Payment Intent Created",
+                                timestamp: date
+                            } as StatusHistory,
+                            {
+                                item: {
+                                    status: {
+                                        type: "fulfilled",
+                                        value: date
+                                    },
+                                    assigned_products: e.products.map<string>(e => {
+                                        return e.id
+                                    }) as string[],
+                                    timestamp: date
+                                },
+                                reason: "Instore Purchase",
+                                timestamp: date
+                            } as StatusHistory
+                        ]
 
-                    :
+                        :
 
-                [
-                    ...e.status_history as StatusHistory[],
-                    {
-                        item: {   
-                            status: {
-                                type: "queued",
-                                value: date
-                            },
-                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
-                            timestamp: date
-                        },
-                        reason: "Queued Purchase",
-                        timestamp: date
-                    }
-                ]
-            } as DbOrder
-        }else {
+                        [
+                            ...e.status_history as StatusHistory[],
+                            {
+                                item: {
+                                    status: {
+                                        type: "queued",
+                                        value: date
+                                    },
+                                    assigned_products: e.products.map<string>(e => {
+                                        return e.id
+                                    }) as string[],
+                                    timestamp: date
+                                },
+                                reason: "Queued Purchase",
+                                timestamp: date
+                            }
+                        ]
+            } as Order
+        } else {
             return {
                 ...e,
                 discount: toDbDiscount(e.discount),
-                status: {   
+                status: {
                     status: {
                         type: "queued",
                         value: date
                     },
-                    assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                    assigned_products: e.products.map<string>(e => {
+                        return e.id
+                    }) as string[],
                     timestamp: date
                 },
-                products: e.products.map(k => { 
-                    return { 
-                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value), 
-                        product_cost: k.variant_information.retail_price * 1.15, 
-                        product_code: k.product_code, 
-                        product_name: k.product.company + " " + k.product.name, 
-                        product_variant_name: k.variant_information.name, 
-                        quantity: k.quantity, 
+                products: e.products.map(k => {
+                    return {
+                        discount: toDbDiscount(findMaxDiscount(k.discount, k.variant_information.retail_price * 1.15, !(!customerState))[0].value),
+                        product_cost: k.variant_information.retail_price * 1.15,
+                        product_code: k.product_code,
+                        product_name: k.product.company + " " + k.product.name,
+                        product_variant_name: k.variant_information.name,
+                        quantity: k.quantity,
                         product_sku: k.product_sku,
                         id: k.id,
                         tags: k.tags,
                         transaction_type: k.transaction_type,
                     }
-                }) as DbProductPurchase[],
+                }) as ProductPurchase[],
                 status_history: [
                     {
-                        item: {   
+                        item: {
                             status: {
                                 type: "queued",
                                 value: date
                             },
-                            assigned_products: e.products.map<string>(e => { return e.id }) as string[],
+                            assigned_products: e.products.map<string>(e => {
+                                return e.id
+                            }) as string[],
                             timestamp: date
                         },
                         reason: "Queued indirect purchase",
                         timestamp: date
                     }
                 ]
-            } as DbOrder
+            } as Order
         }
     });
-
-    return new_state;
 })
 
 export { computeDatabaseOrderFormat }

@@ -1,7 +1,7 @@
 import { useAtomValue } from "jotai";
 import { useMemo } from "react";
 
-import { Order, ProductPurchase } from "@utils/stockTypes";
+import { ContextualOrder, ContextualProductPurchase } from "@utils/stockTypes";
 import { masterStateAtom } from "@atoms/openpos";
 
 import { ProductQuantity } from "./productQuantity";
@@ -11,8 +11,8 @@ import { ProductTitle } from "./productTitle";
 import { ProductPrice } from "./productPrice";
 
 interface ProductElementProps {
-    product: ProductPurchase,
-    currentOrder: Order
+    product: ContextualProductPurchase,
+    currentOrder: ContextualOrder
 }
 
 export function ProductElement({ product, currentOrder }: ProductElementProps) {

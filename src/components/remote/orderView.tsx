@@ -3,18 +3,13 @@ import moment from "moment"
 import Image from "next/image"
 import Link from "next/link"
 
-import { 
-    OrderStatusStatus,
-    Transaction,
-    Customer, 
-    Order
-} from "@utils/stockTypes";
 import { applyDiscount, findMaxDiscount } from "@utils/discountHelpers"
 import { getDate } from "@utils/utils"
 import NotesMenu from "@components/common/notesMenu"
-import queryOs from "@/src/utils/query-os";
 import { PrimitiveAtom, useAtom, useAtomValue } from "jotai";
 import { masterStateAtom } from "@/src/atoms/openpos";
+import {openStockClient} from "~/query/client";
+import {Customer, Order, PickStatus} from "@/generated/stock/Api";
 
 export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Order | null> }) {
     const masterState = useAtomValue(masterStateAtom)
@@ -23,25 +18,15 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
     const [ customerInfo, setCustomerInfo ] = useState<Customer | null>(null);
 
     useEffect(() => {
-        queryOs(`transaction/ref/${activeOrder?.reference}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async d => {
-            if(d.ok) {
-                const data: Transaction[] = await d.json();
-                queryOs(`customer/${data[0].customer.customer_id}`, {
-                    method: "GET",
-                    credentials: "include",
-                    redirect: "follow"
-                }).then(async d => {
-                    if(d.ok) {
-                        const data: Customer = await d.json();
-                        setCustomerInfo(data);
-                    }
+        if (activeOrder?.reference)
+            openStockClient.transaction.getByName(activeOrder?.reference)
+                .then(data => {
+                    if (data.ok)
+                        openStockClient.customer.get(data.data[0].customer.customer_id)
+                            .then(customerData => {
+                                if(customerData.ok) setCustomerInfo(customerData.data)
+                            })
                 })
-            }
-        })
     }, [activeOrder])
 
     const [ completedPercentage, setCompletedPercentage ] = useState(0);
@@ -52,8 +37,9 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
 
         activeOrder?.products.map(v => {
             total_products += v.quantity
+
             v?.instances?.map(k => {
-                if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
+                if (k.fulfillment_status?.pick_status === "Picked") {
                     completed += 1
                 }
             })
@@ -109,27 +95,19 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                     <div 
                         onClick={async () => {
                             if ((activeOrder?.order_type !== "shipment" || (activeOrder.destination?.store_id !== activeOrder?.origin?.store_id && activeOrder.destination?.store_id !== masterState?.store_id))) {
-                                const new_status: OrderStatusStatus = {
-                                    type: "instore",
-                                    value: getDate()
-                                }
-                                
-                                const data = await queryOs(`transaction/status/order/${activeOrder?.reference}`, {
-                                    method: "POST",
-                                    credentials: "include",
-                                    redirect: "follow",
-                                    body: JSON.stringify(new_status)
-                                })
-                                
-                                if (data.ok) {
-                                    const updated: Transaction = await data.json();
-
-                                    // @ts-expect-error
-                                    setActiveOrder({ 
-                                        ...updated.products.find(
-                                            (order) => order.reference === activeOrder?.reference
-                                        ) 
+                                if (activeOrder?.reference) {
+                                    const data = await openStockClient.transaction.updateOrderStatus(activeOrder.reference, {
+                                        type: "instore",
+                                        value: getDate()
                                     })
+
+                                    if (data.ok) {
+                                        const foundValue = data.data.products.find(
+                                            order => order.reference === activeOrder.reference
+                                        );
+
+                                        if (foundValue) setActiveOrder(foundValue)
+                                    }
                                 }
                             } else {
                                 console.log("CHANGE TO SCREEN TO SHOW PACKING")
@@ -283,7 +261,7 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                                 </div>
                                 
                                 {/* {JSON.stringify(k.discount)} */}
-                                <p className="text-white font-semibold">${applyDiscount(k.product_cost, findMaxDiscount(k.discount, k.product_cost, false)[0].value).toFixed(2)}</p>
+                                <p className="text-white font-semibold">${applyDiscount(k.product_cost, findMaxDiscount([k.discount], k.product_cost, false)[0].value).toFixed(2)}</p>
                             </div>
                         )
                     })
@@ -295,7 +273,7 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                     <p className="text-gray-400"></p>
                     <p className="text-white font-semibold">Total</p>
                     {/* {JSON.stringify(k.discount)} */}
-                    <p className="text-white font-semibold">${activeOrder?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, findMaxDiscount(k.discount, k.product_cost, false)[0].value), 0).toFixed(2)}</p>
+                    <p className="text-white font-semibold">${activeOrder?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, findMaxDiscount([k.discount], k.product_cost, false)[0].value), 0).toFixed(2)}</p>
                 </div>
             </div>
 

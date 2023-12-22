@@ -2,10 +2,10 @@ import { useAtomValue } from "jotai"
 import Image from "next/image"
 
 import { ordersAtom } from "@atoms/transaction"
-import { Order } from "@utils/stockTypes"
+import {ContextualOrder} from "@utils/stockTypes";
 
 interface OrderTitleProps {
-    currentOrder: Order,
+    currentOrder: ContextualOrder,
     index: number
 }
 

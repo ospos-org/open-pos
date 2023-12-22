@@ -1,17 +1,16 @@
 import { createRef, RefObject } from "react";
 import { atomWithReset } from "jotai/utils";
 import { atom } from "jotai";
-
-import { Customer, Product, Promotion, Transaction } from "@utils/stockTypes";
-import { OPEN_STOCK_URL } from "@utils/environment";
-import queryOs from "../utils/query-os";
+import {
+    CustomerWithTransactionsOut,
+    ProductWPromotion,
+    Transaction
+} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
 
 interface SearchResults {
-    products: {
-        product: Product,
-        promotions: Promotion[]
-    }[],
-    customers: Customer[],
+    products: ProductWPromotion[],
+    customers: CustomerWithTransactionsOut[],
     transactions: Transaction[]
 }
 
@@ -63,17 +62,19 @@ const querySearchTerm = atom(undefined,
         const searchType = get(searchTypeAtom)
         const searchTerm = get(searchTermAtom)
 
-        const fetchResult = await queryOs(`${searchType.substring(0, searchType.length-1)}/${searchType == "transactions" ? "ref" : searchType == "products" ? "search/with_promotions" : "search"}/${searchTerm.trim()}`, {
-            method: "GET",
-            headers: myHeaders,
-            redirect: "follow",
-            credentials: "include"
-        });
-
-        if(fetchResult.ok) {
-            const data = await fetchResult.json();
-            set(searchResultsAtomic, data)
+        const performQuery = async () => {
+            switch (searchType) {
+                case "customers":
+                    return await openStockClient.customer.searchQuery(searchTerm)
+                case "products":
+                    return await openStockClient.product.searchWithAssociatedPromotions(searchTerm)
+                case "transactions":
+                    return await openStockClient.transaction.getByName(searchTerm)
+            }
         }
+
+        const queryResponse = await performQuery()
+        if (queryResponse.ok) set(searchResultsAtomic, queryResponse.data)
     })
 
 export { 

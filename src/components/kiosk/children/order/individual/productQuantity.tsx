@@ -1,11 +1,11 @@
 import { ordersAtom } from "@/src/atoms/transaction"
-import { Order, ProductPurchase } from "@/src/utils/stockTypes"
 import { useAtom } from "jotai"
 import Image from "next/image"
+import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
 
 interface ProductQuantityProps {
-    currentOrder: Order,
-    product: ProductPurchase,
+    currentOrder: ContextualOrder,
+    product: ContextualProductPurchase,
     totalStock: number
 }
 
@@ -84,13 +84,13 @@ export function ProductQuantity({ currentOrder, product, totalStock }: ProductQu
 
                     const new_state = {
                         ...currentOrder,
-                        products: product_list_clone.filter(k => k) as ProductPurchase[]
+                        products: product_list_clone.filter(k => k) as ContextualProductPurchase[]
                     }
 
                     // If no products exist anymore.
 
                     if(new_state.products.length <= 0) {
-                        const new_order: Order[] = orderState.map(e => e.id == currentOrder.id ? null : e)?.filter(b => b) as any as Order[];
+                        const new_order: ContextualOrder[] = orderState.map(e => e.id == currentOrder.id ? null : e)?.filter(b => b) as any as ContextualOrder[];
                         setOrderState(new_order ?? [])
                     }else {
                         const new_order = orderState.map(e => e.id == currentOrder.id ? new_state : e)
