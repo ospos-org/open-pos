@@ -62,6 +62,7 @@ export type ProductCategoryItem = {
     order_reference: string,
     sku: string,
     barcode: string,
+
     // Length of instances is quantity.
     instances: {
         product_purchase_id: string,
@@ -70,6 +71,26 @@ export type ProductCategoryItem = {
     }[],
 }
 
+export type StrictVariantCategory = {
+    category: string,
+    variant: Variant
+}
+
+/*
+*   Contextual items expand upon imported elements,
+*   such that they contain extra information for internal
+*   referencing (caching) that should be removed before
+*   sending to server, but reduce the need to continually query
+*   for data we already have.
+*
+*
+*   This is extra-important when performing product placement
+*   and promotion simulations where we want instant-application
+*   of promotions, without needing to query for the products
+*   attributes.
+*/
+
+// @ts-ignore
 export interface ContextualOrder extends Order {
     destination: Location | null,
     origin: Location | null,
@@ -78,7 +99,7 @@ export interface ContextualOrder extends Order {
     discount: string,
 }
 
-/// Extra information for internal referencing (caching) that should be removed before sending to server
+// @ts-ignore
 export interface ContextualProductPurchase extends ProductPurchase {
     product: Product,
     variant_information: VariantInformation,
@@ -86,18 +107,11 @@ export interface ContextualProductPurchase extends ProductPurchase {
     discount: ContextualDiscountValue[],
 }
 
-
 export interface ContextualDiscountValue {
     source: DiscountSource,
-    /** @format % or || **/
+    /** @format `{"a"|"p"}|{value}` **/
     value: string,
     // Quantity discount is applicable for, if -1, can apply for any quantity.
     applicable_quantity: number,
     promotion?: Promotion
 }
-
-export type StrictVariantCategory = {
-    category: string,
-    variant: Variant
-}
-
