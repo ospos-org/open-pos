@@ -1,7 +1,6 @@
 import { atom } from "jotai";
 
 import { applyDiscount, applyDiscountsConsiderateOfQuantity } from "@utils/discountHelpers";
-import { PaymentIntent } from "@utils/stockTypes";
 
 import { aCustomerActiveAtom } from "@atoms/customer";
 import { ordersAtomsAtom } from "@atoms/transaction";

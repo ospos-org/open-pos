@@ -7,8 +7,7 @@ import {transactionTypeAtom} from "@atoms/kiosk";
 import {masterStateAtom} from "@atoms/openpos";
 import {customerAtom} from "@atoms/customer";
 import {ordersAtom} from "@atoms/transaction";
-import {Order, ProductPurchase} from "@/generated/stock/Api";
-import {StatusHistory} from "@utils/stockTypes";
+import {HistoryForOrderStatusAssignment, Order, ProductPurchase} from "@/generated/stock/Api";
 
 const computeDatabaseOrderFormat = atom((get) => {
     const date = getDate()
@@ -69,7 +68,7 @@ const computeDatabaseOrderFormat = atom((get) => {
                     !(transactionType == "Saved" || transactionType == "Quote") ?
 
                         [
-                            ...e.status_history as StatusHistory[],
+                            ...e.status_history as HistoryForOrderStatusAssignment[],
                             {
                                 item: {
                                     status: {
@@ -83,7 +82,7 @@ const computeDatabaseOrderFormat = atom((get) => {
                                 },
                                 reason: "Payment Intent Created",
                                 timestamp: date
-                            } as StatusHistory,
+                            } as HistoryForOrderStatusAssignment,
                             {
                                 item: {
                                     status: {
@@ -97,13 +96,13 @@ const computeDatabaseOrderFormat = atom((get) => {
                                 },
                                 reason: "Instore Purchase",
                                 timestamp: date
-                            } as StatusHistory
+                            } as HistoryForOrderStatusAssignment
                         ]
 
                         :
 
                         [
-                            ...e.status_history as StatusHistory[],
+                            ...e.status_history as HistoryForOrderStatusAssignment[],
                             {
                                 item: {
                                     status: {
