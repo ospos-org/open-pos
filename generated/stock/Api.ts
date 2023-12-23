@@ -390,10 +390,7 @@ export interface Customer {
   name: string;
   contact: ContactInformation;
   customer_notes: Note[];
-  /**
-   * @format uint32
-   * @min 0
-   */
+  /** @format int64 */
   balance: number;
   special_pricing: string;
   accepts_marketing: boolean;
@@ -415,10 +412,7 @@ export interface CustomerInput {
   contact: ContactInformation;
   customer_notes: Note[];
   special_pricing: string;
-  /**
-   * @format uint32
-   * @min 0
-   */
+  /** @format int64 */
   balance: number;
   accepts_marketing: boolean;
 }
@@ -450,7 +444,7 @@ export interface Transaction {
   customer: TransactionCustomer;
   transaction_type: TransactionType;
   products: Order[];
-  /** @format float */
+  /** @format int64 */
   order_total: number;
   payment: Payment[];
   /** @format date-time */
@@ -510,7 +504,7 @@ export interface ProductPurchase {
 
 export interface ProductInstance {
   id: string;
-  /** @default {"last_updated":"2023-12-17T06:00:14.178254345Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
+  /** @default {"last_updated":"2023-12-22T11:13:52.240496293Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
   fulfillment_status?: FulfillmentStatus;
 }
 
@@ -886,7 +880,7 @@ export interface TransactionInit {
   customer: TransactionCustomer;
   transaction_type: TransactionType;
   products: Order[];
-  /** @format float */
+  /** @format int64 */
   order_total: number;
   payment: Payment[];
   /** @format date-time */
@@ -899,7 +893,7 @@ export interface TransactionInput {
   customer: TransactionCustomer;
   transaction_type: TransactionType;
   products: Order[];
-  /** @format float */
+  /** @format int64 */
   order_total: number;
   payment: Payment[];
   /** @format date-time */
@@ -1575,7 +1569,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @name Update
      * @request POST:/customer/{id}
      */
-    update: (id: string, data: CustomerInput, params: RequestParams = {}) =>
+    update: (id: string, data: Customer, params: RequestParams = {}) =>
       this.request<Customer, any>({
         path: `/customer/${id}`,
         method: "POST",

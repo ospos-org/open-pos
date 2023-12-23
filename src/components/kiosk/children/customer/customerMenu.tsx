@@ -1,52 +1,25 @@
-import { createRef, useEffect, useMemo, useState } from "react"
+import {createRef, useCallback, useEffect, useMemo, useState} from "react"
 import { useAtom, useSetAtom } from "jotai"
 import { debounce } from "lodash"
 import Image from "next/image"
 
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
-import { customerAtom } from "@/src/atoms/customer"
-import {Customer, Address, CustomerWithTransactionsOut, ContactInformation} from "@/generated/stock/Api";
+import {customerAtom, inspectingCustomerAtom} from "@/src/atoms/customer"
+import {Customer, Address, CustomerWithTransactionsOut, ContactInformation, CustomerInput} from "@/generated/stock/Api";
 import {openStockClient} from "~/query/client";
+import {toast} from "sonner";
+import {useAtomValue} from "jotai/index";
 
 function CustomerMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const inspectingCustomer = useAtomValue(inspectingCustomerAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
 
     const [ loading, setLoading ] = useState(false);
     const [ searching, setSearching ] = useState(false);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
 
-    const [ customerStateInternal, setCustomerStateInternal ] = useState<CustomerWithTransactionsOut | null>(customerState != null ? customerState : {
-        id: "",
-        name: "",
-        contact: {
-            name: "",
-            mobile: {
-                number: "",
-                valid: false
-            },
-            email: {
-                root: "",
-                domain: "",
-                full: ""
-            },
-            landline: "",
-            address: {
-                street: "",
-                street2: "",
-                city: "",
-                country: "",
-                po_code: "",
-                lat: 0,
-                lon: 0
-            }
-        },
-        transactions: "",
-        customer_notes: [],
-        special_pricing: "",
-        accepts_marketing: false,
-        balance: 0,
-    })
+    const [ customerStateInternal, setCustomerStateInternal ] = useState<Customer | null>(inspectingCustomer)
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -232,33 +205,36 @@ function CustomerMenu() {
                                     name: customerStateInternal.contact.name
                                 }
 
-                                if (customerStateInternal?.id)
-                                    openStockClient.customer.update(customerStateInternal.id, customerObject)
-                                        .then(data => {
-                                            if(data.ok) {
+                                console.log(customerObject, customerObject.id)
+
+                                if (customerObject?.id)
+                                    toast.promise(
+                                        openStockClient.customer.update(customerObject.id, customerObject),
+                                        {
+                                            loading: `Saving customer details...`,
+                                            error: (data) => {
+                                                setLoading(false);
+                                                return `Failed. ${data.error?.message ?? "Server error, please contact support."}`
+                                            },
+                                            success: (data) => {
+                                                setLoading(false);
+
                                                 setCustomerState(data.data);
-                                                setLoading(false);
                                                 setKioskPanel("cart")
-                                            }else {
-                                                setLoading(false);
+
+                                                return `Saved customer.`
                                             }
-                                        })
-                                else if (customerStateInternal?.contact && customerStateInternal?.name)
-                                    openStockClient.customer.create(customerObject)
-                                        .then(data => {
-                                            if(data.ok) {
-                                                setCustomerState(data.data);
-                                                setLoading(false);
-                                                setKioskPanel("cart")
-                                            }else {
-                                                setLoading(false);
-                                            }
-                                        })
+                                        }
+                                    )
+                                else {
+                                    toast.message("No Identifier Provided, State has de-synced.")
+                                    setLoading(false);
+                                }
                             }
                         }}
-                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                        
-                        <p className={`text-white font-semibold ${""}`}>{loading ? "Saving..." : "Save"}</p>
+                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}
+                    >
+                        <p className="text-white font-semibold">{loading ? "Saving..." : "Save"}</p>
                     </div>
                 </div>
             </div>
