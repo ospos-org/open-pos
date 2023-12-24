@@ -315,63 +315,72 @@ export interface Promotion {
 
 export type PromotionBuy =
   | {
+      type: "specific";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Specific: [string, number];
+      value: [string, number];
     }
   | {
+      type: "any";
       /** @format float */
-      Any: number;
+      value: number;
     }
   | {
+      type: "category";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Category: [string, number];
+      value: [string, number];
     };
 
 /** `SoloThis(discount)` <br /> *Represents the individual product.* <br /> <br /> Is used in cases where the product is the recipient of the promotion in inclusive quantity, i.e. 50% off t-shirts (applies to self) */
 export type PromotionGet =
   | {
-      SoloThis: DiscountValue;
+      type: "solothis";
+      value: DiscountValue;
     }
   | {
+      type: "this";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      This: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "specific";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Specific: [string, [number, DiscountValue]];
+      value: [string, [number, DiscountValue]];
     }
   | {
+      type: "any";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Any: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "anyother";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      AnyOther: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "category";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Category: [string, [number, DiscountValue]];
+      value: [string, [number, DiscountValue]];
     };
 
 export interface PromotionInput {
@@ -505,7 +514,7 @@ export interface ProductPurchase {
 
 export interface ProductInstance {
   id: string;
-  /** @default {"last_updated":"2023-12-24T03:32:19.572857Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
+  /** @default {"last_updated":"2023-12-24T04:19:55.449919Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
   fulfillment_status?: FulfillmentStatus;
 }
 

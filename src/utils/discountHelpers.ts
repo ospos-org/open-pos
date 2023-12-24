@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import {Product, Promotion} from "@/generated/stock/Api";
 import {
     ContextualDiscountValue,
@@ -206,34 +204,34 @@ export function applyPromotion(promo: Promotion, pdt: ContextualProductPurchase,
     pdt_map.forEach(b => total_quantity += b.quantity);
 
     // If the product does not match the BUY criterion
-    if(promo.get.Specific && !pdt_map.get(promo.get.Specific[0])) return 0;
-    if(promo.get.Category && !pdt.product.tags.includes(promo.get.Category?.[0])) return 0;
+    if(promo.get.type === "specific" && !pdt_map.get(promo.get.value[0])) return 0;
+    if(promo.get.type === "category" && !pdt.product.tags.includes(promo.get.value?.[0])) return 0;
 
     // If promotion is a SoloThis or This type and the bought product is not <pdt>
-    else if((promo.get.SoloThis || promo.get.This) && promo.buy.Specific && pdt.id != promo.buy.Specific[0]) return 0;
+    else if((promo.get.type === "solothis" || promo.get.type === "this") && promo.buy.type === "specific" && pdt.id != promo.buy.value[0]) return 0;
 
     // Product is the one in the GET condition...
     // Note: Any will only match the current product, and will not incur a search for another matching product as the function is called in a search-pattern.
     
     // Determine if product in the BUY condition is in the cart, if instead fits <promo.buy.Any>, no condition is necessary as the product is within categoric bounds.
-    if(promo.buy.Specific && !pdt_map.get(promo.buy.Specific[0])) return 0
+    if(promo.buy.type == "specific" && !pdt_map.get(promo.buy.value[0])) return 0
 
     // Check matches quantity condition for buy
-    if(promo.buy.Any && promo.buy.Any > pdt.quantity && promo.buy.Any > total_quantity) return 0;
-    else if(promo.buy.Specific && promo.buy.Specific[1] > (pdt_map.get(promo.buy.Specific[0])?.quantity ?? 0)) return 0;
+    if(promo.buy.type === "any" && promo.buy.value > pdt.quantity && promo.buy.value > total_quantity) return 0;
+    else if(promo.buy.type === "specific" && promo.buy.value[1] > (pdt_map.get(promo.buy.value[0])?.quantity ?? 0)) return 0;
 
     const discount = discountFromPromotion(promo);
 
     // Is promotion for THIS or for ANOTHER?
-    if(promo.get.Specific && pdt.product.sku == promo.get.Specific?.[0]) {
+    if(promo.get.type === "specific" && pdt.product.sku == promo.get.value?.[0]) {
         // is for THIS
         const normal_price = (pdt.variant_information.retail_price * 1.15);
         const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
         return normal_price - discounted_price;
 
-    }else if(promo.get.Specific && pdt_map.get(promo.get.Specific[0])) {
+    }else if(promo.get.type === "specific" && pdt_map.get(promo.get.value[0])) {
         // is for ANOTHER
-        const prd_pur = pdt_map.get(promo.get.Specific[0]);
+        const prd_pur = pdt_map.get(promo.get.value[0]);
         const normal_price = (prd_pur!.variant_information.retail_price * 1.15);
         const discounted_price = applyDiscount(normal_price, fromDbDiscount(discount));
         return normal_price - discounted_price;
@@ -247,16 +245,16 @@ export function applyPromotion(promo: Promotion, pdt: ContextualProductPurchase,
 
 export function discountFromPromotion(promo: Promotion): { Absolute?: number | undefined, Percentage?: number | undefined } {
     const discount: { Absolute?: number | undefined, Percentage?: number | undefined } 
-        = promo.get.Any 
-          ? promo.get.Any[1] : 
-          promo.get.SoloThis 
-          ? promo.get.SoloThis : 
-          promo.get.Specific 
-          ? promo.get.Specific[1][1] : 
-          promo.get.This 
-          ? promo.get.This[1] : 
-          promo.get.Category 
-          ? promo.get.Category[1][1] :
+        = promo.get.type === "any"
+          ? promo.get.value[1] :
+          promo.get.type === "solothis"
+          ? promo.get.value :
+          promo.get.type === "specific"
+          ? promo.get.value[1][1] :
+          promo.get.type === "this"
+          ? promo.get.value[1] :
+          promo.get.type === "category"
+          ? promo.get.value[1][1] :
           { Absolute: 0 };
 
     return discount;
