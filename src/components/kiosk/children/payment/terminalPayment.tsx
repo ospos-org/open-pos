@@ -1,14 +1,13 @@
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
-import { v4 } from "uuid"
+import {useAtom, useAtomValue, useSetAtom} from "jotai"
+import {v4} from "uuid"
 import Image from "next/image"
 
-import { defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom } from "@atoms/kiosk"
-import { paymentIntentsAtom, probingPricePayableAtom } from "@atoms/payment"
-import { OPEN_STOCK_URL } from "@utils/environment"
-import { PaymentIntent } from "@utils/stockTypes"
-import { getDate } from "@utils/utils"
-import queryOs from "@/src/utils/query-os"
-import { toast } from "sonner"
+import {defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom} from "@atoms/kiosk"
+import {paymentIntentsAtom, probingPricePayableAtom} from "@atoms/payment"
+import {getDate} from "@utils/utils"
+import {toast} from "sonner"
+import {openStockClient} from "~/query/client";
+import {Payment, PaymentAction} from "@/generated/stock/Api";
 
 export function TerminalPayment() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -40,9 +39,9 @@ export function TerminalPayment() {
             </div>
 
             <p onClick={() => {
-                const payment_intents: PaymentIntent[] = [ ...paymentIntents, {
+                const payment_intents: Payment[] = [ ...paymentIntents, {
                     amount: {quantity: probingPrice ?? 0, currency: 'NZD'},
-                    delay_action: "Cancel",
+                    delay_action: PaymentAction.Cancel,
                     delay_duration: "PT12H",
                     fulfillment_date: getDate(),
                     id: v4(),
@@ -92,19 +91,12 @@ export function TerminalPayment() {
                     return null;
                 }
 
-                queryOs(`transaction`, {
-                    method: "POST",
-                    body: JSON.stringify({ ...computeTransaction, payment: payment_intents }),
-                    credentials: "include",
-                    redirect: "follow"
-                }).then(async k => {
-                    if(k.ok) {
-                        setKioskPanel("completed");
-                    }else {
-                        toast.message('Failed to save transaction', {
-                            description: `Server gave: ${await k.json()}`,
-                        })
-                    }
+                openStockClient.transaction.create({
+                    ...computeTransaction,
+                    payment: payment_intents
+                }).then(data => {
+                    if (data.ok) setKioskPanel("completed")
+                    else toast.message("Failed to save transaction", { description: `Server gave ${data.error}` })
                 })
             }}>skip to completion</p>
         </div>

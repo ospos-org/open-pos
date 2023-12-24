@@ -1,7 +1,6 @@
 import { atomWithReset } from "jotai/utils";
 import { atom } from "jotai";
-
-import { Customer } from "@utils/stockTypes";
+import {Customer} from "@/generated/stock/Api";
 
 /// The customer assigned to the active order
 const customerAtom = atomWithReset<Customer | null>(null)

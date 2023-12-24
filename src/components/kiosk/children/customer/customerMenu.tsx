@@ -1,54 +1,25 @@
-import { createRef, useEffect, useMemo, useState } from "react"
+import {createRef, useCallback, useEffect, useMemo, useState} from "react"
 import { useAtom, useSetAtom } from "jotai"
 import { debounce } from "lodash"
 import Image from "next/image"
 
-import { Address, ContactInformation, Customer } from "@utils/stockTypes"
 import { kioskPanelLogAtom } from "@/src/atoms/kiosk"
-import { OPEN_STOCK_URL } from "@utils/environment"
-import { customerAtom } from "@/src/atoms/customer"
-import queryOs from "@/src/utils/query-os"
+import {customerAtom, inspectingCustomerAtom} from "@/src/atoms/customer"
+import {Customer, Address, CustomerWithTransactionsOut, ContactInformation, CustomerInput} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
+import {toast} from "sonner";
+import {useAtomValue} from "jotai/index";
 
 function CustomerMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
+    const inspectingCustomer = useAtomValue(inspectingCustomerAtom)
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
 
     const [ loading, setLoading ] = useState(false);
     const [ searching, setSearching ] = useState(false);
     const [ suggestions, setSuggestions ] = useState<Address[]>([]);
 
-    const [ customerStateInternal, setCustomerStateInternal ] = useState<Customer | null>(customerState != null ? customerState : {
-        id: "",
-        name: "",
-        contact: {
-            name: "",
-            mobile: {
-                number: "",
-                valid: false
-            },
-            email: {
-                root: "",
-                domain: "",
-                full: ""
-            },
-            landline: "",
-            address: {
-                street: "",
-                street2: "",
-                city: "",
-                country: "",
-                po_code: "",
-                lat: 0,
-                lon: 0
-            }
-        },
-        transactions: "",
-        order_history: [],
-        customer_notes: [],
-        special_pricing: "",
-        accepts_marketing: false,
-        balance: 0,
-    })
+    const [ customerStateInternal, setCustomerStateInternal ] = useState<Customer | null>(inspectingCustomer)
 
     const input_ref = createRef<HTMLInputElement>();
 
@@ -56,18 +27,9 @@ function CustomerMenu() {
         return debounce(async (address: string) => {
             setLoading(true);
 
-            const data = await queryOs(`helpers/suggest/`, {
-                method: "POST",
-                credentials: "include",
-                redirect: "follow",
-                body: address
-            })?.then(async e => {
-                const data: Address[] = await e.json();
-    
-                return data;
-            });
+            const data = await openStockClient.helpers.suggestAddr(address)
 
-            setSuggestions(data);
+            setSuggestions(data.data);
             setLoading(false);
         }, 250);
     }, []);
@@ -234,30 +196,45 @@ function CustomerMenu() {
                     <div
                         onClick={() => {
                             if(!loading) {
+                                if (!customerStateInternal?.contact || !customerStateInternal?.name) return
                                 setLoading(true);
 
-                                queryOs(customerState === null ? `customer` : `customer/${customerStateInternal?.id}`, {
-                                    method: "POST",
-                                    body: JSON.stringify({ ...customerStateInternal, contact: customerStateInternal?.contact, name: customerStateInternal?.contact.name }),
-                                    credentials: "include",
-                                    redirect: "follow"
-                                })?.then(async e => {
-                                    const data: Customer = await e.json();
+                                const customerObject = {
+                                    ...customerStateInternal,
+                                    contact: customerStateInternal.contact,
+                                    name: customerStateInternal.contact.name
+                                }
 
-                                    setCustomerState({ ...data });
+                                console.log(customerObject, customerObject.id)
 
-                                    if(e.ok) {
-                                        setLoading(false);
-                                        setKioskPanel("cart")
-                                    }else {
-                                        setLoading(false);
-                                    }
-                                })
+                                if (customerObject?.id)
+                                    toast.promise(
+                                        openStockClient.customer.update(customerObject.id, customerObject),
+                                        {
+                                            loading: `Saving customer details...`,
+                                            error: (data) => {
+                                                setLoading(false);
+                                                return `Failed. ${data.error?.message ?? "Server error, please contact support."}`
+                                            },
+                                            success: (data) => {
+                                                setLoading(false);
+
+                                                setCustomerState(data.data);
+                                                setKioskPanel("cart")
+
+                                                return `Saved customer.`
+                                            }
+                                        }
+                                    )
+                                else {
+                                    toast.message("No Identifier Provided, State has de-synced.")
+                                    setLoading(false);
+                                }
                             }
                         }}
-                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}>
-                        
-                        <p className={`text-white font-semibold ${""}`}>{loading ? "Saving..." : "Save"}</p>
+                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}
+                    >
+                        <p className="text-white font-semibold">{loading ? "Saving..." : "Save"}</p>
                     </div>
                 </div>
             </div>

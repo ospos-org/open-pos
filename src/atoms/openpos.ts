@@ -1,8 +1,12 @@
 import { atomWithStorage } from "jotai/utils"
 
-import { Employee, MasterState, Store } from "@utils/stockTypes"
+import { MasterState } from "@utils/stockTypes"
 import { atom } from "jotai"
 import Stripe from "stripe"
+import {Employee, Store} from "@/generated/stock/Api";
+
+const refreshTokenAtom = atom<string | undefined>(undefined)
+const loginAuthAtom = atom<[string, string] | undefined>(undefined)
 
 const pageAtom = atom<number>(0)
 const mobileMenuOpenAtom = atom<boolean>(false)
@@ -68,6 +72,8 @@ export {
     activeEmployeeAtom, 
     mobileLowModeAtom, 
     passwordInputAtom,
-    masterStateAtom, 
+    masterStateAtom,
+    refreshTokenAtom,
+    loginAuthAtom,
     pageAtom,
 }

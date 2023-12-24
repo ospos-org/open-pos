@@ -2,9 +2,9 @@ import { Check } from "react-feather"
 import { useAtomValue } from "jotai"
 import moment from "moment"
 
-import { Order, PickStatus } from "@utils/stockTypes"
 import { deliverablesAtom } from "@atoms/deliverables"
 import { useWindowSize } from "@hooks/useWindowSize"
+import {Order, PickStatus} from "@/generated/stock/Api";
 
 interface OrderGroupViewProps {
     setActiveCallback: (newActiveOrder: Order) => void
@@ -32,7 +32,7 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
                             b.products.map(v => {
                                 total_products += v.quantity
                                 v?.instances?.map(k => {
-                                    if(k.fulfillment_status.pick_status.toLowerCase() == "picked") {
+                                    if(k.fulfillment_status?.pick_status == "Picked") {
                                         completed += 1
                                     }
                                 })
@@ -42,10 +42,10 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 
                             b.products.map(n => {
                                 n?.instances?.map(l => {
-                                    if(pairings.get(l.fulfillment_status.pick_status) == undefined){
-                                        pairings.set(l.fulfillment_status.pick_status, 1)
+                                    if(pairings.get(l.fulfillment_status?.pick_status) == undefined){
+                                        pairings.set(l.fulfillment_status?.pick_status, 1)
                                     }else {
-                                        pairings.set(l.fulfillment_status.pick_status, pairings.get(l.fulfillment_status.pick_status)+1)
+                                        pairings.set(l.fulfillment_status?.pick_status, pairings.get(l.fulfillment_status?.pick_status)+1)
                                     }
                                 })
                             })
@@ -93,24 +93,24 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
                                                                     key={JSON.stringify(status)} 
                                                                     className={"flex flex-row items-center bg-gray-700 rounded-full max-h-4 pr-2 gap-1 justify-between w-full flex-1"}>
                                                                     {(() => {
-                                                                        switch(status.name.toLowerCase()) {
-                                                                            case "picked":
+                                                                        switch(status.name) {
+                                                                            case "Picked":
                                                                                 return (
                                                                                     <div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
                                                                                 )
-                                                                            case "pending":
+                                                                            case "Pending":
                                                                                 return (
                                                                                     <div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
                                                                                 )
-                                                                            case "failed":
+                                                                            case "Failed":
                                                                                 return (
                                                                                     <div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
                                                                                 )
-                                                                            case "uncertain":
+                                                                            case "Uncertain":
                                                                                 return (
                                                                                     <div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
                                                                                 )
-                                                                            case "processing":
+                                                                            case "Processing":
                                                                                 return (
                                                                                     <div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
                                                                                 )

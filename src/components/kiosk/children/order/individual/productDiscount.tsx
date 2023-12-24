@@ -1,11 +1,11 @@
 import { activeDiscountAtom, kioskPanelLogAtom } from "@/src/atoms/kiosk";
 import { findMaxDiscount, stringValueToObj } from "@/src/utils/discountHelpers";
-import { ProductPurchase } from "@/src/utils/stockTypes";
 import { useSetAtom } from "jotai";
 import Image from "next/image";
+import {ContextualProductPurchase} from "@utils/stockTypes";
 
 interface ProductDiscountProps {
-    product: ProductPurchase
+    product: ContextualProductPurchase
 }
 
 export function ProductDiscount({ product }: ProductDiscountProps) {

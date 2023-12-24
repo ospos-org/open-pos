@@ -1,11 +1,12 @@
 import { customAlphabet } from "nanoid";
 import { applyPromotion } from "./discountHelpers";
 import { ProductAnalysis } from "./kioskTypes";
-import { ProductPurchase, Promotion } from "./stockTypes";
+import { ContextualProductPurchase } from "./stockTypes";
+import {Promotion} from "@/generated/stock/Api";
 
-export const determineOptimalPromotionPathway = (products: ProductPurchase[]) => {
+export const determineOptimalPromotionPathway = (products: ContextualProductPurchase[]) => {
     const analysis_list: ProductAnalysis[] = [];
-    const product_map = new Map<string, ProductPurchase>();
+    const product_map = new Map<string, ContextualProductPurchase>();
 
     products.map(k => {
         const pdt = product_map.get(k.product.sku);

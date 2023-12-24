@@ -3,9 +3,10 @@ import { masterStateAtom } from "@/src/atoms/openpos";
 import { inspectingProductAtom } from "@/src/atoms/product";
 import { searchFocusedAtom, searchResultsAtomic } from "@/src/atoms/search";
 import { useWindowSize } from "@/src/hooks/useWindowSize";
-import { Product, Promotion, StrictVariantCategory } from "@/src/utils/stockTypes";
 import { useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
+import {Product, Promotion} from "@/generated/stock/Api";
+import {StrictVariantCategory} from "@utils/stockTypes";
 
 interface ItemProductProps {
     product: Product,
@@ -34,14 +35,21 @@ export function ItemProduct({ product, promotions, index }: ItemProductProps) {
                 const var_map = product.variants[i].variant_code.map(k => {
                     // Replace the variant code with the variant itself.
                     return product.variant_groups.map(c => {
-                        let nc = c.variants.map(l => k == l.variant_code ? { category: c.category, variant: l } : false)
+                        let nc = c.variants.map(l =>
+                            k == l.variant_code ?
+                                { category: c.category, variant: l }
+                                : undefined
+                        )
 
-                        return nc.filter(l => l)
+                        return nc.filter(l => l !== undefined) as StrictVariantCategory[];
                     });
                 }).flat();
 
                 // Flat map of the first variant pair.
-                let vlist: StrictVariantCategory[] = var_map.map(e => e.length > 0 ? e[0] : false).filter(e => e) as StrictVariantCategory[];
+                let vlist: StrictVariantCategory[] = var_map
+                    .map(e => e.length > 0 ? e[0] : undefined)
+                    .filter(e => e !== undefined) as StrictVariantCategory[];
+
                 vmap_list.push(vlist);
             }
 

@@ -1,6 +1,6 @@
 import { atomWithReset } from "jotai/utils";
-
-import { Product, Promotion, StrictVariantCategory, VariantInformation } from "@utils/stockTypes";
+import {Product, Promotion, VariantInformation} from "@/generated/stock/Api";
+import {StrictVariantCategory} from "@utils/stockTypes";
 
 interface ProductInspection {
     activeProduct: Product | null,

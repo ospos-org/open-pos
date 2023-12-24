@@ -1,12 +1,12 @@
 import { parseDiscount } from "@/src/utils/discountHelpers";
-import { Order } from "@/src/utils/stockTypes";
+import {ContextualOrder} from "@utils/stockTypes";
 
 interface PromotionLabelProps {
-    currentOrder: Order
+    currentOrder: ContextualOrder
 }
 
 export function PromotionLabel({ currentOrder }: PromotionLabelProps) {
-    if (currentOrder.discount === "a|0") return <></>;
+    if (currentOrder.discount.endsWith("|0")) return <></>;
 
     return (
         <div className="flex flex-row items-center gap-1">

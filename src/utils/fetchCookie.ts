@@ -1,54 +1,50 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import {atom, useAtomValue, useSetAtom} from "jotai";
 import { useCallback } from "react";
 
-import { activeEmployeeAtom, masterStateAtom, storeLookupTableAtom } from "@atoms/openpos";
-import { Employee } from "./stockTypes";
-import queryOs from "./query-os";
+import {
+    activeEmployeeAtom,
+    loginAuthAtom,
+    masterStateAtom,
+    refreshTokenAtom,
+    storeLookupTableAtom
+} from "@atoms/openpos";
+import {openStockClient} from "~/query/client";
+import {toast} from "sonner";
 
-const useFetchCookie = () => {
-    const masterState = useAtomValue(masterStateAtom)
+const cookieAtom = atom(
+    (get) => get(refreshTokenAtom),
+    async (get, set) => {
+        const loginAuthInformation = get(loginAuthAtom)
+        if (loginAuthInformation === undefined) return;
 
-    const setStoreLut = useSetAtom(storeLookupTableAtom)
-    const setUser = useSetAtom(activeEmployeeAtom)
+        const masterState = get(masterStateAtom)
+        const [rid, pass] = loginAuthInformation
 
-    const query = useCallback(async function(rid: string, pass: string, callback: (password: string) => void) {
-        queryOs(`employee/auth/rid/${rid}`, {
-            method: "POST",
-            body: JSON.stringify({
+        const hydrateState = async function (refreshToken: string, rid: string, pass: string) {
+            set(refreshTokenAtom, refreshToken)
+            set(loginAuthAtom, [rid, pass])
+
+            const employee = await openStockClient.employee.getByRid(rid)
+            const storeLookupTable = await openStockClient.store.getAll()
+
+            if (employee.ok) set(activeEmployeeAtom, employee.data[0])
+            if (storeLookupTable.ok) set(storeLookupTableAtom, storeLookupTable.data)
+        }
+
+        if (masterState.kiosk_id)
+            openStockClient.employee.authRid(rid, {
                 pass: pass,
                 kiosk_id: masterState.kiosk_id,
                 tenant_id: "DEFAULT_TENANT",
-            }),
-            credentials: "include",
-            redirect: "follow"
-        }).then(async e => {
-            if(e.ok) {
-                queryOs(`employee/rid/${rid}`, {
-                    method: "GET",
-                    credentials: "include",
-                    redirect: "follow"
-                }).then(async k => {
-                    if(k.ok) {
-                        const employee: Employee[] = await k.json();
-                        setUser(employee[0]);
-
-                        queryOs(`store/`, {
-                            method: "GET",
-                            redirect: "follow",
-                            credentials: "include"
-                        }).then(async response => {
-                            const data = await response.json();
-                            setStoreLut(data);
-                        })
-        
-                        callback(pass)
+            })
+                .then(async token => {
+                    if (token.ok) {
+                        await hydrateState(token.data, rid, pass)
+                    } else {
+                        toast.error(`Failed to login, invalid credentials`)
                     }
                 })
-            }
-        })
-    }, [masterState.kiosk_id, setStoreLut, setUser])
-    
-    return { query }
-}
+    }
+)
 
-export default useFetchCookie
+export { cookieAtom }

@@ -1,12 +1,13 @@
 import { useSetAtom } from "jotai"
 
 import { inspectingProductAtom } from "@atoms/product"
-import { Order, ProductPurchase, StockInfo } from "@utils/stockTypes"
+import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes"
+import {Stock} from "@/generated/stock/Api";
 
 interface ProductTitleProps {
-    currentOrder: Order,
-    product: ProductPurchase,
-    quantityHere: StockInfo | undefined,
+    currentOrder: ContextualOrder,
+    product: ContextualProductPurchase,
+    quantityHere: Stock | undefined,
     totalStock: number
 }
 
@@ -21,7 +22,6 @@ export function ProductTitle({ currentOrder, product, quantityHere, totalStock }
                     activeProduct: product.product,
                     activeProductVariant: product.variant_information,
                     activeProductPromotions: product.active_promotions
-
                 }))
             }} >
             <p className="font-semibold">{product.product.company} {product.product.name}</p>

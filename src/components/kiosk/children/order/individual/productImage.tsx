@@ -1,10 +1,11 @@
-import { Order, ProductPurchase, StockInfo } from "@/src/utils/stockTypes";
+import { ContextualOrder, ContextualProductPurchase, StockInfo } from "@/src/utils/stockTypes";
 import Image from "next/image";
+import {Stock} from "@/generated/stock/Api";
 
 interface ProductImageProps {
-    currentOrder: Order,
-    quantityHere: StockInfo | undefined,
-    product: ProductPurchase
+    currentOrder: ContextualOrder,
+    quantityHere: Stock | undefined,
+    product: ContextualProductPurchase
 }
 
 export function ProductImage({ currentOrder, quantityHere, product }: ProductImageProps) {

@@ -4,16 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import moment from "moment";
 
-import { applyDiscount, fromDbDiscount, toAbsoluteDiscount } from "@utils/discountHelpers";
+import { applyDiscount, fromDbDiscount } from "@utils/discountHelpers";
 import { inspectingTransactionAtom, ordersAtom } from "@/src/atoms/transaction";
-import { Customer, DbOrder, DbProductPurchase, Order, Product, ProductInstance, ProductPurchase, Promotion } from "@utils/stockTypes";
 
 import { NoteElement } from "@components/common/noteElement";
-import queryOs from "@/src/utils/query-os";
 import { addToCartAtom, defaultKioskAtom, kioskPanelLogAtom, perfAtom } from "@/src/atoms/kiosk";
 import { RESET } from "jotai/utils";
 import { customerAtom } from "@/src/atoms/customer";
 import { customAlphabet } from "nanoid";
+import {Customer, Order, ProductPurchase, Store} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
+import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
 
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)
@@ -25,38 +26,28 @@ export default function TransactionMenu() {
     const setCustomerState = useSetAtom(customerAtom)
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
     
-    const [ activeTransaction, setActiveTransaction ] = useState<DbOrder | null>(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
+    const [ activeTransaction, setActiveTransaction ] = useState<Order | null>(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
     const [ selectedItems, setSelectedItems ] = useState<{
         product_id: string,
         quantity: number
-    }[]>([]); 
+    }[]>([]);
+
     const [ selectorOpen, setSelectorOpen ] = useState(false);
     const [ refChoices, setRefChoices ] = useState(transaction?.item.products);
-    const [ customer, setCustomer ] = useState<Customer | null>();
+    const [ customer, setCustomer ] = useState<Customer | Store | null>();
     
     useEffect(() => {
         setActiveTransaction(transaction?.item?.products.find(k => k.id == transaction?.identifier) ?? null);
         // refChoices?.find(b => b.reference.includes(transaction?.identifier))
         setRefChoices(transaction?.item.products)
 
-        if(transaction?.item?.customer.customer_type != "Store") {
-            queryOs(`customer/${transaction?.item?.customer.customer_id}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const n = await k.json();
-                setCustomer(n);
-            })
+        if(transaction?.item.customer.customer_type != "Store") {
+            if (transaction?.item.customer.customer_id)
+                openStockClient.customer.get(transaction?.item.customer.customer_id)
+                    .then(data => data.ok && setCustomer(data.data))
         }else {
-            queryOs(`store/code/${transaction?.item?.customer.customer_id}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const n = await k.json();
-                setCustomer(n);
-            })
+            openStockClient.store.getByCode(transaction?.item.customer.customer_id)
+                .then(data => data.ok && setCustomer(data.data))
         }
     }, [transaction]);
 
@@ -305,7 +296,7 @@ export default function TransactionMenu() {
 
                         reference.instances = reference?.instances.filter((_, index) => index < elem.quantity)
                         return reference
-                    }).filter((elem) => (elem !== undefined)) as DbProductPurchase[]
+                    }).filter((elem) => (elem !== undefined)) as ProductPurchase[]
 
                     // We must restore the kiosk state to its default, upon which - we set the customer
                     // to the customer of this transaction. Following which, we set the transaction information
@@ -315,35 +306,36 @@ export default function TransactionMenu() {
                     setPerfState({ type: "continuative" as "continuative", transaction_id: activeTransaction.id })
 
                     const conv_to_product_purchase = products_being_returned.map(async (product) => {
-                        const returned_product_set = await queryOs(`product/with_promotions/${product.product_sku}`, {
-                            method: "GET",
-                            credentials: "include",
-                            redirect: "follow"
-                        })
+                        const response = await openStockClient.product
+                            .getWithAssociatedPromotions(parseInt(product.product_sku))
 
-                        const data: { product: Product, promotions: Promotion[] } = await returned_product_set.json()
-                        const variant_info = data.product.variants.find((element) => element.barcode === product.product_code)
+                        if (!response.ok) return;
+
+                        const variant_info = response.data.product.variants
+                            .find((element) => element.barcode === product.product_code)
 
                         if (!variant_info) return undefined;
 
                         return {
                             ...product,
-                            product: data.product,
+                            product: response.data.product,
                             transaction_type: "In",
                             variant_information: variant_info,
-                            active_promotions: data.promotions,
+                            active_promotions: response.data.promotions,
                             discount: [{ source: "user", value: fromDbDiscount(product.discount), applicable_quantity: -1 }]
-                        } as ProductPurchase
+                        } as ContextualProductPurchase
                     });
 
                     Promise.all(conv_to_product_purchase).then(fulfilled => {
-                        const products = fulfilled.filter(e => e !== undefined) as ProductPurchase[]
+                        const products = fulfilled
+                            .filter(e => e !== undefined) as ContextualProductPurchase[]
 
-                        const newOrder: Order = {
+                        const newOrder: ContextualOrder = {
                             ...activeTransaction,
                             products: products,
                             discount: "a|0",
-                            reference: `CT${customAlphabet(`1234567890abcdef`, 10)(8)}`
+                            reference: `CT${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+
                         }
 
                         setOrderState([newOrder])

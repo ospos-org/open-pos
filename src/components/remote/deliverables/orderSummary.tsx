@@ -9,9 +9,10 @@ import {
     productCategoriesAtom,
     deliverablesAtom
 } from "@atoms/deliverables";
-import { Order, ProductCategory, Transaction } from "@/src/utils/stockTypes";
 import { Skeleton } from "@components/common/skeleton";
-import queryOs from "@/src/utils/query-os";
+import {Order} from "@/generated/stock/Api";
+import {ProductCategory} from "@utils/stockTypes";
+import {openStockClient} from "~/query/client";
 
 const parseDeliverables = (deliverables: Order[]) => {
     let categories: ProductCategory[] = [];
@@ -27,7 +28,7 @@ const parseDeliverables = (deliverables: Order[]) => {
                     if(loc != -1) {
                         categories[match].items[loc].instances.push(
                             ...(b?.instances ?? [])
-                            .filter(n => n.fulfillment_status.pick_status != "picked")
+                            .filter(n => n.fulfillment_status?.pick_status !== "Picked")
                             .map(n => {
                                 return {
                                     state: n,
@@ -46,7 +47,7 @@ const parseDeliverables = (deliverables: Order[]) => {
                             barcode: b.product_code,
                             // Length of instances is quantity.
                             instances: (b?.instances ?? [])
-                                .filter(n => n.fulfillment_status.pick_status != "picked")
+                                .filter(n => n.fulfillment_status?.pick_status !== "Picked")
                                 .map(n => {
                                     return {
                                         state: n,
@@ -73,7 +74,7 @@ const parseDeliverables = (deliverables: Order[]) => {
                     barcode: b.product_code,
                     // Length of instances is quantity.
                     instances: (b?.instances ?? [])
-                        .filter(n => n.fulfillment_status.pick_status != "picked")
+                        .filter(n => n.fulfillment_status?.pick_status != "Picked")
                         .map(n => {
                             return {
                                 state: n,
@@ -171,7 +172,7 @@ export function OrderSummary() {
                                         <div key={JSON.stringify(k)} className="flex flex-row justify-between text-white pl-4 border-gray-800 bg-gray-900 border-2 w-full items-center p-2 rounded-lg">
                                             <div className="flex flex-row items-center gap-2">
                                                 {(() => {
-                                                    switch(k.state.fulfillment_status.pick_status.toLocaleLowerCase()) {
+                                                    switch(k.state.fulfillment_status?.pick_status) {
                                                         case "pending":
                                                             return (
                                                                 <div className="bg-gray-400 h-3 w-3 rounded-full"></div>
@@ -199,7 +200,7 @@ export function OrderSummary() {
                                                     }
                                                 })()}
 
-                                                <p>{k.state.fulfillment_status.pick_status}</p>
+                                                <p>{k.state.fulfillment_status?.pick_status.toString()}</p>
                                             </div>
                                             
                                             <p className="font-bold text-gray-400">{k.transaction_id}</p>
@@ -224,7 +225,7 @@ export function OrderSummary() {
                 <div className="absolute pointer-events-auto sm:relative overflow-y-scroll flex flex-col gap-4 z-50 bottom-0 sm:mb-0 mb-[40px] sm:h-full h-[440px] p-4 sm:w-full w-screen bg-black text-white h-80px sm:rounded-none rounded-t-md">
                     <div className="flex flex-col">
                         <p className="text-gray-400 text-sm font-bold">CURRENT STATUS</p>
-                        <p>{stateChange.state.fulfillment_status.pick_status}</p>
+                        <p>{stateChange.state.fulfillment_status?.pick_status.toString()}</p>
                     </div>
 
                     <div className="flex flex-col gap-2">
@@ -235,9 +236,9 @@ export function OrderSummary() {
                                 ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
                                     return <p 
                                         key={JSON.stringify(k)}
-                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
+                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status?.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
                                         onClick={() => {
-                                            if(k == stateChange.state.fulfillment_status.pick_status) setPendingStatus(null)
+                                            if(k == stateChange.state.fulfillment_status?.pick_status) setPendingStatus(null)
                                             else setPendingStatus(k.toLowerCase())
                                         }}>{k}</p>
                                 })
@@ -250,11 +251,11 @@ export function OrderSummary() {
 
                         <div className={`flex flex-col gap-2 ${pendingStatus != null ? "pb-[60px]" : ""}`}>
                             {
-                                stateChange.state.fulfillment_status.pick_history.map(k => {
+                                stateChange.state.fulfillment_status?.pick_history.map(k => {
                                     return (
                                         <div key={JSON.stringify(k)} className="grid flex-row items-center" style={{ gridTemplateColumns: "1fr 1fr" }}>
                                             <div className="flex flex-col">
-                                                <p className="font-bold">{k.item}</p>
+                                                <p className="font-bold">{k.item.toString()}</p>
                                                 <p className="text-gray-400 text-sm">{k.reason}</p>
                                             </div>
                                             <p className="text-gray-400 text-sm text-end">{new Date(k.timestamp).toLocaleString()}</p>
@@ -278,43 +279,38 @@ export function OrderSummary() {
 
                             <div
                                 onClick={() => {
-                                    queryOs(`transaction/status/product/${stateChange.transaction_id}/${stateChange.product_purchase_id}/${stateChange.state.id}`, {
-                                        method: "POST",
-                                        body: pendingStatus,
-                                        credentials: "include",
-                                        redirect: "follow"
-                                    }).then(async k => {
-                                        if(k.ok) {
-                                            setPendingStatus(null)
-                                            setStateChange(null)
+                                    openStockClient.transaction.updateProductStatus(stateChange?.transaction_id, stateChange?.product_purchase_id, stateChange.state.id, pendingStatus)
+                                        .then(data => {
+                                            if (data.ok) {
+                                                setPendingStatus(null)
+                                                setStateChange(null)
 
-                                            const data: Transaction = await k.json();
-                                            let abn: Order[] = deliverables;
+                                                let abn: Order[] = deliverables;
 
-                                            data.products.map(b => {
-                                                abn = deliverables.map(k => {
-                                                    return b.id == k.id ? b : k
-                                                }) as Order[];
-                                            })
+                                                data.data.products.map(b => {
+                                                    abn = deliverables.map(k => {
+                                                        return b.id == k.id ? b : k
+                                                    }) as Order[];
+                                                })
 
-                                            setDeliverables(abn)
-                                            const categories = parseDeliverables(abn);
-                                            setProductCategories(categories)
+                                                setDeliverables(abn)
+                                                const categories = parseDeliverables(abn);
+                                                setProductCategories(categories)
 
-                                            categories.map(c => {
-                                                c.items.map(k => {
-                                                    if(k.barcode == menuState?.barcode) {
-                                                        setMenuState({
-                                                            instances: k.instances,
-                                                            product: k.sku,
-                                                            barcode: k.barcode
-                                                        })
-                                                    }
-                                                }) 
-                                            })
-                                        }
-                                    })
-                                }} 
+                                                categories.map(c => {
+                                                    c.items.map(k => {
+                                                        if(k.barcode == menuState?.barcode) {
+                                                            setMenuState({
+                                                                instances: k.instances,
+                                                                product: k.sku,
+                                                                barcode: k.barcode
+                                                            })
+                                                        }
+                                                    })
+                                                })
+                                            }
+                                        })
+                                }}
                                 className="bg-blue-700 flex-1 text-center p-4 rounded-md">
                                 <p>Save</p>
                             </div>

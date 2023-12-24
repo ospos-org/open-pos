@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useResetAtom } from "jotai/utils";
-import { useEffect, useState } from "react";
+import {useEffect, useMemo, useState} from "react";
 import moment from "moment";
 import Image from "next/image";
 
@@ -8,10 +8,9 @@ import { searchFocusedAtom, searchResultsAtom, searchTypeHandlerAtom } from "@at
 import { customerAtom, inspectingCustomerAtom } from "@atoms/customer";
 import { inspectingTransactionAtom } from "@atoms/transaction";
 import { kioskPanelLogAtom } from "@atoms/kiosk";
-import { Transaction } from "@utils/stockTypes";
 import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
-import { OPEN_STOCK_URL } from "@/src/utils/environment";
-import queryOs from "@/src/utils/query-os";
+import {openStockClient} from "~/query/client";
+import {Transaction} from "@/generated/stock/Api";
 
 
 export function ExpandedCustomer() {
@@ -27,19 +26,17 @@ export function ExpandedCustomer() {
     const [ customerState, setCustomerState ] = useAtom(customerAtom)
     const [ activeCustomerTransactions, setActiveCustomerTransactions ] = useState<Transaction[] | null>(null);
 
-    useEffect(() => {
-        if(inspectingCustomer) {
-            queryOs(`customer/transactions/${inspectingCustomer.id}`, {
-                method: "GET",
-				credentials: "include",
-				redirect: "follow"
-            }).then(async k => {
-                if(k.ok) {
-                    const data: Transaction[] = await k.json();
+    const sortedTransactions = useMemo(() =>
+        activeCustomerTransactions?.sort((a,b) =>
+            new Date(a.order_date).getTime() - new Date(b.order_date).getTime()
+        ) ?? [],
+        [activeCustomerTransactions]
+    )
 
-                    setActiveCustomerTransactions(data)
-                }
-            })
+    useEffect(() => {
+        if (inspectingCustomer) {
+            openStockClient.customer.findRelatedTransactions(inspectingCustomer.id)
+                .then(data => data.ok && setActiveCustomerTransactions(data.data))
         }
     }, [inspectingCustomer]);
 
@@ -47,17 +44,21 @@ export function ExpandedCustomer() {
 
     return (
         <div className="p-4 text-white flex flex-col gap-8 bg-opacity-50 rounded-sm">
-            <div className="flex flex-1 flex-row items-start h-full justify-between">
+            <div className="flex flex-1 flex-row items-start h-full justify-between gap-2">
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-row items-center gap-2">
                         <p className="text-xl font-semibold text-white">{inspectingCustomer.name}</p>
-                        <div 
-                            onClick={() => { 
+                        <div
+                            className="px-2 bg-gray-100 bg-opacity-10 cursor-pointer rounded-md"
+                            onClick={() => {
                                 setKioskPanel("customer")
                             }}
-                            className="px-2 bg-gray-100 bg-opacity-10 cursor-pointer rounded-md">Edit</div>
+                        >
+                            Edit
+                        </div>
                     </div>
-                    <p className="text-gray-400">{inspectingCustomer.contact.address.street} {inspectingCustomer.contact.address.street2}, {inspectingCustomer.contact.address.city} {inspectingCustomer.contact.address.po_code}, {inspectingCustomer.contact.address.country}</p>
+
+                    <p className="text-gray-400 whitespace-pre-wrap flex-wrap">{inspectingCustomer.contact.address.street} {inspectingCustomer.contact.address.street2}, {inspectingCustomer.contact.address.city} {inspectingCustomer.contact.address.po_code}, {inspectingCustomer.contact.address.country}</p>
 
                     <div className="flex 2xl:flex-row flex-col 2xl:items-center 2xl:gap-4 gap-2">
                         <div className="bg-gray-700 w-fit flex flex-row items-center gap-4 px-2 py-2 rounded-md">
@@ -114,7 +115,11 @@ export function ExpandedCustomer() {
 
                 <div className="flex flex-col gap-2">
                 {
-                    activeCustomerTransactions?.sort((a,b) => new Date(a.order_date).getTime() - new Date(b.order_date).getTime())?.map(b => {
+                    sortedTransactions.length === 0 ? (
+                        <div>
+                            <p>No order history</p>
+                        </div>
+                    ) : sortedTransactions.map(b => {
                         return (
                             <div key={b.id} className="bg-gray-700 px-4 py-4 pt-2 rounded-md gap-2 flex flex-col">
                                 <div className="flex flex-row items-center gap-4">

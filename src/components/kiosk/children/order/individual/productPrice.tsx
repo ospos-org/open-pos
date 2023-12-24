@@ -1,10 +1,10 @@
 import { aCustomerActiveAtom } from "@/src/atoms/customer";
 import { applyDiscount, applyDiscountsConsiderateOfQuantity, findMaxDiscount, parseDiscount } from "@/src/utils/discountHelpers";
-import { ProductPurchase } from "@/src/utils/stockTypes";
 import { useAtomValue } from "jotai";
+import {ContextualProductPurchase} from "@utils/stockTypes";
 
 interface ProductPriceProps {
-    product: ProductPurchase
+    product: ContextualProductPurchase
 }
 
 export function ProductPrice({ product }: ProductPriceProps) {

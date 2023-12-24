@@ -1,17 +1,18 @@
 import { splitAtom } from "jotai/utils";
 import { atom } from "jotai";
 
-import { DiscountValue, Order, Transaction } from "@utils/stockTypes";
-import { determineOptimalPromotionPathway } from "../utils/optimalPromotion";
-import { discountFromPromotion, fromDbDiscount } from "../utils/discountHelpers";
+import { determineOptimalPromotionPathway } from "@utils/optimalPromotion";
+import { discountFromPromotion, fromDbDiscount } from "@utils/discountHelpers";
+import {ContextualDiscountValue, ContextualOrder} from "@utils/stockTypes";
+import {Transaction} from "@/generated/stock/Api";
 
-const _ordersAtom = atom<Order[]>([])
+const _ordersAtom = atom<ContextualOrder[]>([])
 const ordersAtomsAtom = splitAtom(_ordersAtom)
 
 /// We build orders upon this atom, committing changes to the transactionAtom.
 const ordersAtom = atom(
     (get) => get(_ordersAtom), 
-    (get, set, value: Order[]) => {
+    (get, set, value: ContextualOrder[]) => {
         set(_ordersAtom, value)
         
         let flat_products = get(ordersAtomsAtom).map(k => get(k).products).flatMap(k => k);
@@ -36,7 +37,7 @@ const ordersAtom = atom(
                             value: fromDbDiscount(discountFromPromotion(optimal_queue[exists].chosen_promotion!.promotion!)),
                             promotion: optimal_queue[exists].chosen_promotion!.promotion,
                             applicable_quantity: 1
-                        } as DiscountValue;
+                        } as ContextualDiscountValue;
 
                         // console.log("applying, di: ", di);
                         dim.push(di);

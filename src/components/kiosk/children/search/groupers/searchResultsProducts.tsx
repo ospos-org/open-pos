@@ -1,8 +1,8 @@
 import { useAtomValue } from "jotai";
 
 import { searchResultsAtomic } from "@atoms/search";
-import { Product, Promotion } from "@utils/stockTypes";
 import { ItemProduct } from "../results/itemProduct";
+import {Product, Promotion} from "@/generated/stock/Api";
 
 export function SearchResultsProducts() {
     const searchResults = useAtomValue(searchResultsAtomic)

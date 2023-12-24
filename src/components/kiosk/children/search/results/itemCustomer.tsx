@@ -2,12 +2,12 @@ import { customerAtom, inspectingCustomerAtom } from "@/src/atoms/customer"
 import { inspectingProductAtom } from "@/src/atoms/product"
 import { searchFocusedAtom, searchResultsAtom, searchResultsAtomic, searchTypeHandlerAtom } from "@/src/atoms/search"
 import { useWindowSize } from "@/src/hooks/useWindowSize"
-import { Customer } from "@/src/utils/stockTypes"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useResetAtom } from "jotai/utils"
+import {CustomerWithTransactionsOut} from "@/generated/stock/Api";
 
 interface ItemCustomerProps {
-    customer: Customer
+    customer: CustomerWithTransactionsOut
     index: number
 }
 
@@ -43,7 +43,7 @@ export function ItemCustomer({ customer, index }: ItemCustomerProps) {
             <div className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 250px" : `1fr 100px` }}>
                 <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                     <p>{customer.name}</p>
-                    <p className="text-sm text-gray-400">{customer?.transactions?.split(",")?.length > 0 ? customer?.transactions?.split(",")?.length : "No"} Past Order{customer?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
+                    <p className="text-sm text-gray-400">{(customer?.transactions?.split(",")?.length ?? 0) > 0 ? customer?.transactions?.split(",")?.length : "No"} Past Order{customer?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
                 </div>
 
                 {

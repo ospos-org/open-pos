@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react"
 
-import { Employee, Note } from "@utils/stockTypes"
-import queryOs from "@/src/utils/query-os";
+import {openStockClient} from "~/query/client";
+import {Employee, Note} from "@/generated/stock/Api";
 
 export function NoteElement({ note }: { note: Note }) {
     const [ author, setAuthor] = useState<Employee | null>(null);
 
     useEffect(() => {
-        queryOs(`employee/${note.author}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        }).then(async k => {
-            const n = await k.json();
-            setAuthor(n);
-        })
-    })
+        openStockClient.employee.get(note.author)
+            .then(data => setAuthor(data.data))
+    }, [setAuthor, note.author])
 
     return (
         <div className="flex flex-row items-center w-full justify-between gap-6" key={`${note.timestamp}-${note.message}`}>

@@ -2,9 +2,7 @@ import { useAtomValue, useSetAtom } from "jotai"
 import { useEffect } from "react"
 
 import { masterStateAtom } from "@atoms/openpos"
-import { OPEN_STOCK_URL } from "@utils/environment"
-import { Order, Product } from "@utils/stockTypes"
-import { 
+import {
     deliverablesProductInformationAtom, 
     deliverablesActiveOrderAtom, 
     deliverablesStateChangeAtom, 
@@ -16,7 +14,7 @@ import {
 import { SwitchViews } from "./deliverables/switchViews"
 import { OrderSummary, parseDeliverables } from "./deliverables/orderSummary"
 import { ExpandedOrder } from "./deliverables/expandedOrder"
-import queryOs from "@/src/utils/query-os"
+import {openStockClient} from "~/query/client";
 
 export default function Deliverables() {
     const menuState = useAtomValue(deliverablesMenuStateAtom);
@@ -29,15 +27,11 @@ export default function Deliverables() {
     const setProductCategories = useSetAtom(productCategoriesAtom);
 
     useEffect(() => {
-        if(menuState != null)
-            queryOs(`product/${menuState?.product}`, {
-                method: "GET",
-                credentials: "include",
-                redirect: "follow"
-            }).then(async k => {
-                const data: Product = await k.json();
-                setMenuInformation(data);
-            })
+        if(menuState != null && menuState?.product)
+            openStockClient.product.get(parseInt(menuState.product))
+                .then(data => {
+                    if(data.data) setMenuInformation(data.data)
+                })
     }, [menuState, setMenuInformation])
 
 
@@ -53,18 +47,14 @@ export default function Deliverables() {
     }, [activeOrder, setDeliverables])
 
     useEffect(() => {
-        queryOs(`transaction/deliverables/${masterState.store_id}`, {
-            method: "GET",
-            credentials: "include",
-            redirect: "follow"
-        })
-        .then(async b => {
-            if (b.ok) {
-                const data: Order[] = await b.json();
-                setDeliverables(data);
-                setProductCategories(parseDeliverables(data))
-            }
-        })
+        if (masterState.store_id)
+            openStockClient.transaction.deliverablesSearch(masterState.store_id)
+                .then(data => {
+                    if (data.ok) {
+                        setDeliverables(data.data)
+                        setProductCategories(parseDeliverables(data.data))
+                    }
+                })
     }, [masterState.store_id, setDeliverables, setProductCategories])
 
     return (

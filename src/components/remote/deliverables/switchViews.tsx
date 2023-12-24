@@ -8,10 +8,10 @@ import {
 } from "@atoms/deliverables"
 import { useWindowSize } from "@hooks/useWindowSize"
 import { mobileLowModeAtom } from "@atoms/openpos"
-import { Order } from "@utils/stockTypes"
 
 import { BatchGroupView } from "./batchGroupView"
 import { OrderGroupView } from "./orderGroupView"
+import {Order} from "@/generated/stock/Api";
 
 export function SwitchViews() {
     const setActiveOrder = useSetAtom(deliverablesActiveOrderAtom)

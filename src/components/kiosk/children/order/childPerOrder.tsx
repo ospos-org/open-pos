@@ -7,14 +7,9 @@ export function ChildPerOrder() {
 
     return (
         <>
-            {
-                orders.map((orderAtom, index) => {
-                    return (
-                        // eslint-disable-next-line react/jsx-key
-                        <OrderElement orderAtom={orderAtom} index={index} />
-                    )
-                })
-            }
+            {orders.map((orderAtom, index) =>
+                <OrderElement orderAtom={orderAtom} index={index} key={`ORDER_ELEMENT_${index}`} />
+            )}
         </>
     )
 }
