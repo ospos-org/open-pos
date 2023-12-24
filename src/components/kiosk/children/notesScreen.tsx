@@ -7,7 +7,7 @@ import { kioskPanelLogAtom } from "@atoms/kiosk"
 import { masterStateAtom } from "@atoms/openpos"
 import { ordersAtom } from "@atoms/transaction"
 import { getDate } from "@utils/utils"
-import { Note } from "@utils/stockTypes"
+import {Note} from "@/generated/stock/Api";
 
 export function NotesScreen() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)

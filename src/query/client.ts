@@ -1,7 +1,8 @@
+"use client";
+
 import { Api as OpenStockHTTPClient } from "../../generated/stock/Api";
 
 import { env } from "~/env.mjs";
-import {router} from "next/client";
 import {cookieAtom} from "@utils/fetchCookie";
 import {loginAuthAtom} from "@atoms/openpos";
 import {getDefaultStore} from "jotai";
@@ -14,7 +15,7 @@ export const openStockClient = new OpenStockHTTPClient({
 async function useLogin() {
     const loginAuth = getDefaultStore().get(loginAuthAtom)
     if (loginAuth) await getDefaultStore().set(cookieAtom)
-    else await router.push("/login")
+    else window.location.href = "/login"
 }
 
 async function fetchInterceptor(input: (RequestInfo | URL), init?: (RequestInit | undefined)): Promise<Response> {

@@ -55,32 +55,6 @@ export function KioskBlocks() {
                         orderId: "",
                         source: "user",
                         product: {
-                            id: "",
-                            name: "",
-                            stock: [],
-                            images: [],
-                            /// The group codes for all sub-variants; i.e. is White, Short Sleeve and Small.
-                            variant_code: [],
-                            order_history: [],
-                            /// impl! Implement this type!
-                            stock_information: {
-                                stock_group: "string",
-                                sales_group: 'string',
-                                value_stream: 'string',
-                                brand: 'string',
-                                unit: 'string',
-                                tax_code: 'string',
-                                weight: 'string',
-                                volume: 'string',
-                                max_volume: 'string',
-                                back_order: false,
-                                discontinued: false,
-                                non_diminishing: false,
-                                shippable: true
-                            },
-                            loyalty_discount: {
-                                Absolute: 0
-                            },
                             barcode: "CART",
                             marginal_price: orderState.reduce((p, c) => p += c.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.marginal_price), 0), 0),
                             retail_price: orderState.reduce((p, c) => p += c.products?.reduce((prev, curr) => prev += (curr.quantity * curr.variant_information.retail_price), 0), 0)

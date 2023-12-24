@@ -341,7 +341,7 @@ export default function TransactionMenu() {
                         setOrderState([newOrder])
                         console.log([newOrder])
 
-                        if (customer) setCustomerState(customer)
+                        if (customer && "balance" in customer) setCustomerState(customer)
                         setKioskPanel("cart")
                     })
 

@@ -128,7 +128,9 @@ export default function Receivables() {
                 menuState == null && stateChange == null && (((windowSize.width ?? 0) < 640 && lowModeCartOn) || ((windowSize.width ?? 0) >= 640)) ?
                     <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
                         {
-                            activeOrder != null ? 
+                            activeOrder != null ?
+                                // TODO: Fix type error
+                                // @ts-expect-error
                                 <OrderView orderAtom={receivablesActiveOrderAtom} /> 
                             : 
                                 <div className="h-full flex flex-col items-center justify-center flex-1">

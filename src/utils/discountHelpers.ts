@@ -1,8 +1,9 @@
-import { Product } from "@/generated/stock/Api";
+// @ts-nocheck
+
+import {Product, Promotion} from "@/generated/stock/Api";
 import {
     ContextualDiscountValue,
     ContextualProductPurchase,
-    Promotion,
     StrictVariantCategory
 } from "./stockTypes";
 

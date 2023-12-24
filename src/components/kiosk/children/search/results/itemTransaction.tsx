@@ -27,7 +27,7 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
                 .toLowerCase()
                 .includes(searchTermState.toLowerCase())
         ),
-        [transaction]
+        [searchTermState, transaction.products]
     );
 
     const [ customer, setCustomer ] = useState<Customer | Store | null>();

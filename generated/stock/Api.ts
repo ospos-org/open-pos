@@ -422,14 +422,15 @@ export interface CustomerWithTransactionsOut {
   name: string;
   contact: ContactInformation;
   customer_notes: Note[];
-  /**
-   * @format uint32
-   * @min 0
-   */
+  /** @format int64 */
   balance: number;
   special_pricing: string;
-  transactions?: string | null;
   accepts_marketing: boolean;
+  /** @format date-time */
+  created_at: string;
+  /** @format date-time */
+  updated_at: string;
+  transactions?: string | null;
 }
 
 /**
@@ -504,7 +505,7 @@ export interface ProductPurchase {
 
 export interface ProductInstance {
   id: string;
-  /** @default {"last_updated":"2023-12-22T11:13:52.240496293Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
+  /** @default {"last_updated":"2023-12-24T03:32:19.572857Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
   fulfillment_status?: FulfillmentStatus;
 }
 
@@ -901,6 +902,13 @@ export interface TransactionInput {
   order_notes: Note[];
   salesperson: string;
   kiosk: string;
+}
+
+export interface ProductStatusUpdate {
+  transaction_id: string;
+  product_purchase_id: string;
+  product_instance_id: string;
+  new_status: PickStatus;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -2290,13 +2298,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      *
      * @tags Transaction
      * @name UpdateProductStatus
-     * @request POST:/transaction/status/product/{refer}/{pid}/{iid}
+     * @request POST:/transaction/status/product
      */
-    updateProductStatus: (refer: string, pid: string, iid: string, data: string, params: RequestParams = {}) =>
+    updateProductStatus: (data: ProductStatusUpdate, params: RequestParams = {}) =>
       this.request<Transaction, any>({
-        path: `/transaction/status/product/${refer}/${pid}/${iid}`,
+        path: `/transaction/status/product`,
         method: "POST",
         body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

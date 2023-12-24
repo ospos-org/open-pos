@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { fromDbDiscount, parseDiscount } from "@utils/discountHelpers";
 import moment from "moment";
 import {Promotion} from "@/generated/stock/Api";

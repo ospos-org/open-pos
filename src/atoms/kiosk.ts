@@ -131,9 +131,15 @@ const selectionAtom = atom<KioskSelections>({
     transaction: null
 })
 
+interface CartInformation {
+    barcode: "CART",
+    retail_price: number,
+    marginal_price: number
+}
+
 export interface ActiveDiscountApplication {
     type: "absolute" | "percentage",
-    product: VariantInformation | null,
+    product: VariantInformation | CartInformation | null,
     value: number,
     for: "cart" | "product",
     exclusive: boolean,
@@ -160,7 +166,7 @@ const generateTransactionAtom = atom((get) => {
         products,
 
         // As we are saving the order, we aren't charging the customer anything.
-        order_total: Math.round(get(priceAtom).total * 10)
+        order_total: Math.round(get(priceAtom).total * 100)
     } as TransactionInput
 })
 
