@@ -20,7 +20,6 @@ import {
     OrderType,
     Product,
     Transaction,
-    TransactionInit,
     TransactionInput,
     TransactionType,
     VariantInformation
@@ -161,7 +160,7 @@ const generateTransactionAtom = atom((get) => {
         products,
 
         // As we are saving the order, we aren't charging the customer anything.
-        order_total: get(priceAtom).total
+        order_total: Math.round(get(priceAtom).total * 10)
     } as TransactionInput
 })
 
@@ -169,7 +168,10 @@ const parkSaleAtom = atom(undefined, (get, set) => {
     if((get(ordersAtom)?.reduce((p, c) => p + c.products.length, 0) ?? 0) >= 1) {
         const transaction = get(generateTransactionAtom)
 
-        openStockClient.transaction.create(transaction as unknown as TransactionInit)
+        openStockClient.transaction.create({
+            ...transaction,
+            transaction_type: TransactionType.Saved
+        })
             .then(data => {
                 set(defaultKioskAtom, RESET)
             })
