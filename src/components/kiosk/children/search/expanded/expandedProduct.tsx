@@ -1,20 +1,21 @@
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { customAlphabet } from "nanoid";
-import { isEqual } from "lodash";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {customAlphabet} from "nanoid";
+import {isEqual} from "lodash";
 import Image from "next/image";
-import { v4 } from "uuid";
+import {v4} from "uuid";
 
-import { applyDiscount, fromDbDiscount, isValidVariant } from "@utils/discountHelpers";
-import { addToCartAtom, kioskPanelLogAtom } from "@atoms/kiosk";
-import { StrictVariantCategory } from "@utils/stockTypes";
-import { inspectingProductAtom } from "@atoms/product";
-import { getDate, sortOrders } from "@utils/utils";
-import { masterStateAtom } from "@atoms/openpos";
-import { useWindowSize } from "@hooks/useWindowSize";
-import { BLOCK_SIZE } from "@components/kiosk/kioskMenu";
-import { ordersAtom } from "@/src/atoms/transaction";
+import {applyDiscount, fromDbDiscount, isValidVariant} from "@utils/discountHelpers";
+import {addToCartAtom, kioskPanelLogAtom} from "@atoms/kiosk";
+import {StrictVariantCategory} from "@utils/stockTypes";
+import {inspectingProductAtom} from "@atoms/product";
+import {getDate, sortOrders} from "@utils/utils";
+import {masterStateAtom} from "@atoms/openpos";
+import {useWindowSize} from "@hooks/useWindowSize";
+import {BLOCK_SIZE} from "@components/kiosk/kioskMenu";
+import {ordersAtom} from "@/src/atoms/transaction";
 
 import PromotionList from "../../promotion/promotionList";
+import {OrderType} from "@/generated/stock/Api";
 
 export function ExpandedProduct() {    
     const currentStore = useAtomValue(masterStateAtom)
@@ -139,7 +140,7 @@ export function ExpandedProduct() {
                                             reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                             creation_date: getDate(),
                                             discount: "a|0",
-                                            order_type: "direct"
+                                            order_type: OrderType.Direct
                                         };
 
                                         setOrderState([...sortOrders([ ...orderState, cOs])])
@@ -347,7 +348,7 @@ export function ExpandedProduct() {
                                                 reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
                                                 creation_date: getDate(),
                                                 discount: "a|0",
-                                                order_type: "direct"
+                                                order_type: OrderType.Direct
                                             };
 
                                             setOrderState([...sortOrders([ ...orderState, cOs])])

@@ -10,8 +10,9 @@ import { PrimitiveAtom, useAtom, useAtomValue } from "jotai";
 import { masterStateAtom } from "@/src/atoms/openpos";
 import {openStockClient} from "~/query/client";
 import {Customer, Order, PickStatus} from "@/generated/stock/Api";
+import {ContextualOrder} from "@utils/stockTypes";
 
-export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Order | null> }) {
+export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<ContextualOrder | null> }) {
     const masterState = useAtomValue(masterStateAtom)
 
     const [ activeOrder, setActiveOrder ] = useAtom(orderAtom)
@@ -102,10 +103,11 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                                     })
 
                                     if (data.ok) {
-                                        const foundValue = data.data.products.find(
-                                            order => order.reference === activeOrder.reference
-                                        );
+                                        const foundValue = data.data.products
+                                            .find(order => order.reference === activeOrder.reference);
 
+                                        // TODO: fix this type fulfillment
+                                        // @ts-expect-error
                                         if (foundValue) setActiveOrder(foundValue)
                                     }
                                 }
@@ -261,7 +263,7 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                                 </div>
                                 
                                 {/* {JSON.stringify(k.discount)} */}
-                                <p className="text-white font-semibold">${applyDiscount(k.product_cost, findMaxDiscount([k.discount], k.product_cost, false)[0].value).toFixed(2)}</p>
+                                <p className="text-white font-semibold">${applyDiscount(k.product_cost, findMaxDiscount(k.discount, k.product_cost, false)[0].value).toFixed(2)}</p>
                             </div>
                         )
                     })
@@ -273,7 +275,7 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                     <p className="text-gray-400"></p>
                     <p className="text-white font-semibold">Total</p>
                     {/* {JSON.stringify(k.discount)} */}
-                    <p className="text-white font-semibold">${activeOrder?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, findMaxDiscount([k.discount], k.product_cost, false)[0].value), 0).toFixed(2)}</p>
+                    <p className="text-white font-semibold">${activeOrder?.products.reduce((prev, k) => prev + applyDiscount(k.product_cost * k.quantity, findMaxDiscount(k.discount, k.product_cost, false)[0].value), 0).toFixed(2)}</p>
                 </div>
             </div>
 
@@ -281,7 +283,7 @@ export default function OrderView({ orderAtom }: { orderAtom: PrimitiveAtom<Orde
                 <p className="text-gray-400">NOTES</p>
 
                 <NotesMenu autoFocus={false} callback={() => {
-                    // Handle adding notes to an order.
+                    // TODO: Handle adding notes to an order.
                 }}/>
             </div>
         </div>

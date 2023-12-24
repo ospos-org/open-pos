@@ -4,6 +4,7 @@ import { ProductAnalysis } from "./kioskTypes";
 import { ContextualProductPurchase } from "./stockTypes";
 import {Promotion} from "@/generated/stock/Api";
 
+// TODO: Change backend types to validate correctly through TS
 export const determineOptimalPromotionPathway = (products: ContextualProductPurchase[]) => {
     const analysis_list: ProductAnalysis[] = [];
     const product_map = new Map<string, ContextualProductPurchase>();
@@ -64,7 +65,7 @@ export const determineOptimalPromotionPathway = (products: ContextualProductPurc
 
         while (true) {
             if (optimal_promotion == null) break;
-            if (optimal_promotion[0].get.Category || optimal_promotion[0].get.Any || optimal_promotion[0].get.Specific) {
+            if (["category", "any", "specific"].includes(optimal_promotion[0].get.type)) {
                 // Is impacting an external source...
     
                 // Find an appropriate external source by checking those remaining in the queue
@@ -88,42 +89,38 @@ export const determineOptimalPromotionPathway = (products: ContextualProductPurc
                             optimal_promotion 
                             && 
                             (
-                                optimal_promotion[0].buy.Any 
+                                optimal_promotion[0].buy.type === "any"
                                 || 
                                 (
-                                    optimal_promotion[0].buy.Category 
+                                    optimal_promotion[0].buy.type === "category"
                                     && 
-                                    point.tags.includes(optimal_promotion[0].buy.Category?.[0])
+                                    point.tags.includes(optimal_promotion[0].buy.value?.[0])
                                 )
                                 || 
                                 (
-                                    optimal_promotion[0].buy.Specific 
+                                    optimal_promotion[0].buy.type === "specific"
                                     && 
                                     products.find(b =>
                                         b.variant_information.barcode == point.reference_field.barcode
                                     )?.product_sku 
                                     == 
-                                    optimal_promotion[0].buy.Specific[0]
+                                    optimal_promotion[0].buy.value[0]
                                 )
                             )
                         )
-                            if(optimal_promotion && optimal_promotion[0].get.Category) {
+                            if(optimal_promotion && optimal_promotion[0].get.type === "category") {
                                 //console.log("Matching Category?", optimal_promotion[0].get);
 
-                                if(val.tags.includes(optimal_promotion[0].get.Category?.[0] ?? "")) {
+                                if(val.tags.includes(optimal_promotion[0].get.value?.[0] ?? "")) {
                                     external_source_id = val.id;
                                 }
-                            }else if(optimal_promotion && optimal_promotion[0].get.Any) {
-                                //console.log("Matching Any?", products.find(b => b.variant_information.barcode == val.reference_field.barcode)?.product.name, optimal_promotion[0].get);
-
+                            }else if(optimal_promotion && optimal_promotion[0].get.type === "any") {
                                 external_source_id = val.id;
-                            }else if(optimal_promotion && optimal_promotion[0].get.Specific ) {
+                            }else if(optimal_promotion && optimal_promotion[0].get.type === "specific") {
                                 const product_ref = products.findIndex(b => b.variant_information.barcode == val.reference_field.barcode);
         
                                 if(product_ref !== -1) {
-                                    //console.log("Matching Specific?", products[product_ref], optimal_promotion[0].get);
-
-                                    if(products[product_ref].product_sku == optimal_promotion[0].get.Specific[0]) {
+                                    if(products[product_ref].product_sku == optimal_promotion[0].get.value[0]) {
                                         // Has the *specific* product in cart
                                         external_source_id = val.id;
                                     }

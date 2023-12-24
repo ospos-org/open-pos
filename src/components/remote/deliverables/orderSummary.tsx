@@ -10,7 +10,7 @@ import {
     deliverablesAtom
 } from "@atoms/deliverables";
 import { Skeleton } from "@components/common/skeleton";
-import {Order} from "@/generated/stock/Api";
+import {Order, PickStatus} from "@/generated/stock/Api";
 import {ProductCategory} from "@utils/stockTypes";
 import {openStockClient} from "~/query/client";
 
@@ -99,7 +99,7 @@ export function OrderSummary() {
     const [ stateChange, setStateChange ] = useAtom(deliverablesStateChangeAtom)
     const [ deliverables, setDeliverables ] = useAtom(deliverablesAtom)
 
-    const [ pendingStatus, setPendingStatus ] = useState<string | null>()
+    const [ pendingStatus, setPendingStatus ] = useState<PickStatus | null>()
 
     return (
         <div className="absolute pointer-events-none sm:relative flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
@@ -233,14 +233,14 @@ export function OrderSummary() {
                         
                         <div className="flex flex-row flex-wrap gap-2">
                             {
-                                ["Pending", "Picked", "Failed", "Uncertain", "Processing"].map(k => {
+                                (["Pending", "Picked", "Failed", "Uncertain", "Processing"] as PickStatus[]).map(k => {
                                     return <p 
                                         key={JSON.stringify(k)}
-                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status?.pick_status ? "bg-white bg-opacity-20" : k.toLocaleLowerCase() == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
+                                        className={` p-2 rounded-md px-4 w-fit ${k == stateChange.state.fulfillment_status?.pick_status ? "bg-white bg-opacity-20" : k == pendingStatus ? "bg-blue-400 bg-opacity-40" : "bg-gray-200 bg-opacity-10"}`}
                                         onClick={() => {
                                             if(k == stateChange.state.fulfillment_status?.pick_status) setPendingStatus(null)
-                                            else setPendingStatus(k.toLowerCase())
-                                        }}>{k}</p>
+                                            else setPendingStatus(k)
+                                        }}>{k.toString()}</p>
                                 })
                             }
                         </div>
@@ -279,7 +279,12 @@ export function OrderSummary() {
 
                             <div
                                 onClick={() => {
-                                    openStockClient.transaction.updateProductStatus(stateChange?.transaction_id, stateChange?.product_purchase_id, stateChange.state.id, pendingStatus)
+                                    openStockClient.transaction.updateProductStatus({
+                                        transaction_id: stateChange?.transaction_id,
+                                        product_purchase_id: stateChange?.product_purchase_id,
+                                        product_instance_id: stateChange.state.id,
+                                        new_status: pendingStatus
+                                    })
                                         .then(data => {
                                             if (data.ok) {
                                                 setPendingStatus(null)

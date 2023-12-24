@@ -315,63 +315,72 @@ export interface Promotion {
 
 export type PromotionBuy =
   | {
+      type: "specific";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Specific: [string, number];
+      value: [string, number];
     }
   | {
+      type: "any";
       /** @format float */
-      Any: number;
+      value: number;
     }
   | {
+      type: "category";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Category: [string, number];
+      value: [string, number];
     };
 
 /** `SoloThis(discount)` <br /> *Represents the individual product.* <br /> <br /> Is used in cases where the product is the recipient of the promotion in inclusive quantity, i.e. 50% off t-shirts (applies to self) */
 export type PromotionGet =
   | {
-      SoloThis: DiscountValue;
+      type: "solothis";
+      value: DiscountValue;
     }
   | {
+      type: "this";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      This: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "specific";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Specific: [string, [number, DiscountValue]];
+      value: [string, [number, DiscountValue]];
     }
   | {
+      type: "any";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Any: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "anyother";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      AnyOther: [number, DiscountValue];
+      value: [number, DiscountValue];
     }
   | {
+      type: "category";
       /**
        * @maxItems 2
        * @minItems 2
        */
-      Category: [string, [number, DiscountValue]];
+      value: [string, [number, DiscountValue]];
     };
 
 export interface PromotionInput {
@@ -422,14 +431,15 @@ export interface CustomerWithTransactionsOut {
   name: string;
   contact: ContactInformation;
   customer_notes: Note[];
-  /**
-   * @format uint32
-   * @min 0
-   */
+  /** @format int64 */
   balance: number;
   special_pricing: string;
-  transactions?: string | null;
   accepts_marketing: boolean;
+  /** @format date-time */
+  created_at: string;
+  /** @format date-time */
+  updated_at: string;
+  transactions?: string | null;
 }
 
 /**
@@ -504,7 +514,7 @@ export interface ProductPurchase {
 
 export interface ProductInstance {
   id: string;
-  /** @default {"last_updated":"2023-12-22T11:13:52.240496293Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
+  /** @default {"last_updated":"2023-12-24T04:19:55.449919Z","notes":[],"pick_history":[],"pick_status":"Pending"} */
   fulfillment_status?: FulfillmentStatus;
 }
 
@@ -901,6 +911,13 @@ export interface TransactionInput {
   order_notes: Note[];
   salesperson: string;
   kiosk: string;
+}
+
+export interface ProductStatusUpdate {
+  transaction_id: string;
+  product_purchase_id: string;
+  product_instance_id: string;
+  new_status: PickStatus;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -2290,13 +2307,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      *
      * @tags Transaction
      * @name UpdateProductStatus
-     * @request POST:/transaction/status/product/{refer}/{pid}/{iid}
+     * @request POST:/transaction/status/product
      */
-    updateProductStatus: (refer: string, pid: string, iid: string, data: string, params: RequestParams = {}) =>
+    updateProductStatus: (data: ProductStatusUpdate, params: RequestParams = {}) =>
       this.request<Transaction, any>({
-        path: `/transaction/status/product/${refer}/${pid}/${iid}`,
+        path: `/transaction/status/product`,
         method: "POST",
         body: data,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
