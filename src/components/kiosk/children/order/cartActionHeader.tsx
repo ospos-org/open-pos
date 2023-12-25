@@ -31,8 +31,10 @@ export function CartActionHeader() {
                     :
                     <div 
                         onClick={() => setSearchType("customers")}
-                        className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
+                        className="bg-gray-800 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer"
+                    >
                         <p>Select Customer</p>
+
                         <Image 
                             className=""
                             height={15} width={15} src="/icons/arrow-narrow-right.svg" alt="" style={{ filter: "invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)" }}></Image>

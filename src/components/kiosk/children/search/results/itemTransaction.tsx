@@ -11,37 +11,45 @@ import {Customer, Store, Transaction} from "@/generated/stock/Api";
 import {openStockClient} from "~/query/client";
 
 interface ItemTransactionProps {
-    transaction: Transaction,
-    notEnd: boolean
+    value: Transaction,
+    index: number,
+    searchLength: number,
 }
 
-export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
+const WHITE_FILTER = "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)"
+
+export function ItemTransaction({ value, index, searchLength }: ItemTransactionProps) {
     const searchTermState = useAtomValue(searchTermAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setInspectingTransaction = useSetAtom(inspectingTransactionAtom)
 
+    const reachedEnd = useMemo(() =>
+        !(index == searchLength-1 || searchLength == 1),
+        [searchLength, index]
+    )
+
     const filteredOrders = useMemo(() =>
-        transaction.products.filter(
+            value.products.filter(
             k => k.reference
                 .toLowerCase()
                 .includes(searchTermState.toLowerCase())
         ),
-        [searchTermState, transaction.products]
+        [searchTermState, value.products]
     );
 
     const [ customer, setCustomer ] = useState<Customer | Store | null>();
     const windowSize = useWindowSize();
 
     useEffect(() => {
-        if(transaction.customer.customer_type != "Store") {
-            openStockClient.customer.get(transaction.customer.customer_id)
+        if(value.customer.customer_type != "Store") {
+            openStockClient.customer.get(value.customer.customer_id)
                 .then(data => data.ok && setCustomer(data.data))
         }else {
-            openStockClient.store.getByCode(transaction.customer.customer_id)
+            openStockClient.store.getByCode(value.customer.customer_id)
                 .then(data => data.ok && setCustomer(data.data))
         }
-    }, [transaction]);
+    }, [value]);
 
     if(!filteredOrders) return (<></>);
 
@@ -53,7 +61,7 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
                         key={b.id}
                         onClick={() => {
                             setKioskPanel("inv-transaction")
-                            setInspectingTransaction({ item: transaction, identifier: b.id });
+                            setInspectingTransaction({ item: value, identifier: b.id });
                         }}
                         className="flex flex-col overflow-hidden h-fit"
                     >
@@ -61,43 +69,41 @@ export function ItemTransaction({ transaction, notEnd }: ItemTransactionProps) {
                             <div>
                                 {
                                     b.order_type == "pickup" ?
-                                    <Image src="/icons/building-02.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                    <Image src="/icons/building-02.svg" alt=""
+                                           height={20} width={20}
+                                           style={{ filter: WHITE_FILTER }} />
                                     :
                                     b.order_type == "quote" ?
-                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                    <Image src="/icons/globe-05.svg" alt=""
+                                           height={20} width={20}
+                                           style={{ filter: WHITE_FILTER }} />
                                     :
                                     b.order_type == "shipment" ?
-                                    <Image src="/icons/globe-05.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                    <Image src="/icons/globe-05.svg" alt=""
+                                           height={20} width={20}
+                                           style={{ filter: WHITE_FILTER }} />
                                     :
-                                    <Image src="/icons/shopping-bag-01-filled.svg" alt="" height={20} width={20} style={{ filter: "invert(100%) sepia(100%) saturate(0%) hue-rotate(299deg) brightness(102%) contrast(102%)" }} />
+                                    <Image src="/icons/shopping-bag-01-filled.svg" alt=""
+                                           height={20} width={20}
+                                           style={{ filter: WHITE_FILTER }} />
                                 }
-                            
-                                {/* <p className="w-full text-center px-4 rounded-full bg-gray-200 text-black">{b.order_type}</p> */}
                             </div>
 
                             <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
                                 <p className="font-bold">{b.reference}</p>
                                 <p>{moment(b.creation_date).format("DD/MM/YY hh:ss")}</p>
-                                {/* <p className="text-sm text-gray-400">{e.order_history.length} Past Orders</p> */}
                             </div>
 
-                            <div>
-                                {/* {JSON.stringify(customer)} */}
-                                {customer?.name}
-                            </div>
+                            <div>{customer?.name}</div>
 
                             <div className="text-sm text-gray-400 2xl:flex hidden">
                                 {b.products.map(k => k.product_name).join(", ")}
                             </div>
 
-                            <div>
-                                ${transaction.order_total.toFixed(2)}
-                            </div>
+                            <div>${value.order_total.toFixed(2)}</div>
                         </div>
 
-                        {
-                            notEnd ? <></> : <hr className="border-gray-500" />
-                        }
+                        {Boolean(reachedEnd) && <hr className="border-gray-500" />}
                     </div>
                 )
             }

@@ -5,16 +5,15 @@ import { searchFocusedAtom, searchResultsAtomic } from "@/src/atoms/search";
 import { useWindowSize } from "@/src/hooks/useWindowSize";
 import { useAtomValue, useSetAtom } from "jotai";
 import Image from "next/image";
-import {Product, Promotion} from "@/generated/stock/Api";
+import {Product, ProductWPromotion, Promotion} from "@/generated/stock/Api";
 import {StrictVariantCategory} from "@utils/stockTypes";
 
 interface ItemProductProps {
-    product: Product,
-    promotions: Promotion[]
+    value: ProductWPromotion
     index: number
 }
 
-export function ItemProduct({ product, promotions, index }: ItemProductProps) {
+export function ItemProduct({ value: { product, promotions }, index }: ItemProductProps) {
     const searchResults = useAtomValue(searchResultsAtomic)
     const currentStore = useAtomValue(masterStateAtom)
     

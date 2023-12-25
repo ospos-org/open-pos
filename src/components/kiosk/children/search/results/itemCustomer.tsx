@@ -7,11 +7,11 @@ import { useResetAtom } from "jotai/utils"
 import {CustomerWithTransactionsOut} from "@/generated/stock/Api";
 
 interface ItemCustomerProps {
-    customer: CustomerWithTransactionsOut
+    value: CustomerWithTransactionsOut
     index: number
 }
 
-export function ItemCustomer({ customer, index }: ItemCustomerProps) {
+export function ItemCustomer({ value, index }: ItemCustomerProps) {
     const clearSearchResults = useResetAtom(searchResultsAtom)
 
     const searchResults = useAtomValue(searchResultsAtomic)
@@ -27,12 +27,12 @@ export function ItemCustomer({ customer, index }: ItemCustomerProps) {
 
     return (
         <div
-            key={`CUSTOMER-${customer.id}`} className="flex flex-col overflow-hidden h-fit"
+            key={`CUSTOMER-${value.id}`} className="flex flex-col overflow-hidden h-fit"
             onClick={(v) => {
             if((v.target as any).id !== "assign-to-cart") {
                 setSearchFocused(false);
 
-                setInspectingCustomer(customer);
+                setInspectingCustomer(value);
                 setInspectingProduct((previousProduct) => ({
                     ...previousProduct,
                     activeProduct: null
@@ -42,8 +42,8 @@ export function ItemCustomer({ customer, index }: ItemCustomerProps) {
             >
             <div className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer" style={{ gridTemplateColumns: (windowSize.width ?? 0) >= 640 ? "150px 1fr 250px" : `1fr 100px` }}>
                 <div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
-                    <p>{customer.name}</p>
-                    <p className="text-sm text-gray-400">{(customer?.transactions?.split(",")?.length ?? 0) > 0 ? customer?.transactions?.split(",")?.length : "No"} Past Order{customer?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
+                    <p>{value.name}</p>
+                    <p className="text-sm text-gray-400">{(value?.transactions?.split(",")?.length ?? 0) > 0 ? value?.transactions?.split(",")?.length : "No"} Past Order{value?.transactions?.split(",")?.length != 1 ? "s" : ""}</p>
                 </div>
 
                 {
@@ -53,17 +53,17 @@ export function ItemCustomer({ customer, index }: ItemCustomerProps) {
                     <div className="flex 2xl:flex-row flex-col items-center 2xl:gap-4 flex-1">
                         <p>{
                             (() => {
-                                const k = customer.contact.mobile.number.match(/^(\d{3})(\d{3})(\d{4})$/);
+                                const k = value.contact.mobile.number.match(/^(\d{3})(\d{3})(\d{4})$/);
                                 if(!k) return ""
                                 return `${k[1]} ${k[2]} ${k[3]}`
                             })()
                         }</p>
-                        <p className="text-gray-400">{customer.contact.email.full}</p>
+                        <p className="text-gray-400">{value.contact.email.full}</p>
                     </div>
                 }
                 
                 <div className="flex flex-col md:flex-row items-center">
-                    <p className="text-gray-400 flex flex-1 self-center items-center justify-self-center justify-center text-center">${customer.balance} Credit</p>
+                    <p className="text-gray-400 flex flex-1 self-center items-center justify-self-center justify-center text-center">${value.balance} Credit</p>
 
                     <p
                         onClick={(v) => {
@@ -73,7 +73,7 @@ export function ItemCustomer({ customer, index }: ItemCustomerProps) {
                             setSearchFocused(false);
                             setSearchType("products");
 
-                            setCustomerState(customer)
+                            setCustomerState(value)
                         }}
                         id="assign-to-cart"
                         className="whitespace-nowrap justify-self-end pr-4 py-3"

@@ -19,7 +19,6 @@ import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
 export default function TransactionMenu() {
     const transaction = useAtomValue(inspectingTransactionAtom)
 
-    const addToCart = useSetAtom(addToCartAtom)
     const setPerfState = useSetAtom(perfAtom)
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setKioskState = useSetAtom(defaultKioskAtom)

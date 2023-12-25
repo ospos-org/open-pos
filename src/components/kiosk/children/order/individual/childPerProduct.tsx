@@ -9,13 +9,9 @@ interface ChildPerProductProps {
 export function ChildPerProduct({ currentOrder }: ChildPerProductProps) {
     return (
         <>
-            {
-                currentOrder.products.map((product) => {
-                    return (
-                        <ProductElement key={product.id} product={product} currentOrder={currentOrder} />
-                    )
-                })
-            }
+            {currentOrder.products.map((product) =>
+                <ProductElement key={product.id} product={product} currentOrder={currentOrder} />
+            )}
         </>
     )
 }

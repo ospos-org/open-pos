@@ -1,4 +1,4 @@
-import {atomWithReset, RESET} from "jotai/utils";
+import {atomWithReset, RESET, useResetAtom} from "jotai/utils";
 import {customAlphabet} from "nanoid";
 import {atom} from "jotai";
 import {v4} from "uuid";
@@ -263,6 +263,18 @@ const addToCartAtom = atom(undefined, (get, set, orderProducts: ContextualProduc
     return new_order_products_state
 })
 
+const resetAllAtom = atom(
+    undefined,
+    (get, set) => {
+        set(defaultKioskAtom, RESET)
+        set(currentOrderAtom, RESET)
+        set(customerAtom, RESET)
+
+        set(kioskPanelAtom, RESET)
+        set(kioskPanelHistory, RESET)
+    }
+)
+
 export { 
     currentOrderAtom,
     addToCartAtom,
@@ -275,6 +287,7 @@ export {
     kioskPanelHistory, 
     selectionAtom, 
     perfAtom,
+    resetAllAtom,
     activeDiscountAtom 
 }
 
