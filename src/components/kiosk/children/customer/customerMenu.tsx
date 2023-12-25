@@ -9,6 +9,7 @@ import {Customer, Address, CustomerWithTransactionsOut, ContactInformation, Cust
 import {openStockClient} from "~/query/client";
 import {toast} from "sonner";
 import {useAtomValue} from "jotai/index";
+import {SaveCustomer} from "@components/kiosk/children/customer/saveCustomer";
 
 function CustomerMenu() {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -41,12 +42,16 @@ function CustomerMenu() {
     });
 
     return (
-        <div className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto p-6 flex flex-col h-full justify-between flex-1 gap-8" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
+        <div
+            className={
+                "max-h-[calc(100vh - 18px)] h-full p-6 overflow-auto " +
+                "bg-gray-900 flex flex-col flex-1 justify-between gap-8"
+            }
+            style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}
+        >
             <div className="flex flex-row justify-between cursor-pointer">
                 <div 
-                    onClick={() => {
-                        setKioskPanel("cart")
-                    }}
+                    onClick={() => setKioskPanel("cart")}
                     className="flex flex-row items-center gap-2"
                 >
                     <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
@@ -62,9 +67,14 @@ function CustomerMenu() {
                         
                         <div className="flex flex-col gap-1">
                             <p className="text-gray-400 pb-0 mb-0">Customer Name</p>
-                            <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
+                            <div className={
+                                "flex flex-row items-center p-4 rounded-sm " +
+                                "bg-gray-700 gap-4 border-2 border-gray-700"
+                            }>
                                 <input 
-                                    placeholder="Customer Name" defaultValue={customerStateInternal?.contact.name} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Customer Name"
+                                    defaultValue={customerStateInternal?.contact.name}
+                                    className="bg-transparent focus:outline-none text-white flex-1"
                                     onChange={(e) => {
                                         if(customerStateInternal)
                                             setCustomerStateInternal({
@@ -76,7 +86,7 @@ function CustomerMenu() {
                                             }) 
                                     }}
                                     tabIndex={0}
-                                    />
+                                />
                             </div>
                         </div>
                         
@@ -84,7 +94,9 @@ function CustomerMenu() {
                             <p className="text-gray-400">Phone Number</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Phone Number" defaultValue={customerStateInternal?.contact.mobile.number} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Phone Number"
+                                    defaultValue={customerStateInternal?.contact.mobile.number}
+                                    className="bg-transparent focus:outline-none text-white flex-1"
                                     onChange={(e) => {
                                         if(customerStateInternal)
                                             setCustomerStateInternal({
@@ -107,7 +119,9 @@ function CustomerMenu() {
                             <p className="text-gray-400">Email Address</p>
                             <div className={`flex flex-row items-center p-4 rounded-sm bg-gray-700 gap-4 "border-2 border-gray-700`}>
                                 <input 
-                                    placeholder="Email Address" defaultValue={customerStateInternal?.contact.email.full} className="bg-transparent focus:outline-none text-white flex-1" 
+                                    placeholder="Email Address"
+                                    defaultValue={customerStateInternal?.contact.email.full}
+                                    className="bg-transparent focus:outline-none text-white flex-1"
                                     onChange={(e) => {
                                         if(customerStateInternal)
                                             setCustomerStateInternal({
@@ -137,7 +151,9 @@ function CustomerMenu() {
                                     <input 
                                         autoComplete="off"
                                         ref={input_ref}
-                                        placeholder="Address" defaultValue={customerStateInternal?.contact.address.street} className="bg-transparent focus:outline-none text-white flex-1" 
+                                        placeholder="Address"
+                                        defaultValue={customerStateInternal?.contact.address.street}
+                                        className="bg-transparent focus:outline-none text-white flex-1"
                                         onChange={(e) => {
                                             debouncedResults(e.target.value);
                                         }}
@@ -193,49 +209,7 @@ function CustomerMenu() {
                         </div>
                     </div>
 
-                    <div
-                        onClick={() => {
-                            if(!loading) {
-                                if (!customerStateInternal?.contact || !customerStateInternal?.name) return
-                                setLoading(true);
-
-                                const customerObject = {
-                                    ...customerStateInternal,
-                                    contact: customerStateInternal.contact,
-                                    name: customerStateInternal.contact.name
-                                }
-
-                                console.log(customerObject, customerObject.id)
-
-                                if (customerObject?.id)
-                                    toast.promise(
-                                        openStockClient.customer.update(customerObject.id, customerObject),
-                                        {
-                                            loading: `Saving customer details...`,
-                                            error: (data) => {
-                                                setLoading(false);
-                                                return `Failed. ${data.error?.message ?? "Server error, please contact support."}`
-                                            },
-                                            success: (data) => {
-                                                setLoading(false);
-
-                                                setCustomerState(data.data);
-                                                setKioskPanel("cart")
-
-                                                return `Saved customer.`
-                                            }
-                                        }
-                                    )
-                                else {
-                                    toast.message("No Identifier Provided, State has de-synced.")
-                                    setLoading(false);
-                                }
-                            }
-                        }}
-                        className={`${!loading ? "bg-blue-700 cursor-pointer" : "bg-blue-700 bg-opacity-10 opacity-20"} w-full rounded-md p-4 flex items-center justify-center`}
-                    >
-                        <p className="text-white font-semibold">{loading ? "Saving..." : "Save"}</p>
-                    </div>
+                    <SaveCustomer workingCustomer={inspectingCustomer} />
                 </div>
             </div>
         </div>
