@@ -68,29 +68,27 @@ export function PaymentMethod() {
     }, [f6Pressed, generateTransaction, setKioskPanel, setTransactionType]);
 
     useEffect(() => {
-        let has_negative_stocks = false;
+        // When the order state updates,
+        // check for if any negative stocks have been added.
 
-        orderState.map(b => {
-            // All products
-            b.products.map(p => {
-                // All variants
-                p.product.variants.map(n => {
-                    if (p.product_code == n.barcode) {
-                        const store_id = b?.origin?.store_id ?? "";
-                        const stock_level = n.stock.reduce((p, c) =>
-                            p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0),
+        const hasNegativeStocks = orderState.some(b =>
+            b.products.some(p =>
+                p.product.variants.some(n => {
+                    if (p.product_code === n.barcode) {
+                        const storeId = b?.origin?.store_id ?? "";
+                        const stockLevel = n.stock.reduce((prev, curr) =>
+                            prev + (curr.store.store_id === storeId ? curr.quantity.quantity_sellable : 0),
                             0
                         );
 
-                        if (stock_level <= 0) {
-                            has_negative_stocks = true;
-                        }
+                        return stockLevel <= 0;
                     }
+                    return false;
                 })
-            }) 
-        })
+            )
+        );
 
-        setHasNegativeStock(has_negative_stocks);
+        setHasNegativeStock(hasNegativeStocks);
     }, [orderState])
 
     const showNegativeStockWarning = useMemo(() =>
