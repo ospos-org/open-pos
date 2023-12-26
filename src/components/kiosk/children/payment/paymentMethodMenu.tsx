@@ -1,5 +1,5 @@
 import {useAtom, useAtomValue, useSetAtom} from "jotai"
-import {useEffect, useRef, useState} from "react"
+import {useEffect, useMemo, useRef, useState} from "react"
 import Image from "next/image"
 
 import {defaultKioskAtom, generateTransactionAtom, kioskPanelLogAtom, perfAtom, transactionTypeAtom} from "@atoms/kiosk"
@@ -9,20 +9,19 @@ import useKeyPress from "@hooks/useKeyPress"
 import {toast} from "sonner"
 import {TransactionType} from "@/generated/stock/Api";
 import {openStockClient} from "~/query/client";
+import {PayPrice} from "@components/kiosk/children/payment/payPrice";
+import PayOptions from "@components/kiosk/children/payment/payOptions";
+import NegativeStockWarning from "@components/kiosk/children/payment/negativeStockWarning";
 
 export function PaymentMethod() {
     const generateTransaction = useAtomValue(generateTransactionAtom)
-    const kioskState = useAtomValue(defaultKioskAtom)
     const orderState = useAtomValue(ordersAtom)
     const perfState = useAtomValue(perfAtom)
 
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setTransactionType = useSetAtom(transactionTypeAtom)
 
-    const [ probingPrice, setProbingPrice ] = useAtom(probingPricePayableAtom)
-    
     const [ hasNegativeStock, setHasNegativeStock ] = useState(false);
-    const [ editPrice, setEditPrice ] = useState(false);
 
     const f1Pressed = useKeyPress(['F1'])
     const f1firstUpdate = useRef(0);
@@ -62,22 +61,28 @@ export function PaymentMethod() {
         openStockClient.transaction.create(generateTransaction)
             .then(data => {
                 if (data.ok) setKioskPanel("completed")
-                else toast.message("Failed to save transaction", { description: `Server gave ${data.error}` })
+                else toast.message("Failed to save transaction", {
+                    description: `Server gave ${data.error}`
+                })
             })
     }, [f6Pressed, generateTransaction, setKioskPanel, setTransactionType]);
 
     useEffect(() => {
         let has_negative_stocks = false;
+
         orderState.map(b => {
             // All products
             b.products.map(p => {
                 // All variants
                 p.product.variants.map(n => {
-                    if(p.product_code == n.barcode) {
+                    if (p.product_code == n.barcode) {
                         const store_id = b?.origin?.store_id ?? "";
-                        const stock_level = n.stock.reduce((p, c) => p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0), 0);
+                        const stock_level = n.stock.reduce((p, c) =>
+                            p + (c.store.store_id == store_id ? c.quantity.quantity_sellable : 0),
+                            0
+                        );
 
-                        if(stock_level <= 0) {
+                        if (stock_level <= 0) {
                             has_negative_stocks = true;
                         }
                     }
@@ -88,170 +93,41 @@ export function PaymentMethod() {
         setHasNegativeStock(has_negative_stocks);
     }, [orderState])
 
+    const showNegativeStockWarning = useMemo(() =>
+        hasNegativeStock && perfState.type === "creative",
+        [hasNegativeStock, perfState.type]
+    )
+
     return (
-        <div className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll" style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}>
-            <div className={`flex flex-col h-full ${hasNegativeStock && perfState.type === "creative" ? "gap-14" : "gap-20"}`}>
+        <div
+            className="bg-gray-900 p-6 flex flex-col h-full overflow-y-scroll"
+            style={{
+                maxWidth: "min(550px, 100vw)",
+                minWidth: "min(100vw, 550px)"
+            }}
+        >
+            <div className={`flex flex-col h-full ${showNegativeStockWarning ? "gap-14" : "gap-20"}`}>
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-row justify-between cursor-pointer">
                         <div 
-                            onClick={() => {
-                                setKioskPanel("cart")
-                            }}
+                            onClick={() => setKioskPanel("cart")}
                             className="flex flex-row items-center gap-2"
                         >
                             <Image src="/icons/arrow-narrow-left.svg" height={20} width={20} alt="" />
                             <p className="text-gray-400">Back</p>
                         </div>
+
                         <p className="text-gray-400">Select Preferred Payment Method</p>
                     </div>
 
-                    {
-                        hasNegativeStock && perfState.type === "creative" ?
-                        <div className="flex mt-4 relative flex-row items-center p-1 bg-orange-900 rounded-md gap-2">
-                            <div className="absolute top-[-14px] left-[-7px] bg-orange-600 px-2 py-1 flex-1 h-fit rounded-md flex flex-row items-center gap-1">
-                                <Image src="/icons/alert-triangle.svg" style={{ filter: "invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)" }} 
-                                    height={15} width={15} alt="" />
-                                <p className="text-white font-bold text-xs">WARNING</p>
-                            </div>
-                            <p className="text-red-200 p-2 text-xs">This cart contains products with negative stock levels, proceed with caution.</p>
-                        </div>
-                        :
-                        <></>
-                    }
+                    {Boolean(showNegativeStockWarning) && <NegativeStockWarning />}
                 </div>
             
-                <div className="self-center flex flex-col items-center">
-                    <p className="text-gray-400 text-sm">TO PAY</p>
+                <PayPrice />
 
-                    {
-                        editPrice ? 
-                            <input autoFocus className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white" placeholder={
-                                (
-                                    (kioskState.order_total ?? 0)
-                                - 
-                                    (
-                                        kioskState.payment.reduce(function (prev, curr) {
-                                            return prev + (curr.amount.quantity ?? 0)
-                                        }, 0)
-                                    ) 
-                                ).toFixed(2)
-                            } onBlur={(e) => {
-                                if(e.currentTarget.value == "") {
-                                    setEditPrice(false)
-                                    setProbingPrice(kioskState.order_total)
-                                }else {
-                                    let p = parseFloat(e.currentTarget.value);
+                <PayOptions />
 
-                                    if(p < (kioskState.order_total ?? 0)) {
-                                        setProbingPrice(p)
-                                        setEditPrice(false)
-                                    } else if (p == kioskState.order_total) {
-                                        setEditPrice(false)
-                                        setProbingPrice(kioskState.order_total)
-                                    }
-                                }
-                            }}
-                            onKeyDown={(e) => {
-                                if(e.key == "Enter") {
-                                    if(e.currentTarget.value == "") {
-                                        setEditPrice(false)
-                                        setProbingPrice(kioskState.order_total)
-                                    } else { 
-                                        let p = parseFloat(e.currentTarget.value);
-
-                                        if(p < (kioskState.order_total ?? 0)) {
-                                            setProbingPrice(p)
-                                            setEditPrice(false)
-                                        } else if (p == kioskState.order_total) {
-                                            setEditPrice(false)
-                                            setProbingPrice(kioskState.order_total)
-                                        }
-                                    }
-                                }
-                            }}
-                            ></input>
-                        :
-                            <p className="font-semibold text-3xl text-white">${probingPrice?.toFixed(2)}</p>
-                    }
-
-                    {
-                        (probingPrice ?? kioskState?.order_total ?? 0) < ((kioskState.order_total ?? 0)
-                        - 
-                            (
-                                kioskState.payment.reduce(function (prev, curr) {
-                                    return prev + (curr.amount.quantity ?? 0)
-                                }, 0)
-                            ) ) ?
-                        <p className="text-gray-500">${(kioskState.order_total! - (probingPrice! + kioskState.payment.reduce(function (prev, curr) {
-                            return prev + (curr.amount.quantity ?? 0)
-                        }, 0))).toFixed(2)} remains</p>
-                        :
-                        <></>
-                    }
-
-                    <br />
-
-                    <div
-                        onClick={() => {
-                            setEditPrice(true)
-                        }} 
-                        className="self-center flex flex-row items-center gap-2 cursor-pointer p-2"
-                    >
-                        <Image src="/icons/coins-stacked-03.svg" height={20} width={20} alt="" className="text-white" style={{ filter: "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)" }} />
-                        <p className="text-gray-400">Split Payment</p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-16 flex-1 h-full justify-center pb-16">
-                    <div 
-                        className="flex flex-row items-end gap-2 cursor-pointer"
-                        onClick={() => {
-                            setKioskPanel("await-debit");
-                        }}>
-                        <p className="text-white font-semibold text-2xl">Eftpos</p>
-                        <p className="text-sm text-gray-400">F1</p>
-                    </div>
-                    <div 
-                        className="flex flex-row items-end gap-2 cursor-pointer"
-                        onClick={() => {
-                            setKioskPanel("await-cash");
-                        }}>
-                        <p className="text-white font-semibold text-2xl">Cash</p>
-                        <p className="text-sm text-gray-400">F2</p>
-                    </div>
-                    <div className="flex flex-row items-end gap-2 cursor-pointer">
-                        <p className="text-gray-400 font-semibold text-2xl">Bank Transfer</p>
-                        <p className="text-sm text-gray-400">F3</p>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                        <div className="flex flex-row items-end gap-2 cursor-pointer">
-                            <p className="text-white font-semibold text-2xl">Gift Card</p>
-                            <p className="text-sm text-gray-400">F4</p>
-                        </div>
-                        <div className="flex flex-row items-end gap-1 cursor-pointer">
-                            <p className="text-sm text-gray-400">Check Ballance</p>
-                            <p className="text-xs text-gray-400">F5</p>
-                        </div>
-                    </div>
-                    <div
-                        onClick={() => {
-                            setTransactionType(TransactionType.Quote)
-
-                            openStockClient.transaction.create(generateTransaction)
-                                .then(data => {
-                                    if (data.ok) setKioskPanel("completed")
-                                    else toast.message("Failed to save transaction", { description: `Server gave ${data.error}` })
-                                })
-                        }} 
-                        className="flex flex-row items-end gap-2 cursor-pointer">
-                        <p className="text-white font-semibold text-2xl">Save as Quote</p>
-                        <p className="text-sm text-gray-400">F6</p>
-                    </div>
-                </div>
-
-                <div className="self-center flex flex-col items-center">
-                    
-                </div>
+                <div className="self-center flex flex-col items-center" />
             </div>
         </div>
     )

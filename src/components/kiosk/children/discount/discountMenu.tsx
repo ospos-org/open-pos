@@ -12,7 +12,7 @@ const WHITE_FILTER =
 const GRAY_FILTER =
     "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)"
 
-const DiscountMenu: FC<{ callback: Function }> = ({ callback  }) => {
+const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
     const productQuantity = useAtomValue(totalProductQuantityAtom)
 
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);
