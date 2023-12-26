@@ -1,20 +1,14 @@
 import {Product, Promotion} from "@/generated/stock/Api";
-import {
-    ContextualDiscountValue,
-    ContextualProductPurchase,
-    StrictVariantCategory
-} from "./stockTypes";
+import {ContextualDiscountValue, ContextualProductPurchase, StrictVariantCategory} from "./stockTypes";
 
 export function isValidVariant(activeProduct: Product, activeVariant: StrictVariantCategory[]) {
     return activeProduct.variants.find(e => {
-        let comparative_map = e.variant_code.map(b => {
+        const comparative_map = e.variant_code.map(b => {
             return activeVariant?.find(c => c.variant.variant_code == b)
         });
     
-        let filtered = comparative_map.filter(s => !s);
-        let active = filtered.length <= 0;
-
-        return active;
+        const filtered = comparative_map.filter(s => !s);
+        return filtered.length <= 0;
     })
 }
 
@@ -244,26 +238,18 @@ export function applyPromotion(promo: Promotion, pdt: ContextualProductPurchase,
 }
 
 export function discountFromPromotion(promo: Promotion): { Absolute?: number | undefined, Percentage?: number | undefined } {
-    const discount: { Absolute?: number | undefined, Percentage?: number | undefined } 
-        = promo.get.type === "any"
-          ? promo.get.value[1] :
-          promo.get.type === "solothis"
-          ? promo.get.value :
-          promo.get.type === "specific"
-          ? promo.get.value[1][1] :
-          promo.get.type === "this"
-          ? promo.get.value[1] :
-          promo.get.type === "category"
-          ? promo.get.value[1][1] :
-          { Absolute: 0 };
-
-    return discount;
+    return promo.get.type === "any"
+        ? promo.get.value[1] :
+        promo.get.type === "solothis"
+            ? promo.get.value :
+            promo.get.type === "specific"
+                ? promo.get.value[1][1] :
+                promo.get.type === "this"
+                    ? promo.get.value[1] :
+                    promo.get.type === "category"
+                        ? promo.get.value[1][1] :
+                        {Absolute: 0};
 }
 
-export const isEquivalentDiscount = (a: ContextualDiscountValue, b: ContextualDiscountValue, product_cost: number) => {
-    if(a.value == b.value && applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value)) {
-        return true;
-    }
-    
-    return false;
-}
+export const isEquivalentDiscount = (a: ContextualDiscountValue, b: ContextualDiscountValue, product_cost: number) =>
+    a.value == b.value && applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value);

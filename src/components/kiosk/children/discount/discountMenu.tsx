@@ -4,13 +4,21 @@ import Image from "next/image"
 
 import { activeDiscountAtom } from "@atoms/kiosk"
 import { applyDiscount } from "@utils/discountHelpers"
+import {useAtomValue} from "jotai/index";
+import {totalProductQuantityAtom} from "@atoms/cart";
 
-const WHITE_FILTER = "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)"
-const GRAY_FILTER = "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)"
+const WHITE_FILTER =
+    "invert(100%) sepia(0%) saturate(0%) hue-rotate(107deg) brightness(109%) contrast(101%)"
+const GRAY_FILTER =
+    "invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)"
 
-const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback, multiple }) => {
+const DiscountMenu: FC<{ callback: Function }> = ({ callback  }) => {
+    const productQuantity = useAtomValue(totalProductQuantityAtom)
+
     const [ discount, setDiscount ] = useAtom(activeDiscountAtom);
     const click_ref = createRef<HTMLDivElement>();
+
+    const multiple = useMemo(() => productQuantity > 0, [productQuantity])
     
     const retailPrice = useMemo(() => 
         (discount?.product?.retail_price ?? 1) * 1.15,
@@ -27,8 +35,14 @@ const DiscountMenu: FC<{ callback: Function, multiple: boolean }> = ({ callback,
         [discount, retailPrice]
     )
 
-    const grossProfit = useMemo(() => discountedPrice - marginalPrice, [discountedPrice, marginalPrice])
-    const grossProfitPercentage = useMemo(() => (grossProfit / retailPrice) * 100, [grossProfit, retailPrice])
+    const grossProfit = useMemo(() =>
+        discountedPrice - marginalPrice,
+        [discountedPrice, marginalPrice]
+    )
+    const grossProfitPercentage = useMemo(() =>
+        (grossProfit / retailPrice) * 100,
+        [grossProfit, retailPrice]
+    )
 
     if (!discount) return <></>
 

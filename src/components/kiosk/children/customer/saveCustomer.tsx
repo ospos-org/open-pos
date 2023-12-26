@@ -12,7 +12,7 @@ interface SaveCustomerProps {
     workingCustomer: Customer | null
 }
 
-export function SaveCustomer({ workingCustomer }: SaveCustomerProps) {
+export default function SaveCustomer({ workingCustomer }: SaveCustomerProps) {
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
     const setCustomerState = useSetAtom(customerAtom)
 
