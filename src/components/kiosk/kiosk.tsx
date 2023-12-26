@@ -18,7 +18,7 @@ import KioskMenu from "./kioskMenu";
 import CartMenu from "./children/order/cartMenu";
 
 import { CompletedOrderMenu } from "./children/order/completed/completedOrderMenu";
-import { TransactionScreen } from "./children/order/transactionScreen";
+import { TransactionScreen } from "./children/order/transaction/transactionScreen";
 import { DispatchHandler } from "./children/foreign/dispatchHandler";
 import { TerminalPayment } from "./children/payment/terminalPayment";
 import { DiscountScreen } from "./children/discount/discountScreen";

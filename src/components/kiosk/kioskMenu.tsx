@@ -8,7 +8,7 @@ import { inspectingProductAtom } from "@atoms/product"
 import useParkedTransactions from "@/src/hooks/useParkedTransactions"
 import useKeyPress from "@hooks/useKeyPress"
 
-import { SavedTransactionItem } from "./children/order/savedTransactionItem"
+import { SavedTransactionItem } from "./children/order/transaction/savedTransactionItem"
 import { ExpandedCustomer } from "./children/search/expanded/expandedCustomer"
 import { ExpandedProduct } from "./children/search/expanded/expandedProduct"
 import { SearchGroup } from "./children/search/searchGroup"

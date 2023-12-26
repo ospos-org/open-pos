@@ -4,7 +4,11 @@ import { applyDiscount, applyDiscountsConsiderateOfQuantity } from "@utils/disco
 
 import { aCustomerActiveAtom } from "@atoms/customer";
 import { ordersAtomsAtom } from "@atoms/transaction";
-import {Payment} from "@/generated/stock/Api";
+import {Payment, PaymentAction} from "@/generated/stock/Api";
+import {getDate} from "@utils/utils";
+import {v4} from "uuid";
+import {defaultKioskAtom} from "@atoms/kiosk";
+import {activeEmployeeAtom, masterStateAtom} from "@atoms/openpos";
 
 const paymentHistoryAtom = atom<PriceModification[]>([])
 const currentPaidAmountAtom = atom<number>(
@@ -82,4 +86,58 @@ const probingPricePayableAtom = atom<number | null>(null)
 
 const paymentIntentsAtom = atom<Payment[]>([])
 
-export { priceAtom, paymentIntentsAtom, probingPricePayableAtom }
+const generateIntentAtom = atom(
+    undefined,
+    (get, set) => {
+        const newIntent: Payment = {
+            id: v4(),
+            amount: {
+                quantity: get(probingPricePayableAtom) ?? 0,
+                currency: 'NZD'
+            },
+            delay_action: PaymentAction.Cancel,
+            delay_duration: "PT12H",
+            fulfillment_date: getDate(),
+            order_ids: ["?"],
+            payment_method: "Card",
+            processing_fee: {quantity: 0.1, currency: 'NZD'},
+            processor: {
+                location: get(masterStateAtom).store_id ?? "000",
+                employee: get(activeEmployeeAtom)?.id ?? "000",
+                software_version: 'k0.5.2',
+                token: 'dec05e7e-4228-46c2-8f87-8a01ee3ed5a9'
+            },
+            status: {
+                Complete: {
+                    CardDetails: {
+                        card_brand: "VISA",
+                        last_4: "4025",
+                        exp_month: "03",
+                        exp_year: "2023",
+                        fingerprint: "a20@jA928ajsf9a9828",
+                        card_type: "DEBIT",
+                        prepaid_type: "NULL",
+                        bin: "",
+
+                        entry_method: "PIN",
+                        cvv_accepted: "TRUE",
+                        avs_accepted: "TRUE",
+                        auth_result_code: "YES",
+                        statement_description: "DEBIT ACCEPTED",
+                        card_payment_timeline: {
+                            authorized_at: "",
+                            captured_at: ""
+                        }
+                    }
+                }
+            }
+        };
+
+        const newIntentList = [...get(paymentIntentsAtom), newIntent]
+        set(paymentIntentsAtom, newIntentList)
+
+        return newIntentList
+    }
+)
+
+export { priceAtom, generateIntentAtom, paymentIntentsAtom, probingPricePayableAtom }

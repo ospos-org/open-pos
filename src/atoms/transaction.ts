@@ -1,10 +1,10 @@
-import { splitAtom } from "jotai/utils";
+import {splitAtom, useResetAtom} from "jotai/utils";
 import { atom } from "jotai";
 
 import { determineOptimalPromotionPathway } from "@utils/optimalPromotion";
 import { discountFromPromotion, fromDbDiscount } from "@utils/discountHelpers";
 import {ContextualDiscountValue, ContextualOrder} from "@utils/stockTypes";
-import {Transaction} from "@/generated/stock/Api";
+import {Customer, Order, Store, Transaction} from "@/generated/stock/Api";
 
 const _ordersAtom = atom<ContextualOrder[]>([])
 const ordersAtomsAtom = splitAtom(_ordersAtom)
@@ -63,4 +63,18 @@ const inspectingTransactionAtom = atom<{
     identifier: string
 } | null>(null)
 
-export { ordersAtom, ordersAtomsAtom, inspectingTransactionAtom }
+const transactionMenuSelectorOpenAtom = atom(false)
+
+const transactionViewState = {
+    attachedCustomer: atom<Customer | Store | undefined>(undefined),
+    selectedItems: atom<{ product_id: string, quantity: number}[]>([]),
+    activeTransaction: atom<Order | undefined>(undefined)
+}
+
+export {
+    ordersAtom,
+    ordersAtomsAtom,
+    inspectingTransactionAtom,
+    transactionMenuSelectorOpenAtom,
+    transactionViewState
+}
