@@ -253,3 +253,50 @@ export function discountFromPromotion(promo: Promotion): { Absolute?: number | u
 
 export const isEquivalentDiscount = (a: ContextualDiscountValue, b: ContextualDiscountValue, product_cost: number) =>
     a.value == b.value && applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value);
+
+export function generateProductInfo(product: ContextualProductPurchase, customerActive: boolean) {
+    const maxDiscount = findMaxDiscount(
+        product.discount,
+        product.variant_information.retail_price,
+        customerActive
+    )[0];
+
+    const discountedPrice =
+        applyDiscount(product.variant_information.retail_price, maxDiscount.value)
+
+    const priceAlreadyDiscounted =
+        discountedPrice === product.variant_information.retail_price
+
+    const parsedDiscount = parseDiscount(maxDiscount.value)
+
+    const quantityConsiderateTotal = product.variant_information.retail_price * product.quantity
+    const quantityConsiderateTotalWithTax = quantityConsiderateTotal * 1.15
+
+    const quantityConsiderateDiscountedTotal = applyDiscountsConsiderateOfQuantity(
+        product.quantity,
+        product.discount,
+        product.variant_information.retail_price,
+        customerActive
+    )
+
+    const quantityConsiderateDiscountedTotalWTax = applyDiscountsConsiderateOfQuantity(
+        product.quantity,
+        product.discount,
+        product.variant_information.retail_price * 1.15,
+    customerActive
+)
+
+    return {
+        maxDiscount,
+        parsedDiscount,
+
+        discountedPrice,
+        priceAlreadyDiscounted,
+
+        quantityConsiderateTotal,
+        quantityConsiderateTotalWithTax,
+
+        quantityConsiderateDiscountedTotal,
+        quantityConsiderateDiscountedTotalWTax,
+    }
+}
