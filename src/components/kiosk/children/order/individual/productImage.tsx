@@ -2,6 +2,10 @@ import { ContextualOrder, ContextualProductPurchase } from "@/src/utils/stockTyp
 import Image from "next/image";
 import {Stock} from "@/generated/stock/Api";
 import {useMemo} from "react";
+import {useSetAtom} from "jotai";
+import {
+    totalNetQuantityOfProductTransactedOutFromCartAtom
+} from "@atoms/cart";
 
 interface ProductImageProps {
     currentOrder: ContextualOrder,
@@ -10,21 +14,20 @@ interface ProductImageProps {
 }
 
 export function ProductImage({ currentOrder, quantityHere, product }: ProductImageProps) {
+    const totalProductQuantitySelected = useSetAtom(totalNetQuantityOfProductTransactedOutFromCartAtom)
+
     const productQuantityStyle = useMemo(() => {
         // If it's a direct order (must be in-stock), and has a quantity above that which is sellable
         // by the current store - warn the operator using a red colouring.
         if (
             currentOrder.order_type === "direct"
             &&
-            ((currentOrder.products.reduce((t, i) =>
-                i.variant_information.barcode == product.variant_information.barcode ? i.quantity : 0,
-                0)
-                ?? 1
-            ) > (quantityHere?.quantity.quantity_sellable ?? 0) && product.transaction_type == "Out")
+            (totalProductQuantitySelected(product) > (quantityHere?.quantity.quantity_sellable ?? 0)
+                && product.transaction_type == "Out")
         ) return "bg-red-500"
 
         return "bg-gray-600"
-    }, [currentOrder, product, quantityHere])
+    }, [currentOrder, product, quantityHere, totalProductQuantitySelected])
 
     return (
         <div className="relative">

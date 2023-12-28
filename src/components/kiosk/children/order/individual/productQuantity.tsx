@@ -2,6 +2,18 @@ import { ordersAtom } from "@/src/atoms/transaction"
 import { useAtom } from "jotai"
 import Image from "next/image"
 import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
+import {useSetAtom} from "jotai/index";
+import {totalNetQuantityOfProductTransactedOutFromCartAtom} from "@atoms/cart";
+import {createRef, useCallback, useMemo} from "react";
+
+const FILTER_INVALID =
+    "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)"
+
+const FILTER_VALID =
+    "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)"
+
+const FILTER_GRAY =
+    "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
 
 interface ProductQuantityProps {
     currentOrder: ContextualOrder,
@@ -10,110 +22,113 @@ interface ProductQuantityProps {
 }
 
 export function ProductQuantity({ currentOrder, product, totalStock }: ProductQuantityProps) {
+    const totalProductQuantitySelected = useSetAtom(totalNetQuantityOfProductTransactedOutFromCartAtom)
+
     const [ orderState, setOrderState ] = useAtom(ordersAtom)
+
+    const increaseQuantityRef = createRef<HTMLImageElement>()
+    const decreaseQuantityRef = createRef<HTMLImageElement>()
+
+    const validProductQuantity = useMemo(() =>
+        !(totalProductQuantitySelected(product) >= totalStock) || product.transaction_type == "In",
+        [product, totalProductQuantitySelected, totalStock]
+    )
+
+    const mouseOver = useCallback((variant: "INCREASE" | "DECREASE") => {
+        if (variant === "INCREASE") {
+            if (!increaseQuantityRef.current) return;
+
+            if(validProductQuantity)
+                increaseQuantityRef.current.style.filter = FILTER_VALID;
+            else
+                increaseQuantityRef.current.style.filter = FILTER_INVALID;
+        } else {
+            if (!decreaseQuantityRef.current) return;
+
+            if ((currentOrder.products.find(k => k.id == product.id)?.quantity ?? 1) <= 1)
+                decreaseQuantityRef.current.style.filter =
+                    "invert(50%) sepia(98%) saturate(3136%) hue-rotate(332deg) brightness(94%) contrast(99%)"
+            else
+                decreaseQuantityRef.current.style.filter = FILTER_INVALID
+        }
+    }, [currentOrder.products, decreaseQuantityRef, increaseQuantityRef, product.id, validProductQuantity])
+
+    const mouseLeave = useCallback((variant: "INCREASE" | "DECREASE") => {
+        if (variant === "INCREASE") {
+            if (increaseQuantityRef.current)
+                increaseQuantityRef.current.style.filter = FILTER_GRAY;
+        } else {
+            if (decreaseQuantityRef.current)
+                decreaseQuantityRef.current.style.filter = FILTER_GRAY;
+        }
+    }, [decreaseQuantityRef, increaseQuantityRef])
+
+    const alterProductQuantity = useCallback((variant: "INCREASE" | "DECREASE") => {
+        if (validProductQuantity) {
+            const productList = currentOrder.products.map(
+                productPurchase => {
+                    if(productPurchase.id == product.id) {
+                        if(productPurchase.quantity <= 1) return null;
+
+                        return {
+                            ...productPurchase,
+                            quantity: variant === "INCREASE"
+                                ? productPurchase.quantity+1
+                                : productPurchase.quantity-1
+                        }
+                    } else {
+                        return productPurchase
+                    }
+                }
+            ).filter(k => k) as ContextualProductPurchase[]
+
+            const newOrderState = orderState.map(order =>
+                order.id == currentOrder.id
+                    ? productList.length === 0 ? { ...order, products: productList } : null
+                    : order
+            ).filter(b => b) as any as ContextualOrder[];
+
+            setOrderState(newOrderState)
+        }
+    }, [currentOrder, orderState, product.id, setOrderState, validProductQuantity])
 
     return (
         <div className="flex flex-row sm:flex-col gap-2 items-center justify-center">
             <Image
-                onClick={() => {
-                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock) || product.transaction_type == "In") {
-                        const product_list_clone = currentOrder.products.map(k => {
-                            if(k.id == product.id) {
-                                return {
-                                    ...k,
-                                    quantity: k.quantity+1
-                                }
-                            }else {
-                                return k
-                            }
-                        })
-
-                        const new_state = {
-                            ...currentOrder,
-                            products: product_list_clone
-                        }
-
-                        const new_order = orderState.map(e => e.id == currentOrder.id ? new_state : e)
-
-                        setOrderState(new_order ?? [])
-                    }
-                }} 
-                onMouseOver={(v) => {
-                    if(!((currentOrder.products.reduce((p, k) => p += k.variant_information.barcode == product.variant_information.barcode ? k.quantity : 0, 0) ?? 1) >= totalStock) || product.transaction_type == "In")
-                        v.currentTarget.style.filter = "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                    else
-                        v.currentTarget.style.filter = "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)";
-                }}
-                onMouseLeave={(v) => {
-                    v.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                }}
+                ref={increaseQuantityRef}
+                onClick={() => alterProductQuantity("INCREASE")}
+                onMouseOver={() => mouseOver("INCREASE")}
+                onMouseLeave={() => mouseLeave("INCREASE")}
                 draggable="false"
                 className="select-none"
-                src={
-                    "/icons/arrow-block-up.svg"
-                } 
-                width="15" height="15" alt={''} style={{ filter: 
-                    (currentOrder.products.reduce((t, i) => t += (i.variant_information.barcode == product.variant_information.barcode ? i.quantity : 0), 0) ?? 1) 
-                    <= 
-                    totalStock && product.transaction_type === "Out"
-                    ? 
-                    "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
-                    :
-                    product.transaction_type === "Out" ?
-                    "invert(35%) sepia(47%) saturate(1957%) hue-rotate(331deg) brightness(99%) contrast(93%)" 
-                    :
-                    "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)"
-                }} ></Image>
+                src="/icons/arrow-block-up.svg"
+                width="15" height="15"
+                alt="Increase product quantity"
+                style={{ filter:
+                    totalProductQuantitySelected(product) <= totalStock && product.transaction_type === "Out"
+                    ? FILTER_GRAY
+                    : product.transaction_type === "Out"
+                        ? FILTER_INVALID
+                        : FILTER_GRAY
+                }}
+            />
 
             <Image
-                onClick={() => {
-                    const product_list_clone = currentOrder.products.map(k => {
-                        if(k.id == product.id) {
-                            if(k.quantity <= 1) {
-                                return null;
-                            }else {
-                                return {
-                                    ...k,
-                                    quantity: k.quantity-1
-                                }
-                            }
-                        }else {
-                            return k
-                        }
-                    })
-
-                    const new_state = {
-                        ...currentOrder,
-                        products: product_list_clone.filter(k => k) as ContextualProductPurchase[]
-                    }
-
-                    // If no products exist anymore.
-
-                    if(new_state.products.length <= 0) {
-                        const new_order: ContextualOrder[] = orderState.map(e => e.id == currentOrder.id ? null : e)?.filter(b => b) as any as ContextualOrder[];
-                        setOrderState(new_order ?? [])
-                    }else {
-                        const new_order = orderState.map(e => e.id == currentOrder.id ? new_state : e)
-                        setOrderState(new_order ?? [])
-                    }
-                }} 
+                ref={decreaseQuantityRef}
+                onClick={() => alterProductQuantity("DECREASE")}
                 draggable="false"
                 className="select-none"
-                onMouseOver={(b) => {
-                    b.currentTarget.style.filter = (currentOrder.products.find(k => k.id == product.id)?.quantity ?? 1) <= 1 ? 
-                    "invert(50%) sepia(98%) saturate(3136%) hue-rotate(332deg) brightness(94%) contrast(99%)"
-                    : 
-                    "invert(94%) sepia(0%) saturate(24%) hue-rotate(45deg) brightness(105%) contrast(105%)";
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.filter = "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)";
-                }}
-                width="15" height="15" src={
-                    (currentOrder.products.find(k => k.id == product.id)?.quantity ?? 1) <= 1 ? 
-                    "/icons/x-square.svg" 
-                    : 
-                    "/icons/arrow-block-down.svg"
-                } alt={''} style={{ filter: "invert(59%) sepia(9%) saturate(495%) hue-rotate(175deg) brightness(93%) contrast(95%)" }}></Image>
+                onMouseOver={() => mouseOver("DECREASE")}
+                onMouseLeave={() => mouseLeave("DECREASE")}
+                width="15" height="15"
+                src={
+                    totalProductQuantitySelected(product) <= 1
+                        ? "/icons/x-square.svg"
+                        : "/icons/arrow-block-down.svg"
+                }
+                alt="Decrease product quantity"
+                style={{ filter: FILTER_GRAY }}
+            />
         </div>
     )
 }
