@@ -59,7 +59,7 @@ export function CartActionHeader() {
 
                 <div className="text-sm text-gray-400">
                     {
-                        productQuantity
+                        productQuantity === 0
                         ? "Cart Empty"
                         : <p>{productQuantity} item{productQuantity > 1 ? "s" : ""}</p>
                     }

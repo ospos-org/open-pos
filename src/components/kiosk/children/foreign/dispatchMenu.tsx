@@ -1,19 +1,20 @@
-import { useCallback, useState } from "react"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import {useCallback, useMemo, useState} from "react"
 import Image from "next/image"
 
 import { kioskPanelLogAtom } from "@atoms/kiosk"
 import { masterStateAtom } from "@atoms/openpos"
 import { customerAtom } from "@atoms/customer"
 import { ordersAtom } from "@atoms/transaction"
-import {openStockClient} from "~/query/client";
-import {ContextualProductPurchase} from "@utils/stockTypes";
-import {Stock, HttpResponse, Customer} from "@/generated/stock/Api";
 
 import {generateOrders, generateProductMap} from "@utils/dispatchAlgorithm";
+import {ContextualProductPurchase} from "@utils/stockTypes";
 
-import {DispatchShippingRate} from "@components/kiosk/children/foreign/dispatch/dispatchShippingRate";
+import {Stock, HttpResponse, Customer} from "@/generated/stock/Api";
+import {openStockClient} from "~/query/client";
+
 import DispatchProductSelector from "@components/kiosk/children/foreign/dispatch/dispatchProductSelector";
+import {DispatchShippingRate} from "@components/kiosk/children/foreign/dispatch/dispatchShippingRate";
 import EditDispatch from "@components/kiosk/children/foreign/dispatch/editDispatch";
 
 interface GeneratedOrder {
@@ -24,12 +25,16 @@ interface GeneratedOrder {
     quantity: number
 }
 
+type DispatchPage = "origin" | "rate" | "edit"
+
 export function DispatchMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
     const [ customerState, setCustomerState ] = useAtom(customerAtom);
 
-    const [ pageState, setPageState ] = useState<"origin" | "rate" | "edit">("origin");
-    const [ generatedOrder, setGeneratedOrder ] = useState<GeneratedOrder[]>([]);
+    const [ pageState, setPageState ] =
+        useState<DispatchPage>("origin");
+    const [ generatedOrder, setGeneratedOrder ] =
+        useState<GeneratedOrder[]>([]);
 
     const currentStore = useAtomValue(masterStateAtom)
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -60,6 +65,22 @@ export function DispatchMenu() {
         }
     }, [currentStore.store_id, fetchDistanceData, orderState, setCustomerState])
 
+    const dispatchPage = useMemo(() => {
+        if (pageState === "origin")
+            return <DispatchProductSelector
+                generatedOrderPair={[generatedOrder, setGeneratedOrder]}
+                setPageState={setPageState}
+            />
+        if (pageState === "rate")
+            return <DispatchShippingRate
+                generatedOrder={generatedOrder}
+            />
+
+        return <EditDispatch
+            callback={onEditComplete}
+        />
+    }, [generatedOrder, onEditComplete, pageState])
+
     return (
         <div
             className={
@@ -83,21 +104,7 @@ export function DispatchMenu() {
             </div>
 
             <div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
-                {
-                    (() => {
-                        switch(pageState) {
-                            case "origin":
-                                return <DispatchProductSelector
-                                            generatedOrderPair={[generatedOrder, setGeneratedOrder]}
-                                            setPageState={setPageState}
-                                       />
-                            case "rate":
-                                return <DispatchShippingRate generatedOrder={generatedOrder} />
-                            case "edit":
-                                return <EditDispatch callback={onEditComplete} />
-                        }
-                    })()
-                }
+                {dispatchPage}
             </div>
         </div>
     )

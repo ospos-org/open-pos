@@ -52,7 +52,7 @@ export default function DispatchProductSelector({
     }, [orderState, currentStore, fetchDistanceData, setGeneratedOrder])
 
     return (
-        <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full pr-2">
+        <div className="flex-col flex gap-8 flex-1 overflow-y-scroll max-h-full">
             <div className="flex flex-1 flex-col gap-4">
                 <div className="flex flex-row items-center gap-2 text-gray-400">
                     <p>PRODUCTS</p>
@@ -168,7 +168,9 @@ export default function DispatchProductSelector({
                     <p className="font-semibold">{customerState?.contact.name}</p>
                     <p className="">{customerState?.contact.email.full}</p>
                     <p className="">{customerState?.contact.mobile.number}</p>
+
                     <br/>
+
                     <p className="font-semibold">{customerState?.contact.address.street}</p>
                     <p>{customerState?.contact.address.street2}</p>
                     <p className="text-gray-400">
@@ -188,7 +190,7 @@ export default function DispatchProductSelector({
                     : "bg-blue-700 cursor-not-allowed bg-opacity-10 opacity-20"
                 } w-full rounded-md p-4 flex items-center justify-center`}
             >
-                <p className={`text-white font-semibold ${""}`}>Continue</p>
+                <p className="text-white font-semibold">Continue</p>
             </div>
         </div>
     )

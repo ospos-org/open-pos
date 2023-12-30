@@ -23,8 +23,8 @@ export function CartActionFooter() {
             <div 
                 onClick={parkSale}
                 className={`
-                    bg-gray-300 w-full rounded-md p-4 flex items-center justify-center cursor-pointer 
-                    ${Boolean(orderProductQuantity <= 0) && "bg-opacity-10 opacity-20"}
+                    bg-gray-500 hover:bg-gray-200 flex-nowrap w-full rounded-md p-4 flex items-center justify-center cursor-pointer 
+                    ${Boolean(orderProductQuantity <= 0) && "bg-opacity-10 opacity-20 hover:bg-gray-500!"}
                 `}
             >
                 <p className="text-gray-800 font-semibold">Park Sale</p>
@@ -37,7 +37,7 @@ export function CartActionFooter() {
                         orderProductQuantity > 0
                         ? "bg-blue-700 cursor-pointer"
                         : "bg-blue-700 bg-opacity-10 opacity-20"
-                    ) + "w-full rounded-md p-4 flex items-center justify-center"
+                    ) + " w-full rounded-md p-4 flex items-center justify-center"
                 }
             >
                 <p className="text-white font-semibold">Checkout</p>
