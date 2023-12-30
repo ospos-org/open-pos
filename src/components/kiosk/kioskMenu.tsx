@@ -3,7 +3,7 @@ import { useResetAtom } from "jotai/utils"
 import { useEffect } from "react"
 
 import { searchFocusedAtom, searchTermAtom } from "@atoms/search"
-import { inspectingCustomerAtom } from "@atoms/customer"
+import { initialCustomer, inspectingCustomerAtom } from "@atoms/customer"
 import { inspectingProductAtom } from "@atoms/product"
 import useParkedTransactions from "@/src/hooks/useParkedTransactions"
 import useKeyPress from "@hooks/useKeyPress"
@@ -33,7 +33,7 @@ export default function KioskMenu() {
     useEffect(() => {
         resetProductInspection()
         setSearchFocused(false)
-        setInspectingCustomer(null)
+        setInspectingCustomer(initialCustomer)
     }, [escapePressed, resetProductInspection, setInspectingCustomer, setSearchFocused]);
 
     return (
