@@ -1,21 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { useEffect, useMemo, useState } from "react"
+import { useAtomValue, useSetAtom } from "jotai"
 import Image from "next/image"
 
 import { kioskPanelLogAtom } from "@atoms/kiosk"
 import { masterStateAtom } from "@atoms/openpos"
-import { ordersAtom } from "@atoms/transaction"
-import { Stock, Store } from "@/generated/stock/Api";
-import {ContextualOrder, ContextualProductPurchase} from "@utils/stockTypes";
-import {openStockClient} from "~/query/client";
-import EditPickup from "@components/kiosk/children/foreign/pickup/editPickup";
+import { Store } from "@/generated/stock/Api";
+
 import PickupProductSelector from "@components/kiosk/children/foreign/pickup/pickupProductSelector";
+import type { GeneratedOrder } from "@components/kiosk/children/foreign/common/generated";
+import EditPickup from "@components/kiosk/children/foreign/pickup/editPickup";
 
 export function PickupMenu() {
     const [ pageState, setPageState ] =
         useState<"origin" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] =
-        useState<{ item: ContextualProductPurchase | undefined, store: string, alt_stores: Stock[], ship: boolean, quantity: number }[]>([]);
+        useState<GeneratedOrder[]>([]);
     const [ pickupStore, setPickupStore ] =
         useState<Store | null>(null);
 
@@ -48,7 +47,10 @@ export function PickupMenu() {
 
     return (
         <div
-            className="bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto p-6 flex flex-col h-full justify-between flex-1 gap-8"
+            className={
+                "bg-gray-900 max-h-[calc(100vh - 18px)] overflow-auto " +
+                "p-6 flex flex-col h-full justify-between flex-1 gap-8"
+            }
             style={{ maxWidth: "min(550px, 100vw)", minWidth: "min(100vw, 550px)" }}
         >
             <div className="flex flex-row justify-between cursor-pointer">

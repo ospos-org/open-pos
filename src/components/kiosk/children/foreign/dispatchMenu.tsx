@@ -16,14 +16,7 @@ import {openStockClient} from "~/query/client";
 import DispatchProductSelector from "@components/kiosk/children/foreign/dispatch/dispatchProductSelector";
 import {DispatchShippingRate} from "@components/kiosk/children/foreign/dispatch/dispatchShippingRate";
 import EditDispatch from "@components/kiosk/children/foreign/dispatch/editDispatch";
-
-interface GeneratedOrder {
-    item: ContextualProductPurchase | undefined,
-    store: string,
-    alt_stores: Stock[],
-    ship: boolean,
-    quantity: number
-}
+import { GeneratedOrder } from "./common/generated"
 
 type DispatchPage = "origin" | "rate" | "edit"
 
