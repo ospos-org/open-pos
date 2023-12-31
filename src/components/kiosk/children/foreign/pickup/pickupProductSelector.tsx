@@ -1,4 +1,4 @@
-import {SetStateAction, useAtomValue, useSetAtom} from "jotai/index";
+import {atom, SetStateAction, useAtomValue, useSetAtom} from "jotai/index";
 import {Dispatch, useCallback, useEffect, useState} from "react";
 import {customAlphabet} from "nanoid";
 import Image from "next/image";
@@ -16,19 +16,25 @@ import {masterStateAtom} from "@atoms/openpos";
 import {customerAtom} from "@atoms/customer";
 import {ordersAtom} from "@atoms/transaction";
 import {generateOrders, generateProductMap} from "@utils/dispatchAlgorithm";
+import {ProductPullStore} from "@components/kiosk/children/foreign/common/productPullStore";
+import {PrimitiveAtom, useAtom} from "jotai";
+import {SelectedItem} from "@components/kiosk/children/foreign/common/generated";
 
 interface PickupProductSelectorProps {
-    generatedOrderPair: [GeneratedOrder[], Dispatch<SetStateAction<GeneratedOrder[]>>],
+    generatedOrderAtom: PrimitiveAtom<GeneratedOrder[]>,
     setPageState: Dispatch<SetStateAction<"origin" | "edit">>,
     pickupStore: Store | null
 }
 
+const selectedItemsAtom = atom<SelectedItem[]>([])
+
 export default function PickupProductSelector({
-    generatedOrderPair: [ generatedOrder, setGeneratedOrder ],
+    generatedOrderAtom,
     setPageState,
     pickupStore
 }: PickupProductSelectorProps) {
-    const [ selectedItems, setSelectedItems ] = useState<{ store_id: string, item_id: string, selected: boolean }[]>([]);
+    const [ generatedOrder, setGeneratedOrder ] =  useAtom(generatedOrderAtom)
+    const [ selectedItems, setSelectedItems ] = useAtom(selectedItemsAtom)
 
     const currentStore = useAtomValue(masterStateAtom)
     const customerState = useAtomValue(customerAtom);
@@ -118,33 +124,12 @@ export default function PickupProductSelector({
                                             <p className="font-semibold text-white"></p>{k.quantity}
                                             <p className="font-semibold text-gray-400">/{k.item?.quantity}</p>
                                         </div>
-                                        <div className={`relative inline-block ${selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "z-50" : ""}`}>
-                                            <p
-                                                onClick={() => {
-                                                    const sel_items = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, selected: true } : b);
-                                                    setSelectedItems(sel_items)
-                                                }}
-                                                className="self-center cursor-pointer content-center items-center justify-center font-semibold flex">{currentStore.store_lut?.length > 0 ? currentStore.store_lut?.find((b: Store) => k.store == b.id)?.code : "000"}</p>
-                                            <div className={selectedItems.find(b => (b.item_id == k.item?.id && b.store_id == k.store))?.selected ? "absolute flex flex-col items-center justify-center w-full rounded-md overflow-hidden z-50" : "hidden absolute"}>
-                                                {
-                                                    k.alt_stores.map(n => {
-                                                        return (
-                                                            <div
-                                                                onClick={() => {
-                                                                    const new_order = generatedOrder.map(b => (b.item?.id == k?.item?.id && b.store == k.store) ? { ...b, store: n.store.store_id } : b)
-                                                                    setGeneratedOrder(new_order)
 
-                                                                    const sel = selectedItems.map(b => (b.item_id == k.item?.id && b.store_id == k.store) ? { ...b, store_id: n.store.store_id, selected: false } : b);
-                                                                    setSelectedItems(sel)
-                                                                }}
-                                                                key={`${k.item?.id}is-also-available-@${n.store.store_id}`} className={` ${k.store == n.store.store_id ? "bg-white text-gray-700" : "bg-gray-800 hover:bg-gray-700"} cursor-pointer font-semibold w-full flex-1 h-full text-center`}>
-                                                                {n.store.store_code}
-                                                            </div>
-                                                        )
-                                                    })
-                                                }
-                                            </div>
-                                        </div>
+                                        <ProductPullStore
+                                            generatedOrderAtom={generatedOrderAtom}
+                                            selectedItemsAtom={selectedItemsAtom}
+                                            order={k}
+                                        />
                                     </div>
                                 )
                             })

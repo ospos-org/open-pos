@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { useAtomValue, useSetAtom } from "jotai"
+import {atom, useAtom, useAtomValue, useSetAtom} from "jotai"
 import Image from "next/image"
 
 import { kioskPanelLogAtom } from "@atoms/kiosk"
@@ -10,11 +10,13 @@ import PickupProductSelector from "@components/kiosk/children/foreign/pickup/pic
 import type { GeneratedOrder } from "@components/kiosk/children/foreign/common/generated";
 import EditPickup from "@components/kiosk/children/foreign/pickup/editPickup";
 
+const generatedOrderAtom = atom<GeneratedOrder[]>([])
+
 export function PickupMenu() {
     const [ pageState, setPageState ] =
         useState<"origin" | "edit">("origin");
     const [ generatedOrder, setGeneratedOrder ] =
-        useState<GeneratedOrder[]>([]);
+        useAtom(generatedOrderAtom);
     const [ pickupStore, setPickupStore ] =
         useState<Store | null>(null);
 
@@ -32,7 +34,7 @@ export function PickupMenu() {
                 <PickupProductSelector
                     setPageState={setPageState}
                     pickupStore={pickupStore}
-                    generatedOrderPair={[generatedOrder, setGeneratedOrder]}
+                    generatedOrderAtom={generatedOrderAtom}
                 />
             )
 
