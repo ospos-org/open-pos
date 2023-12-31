@@ -9,6 +9,13 @@ interface GeneratedOrder {
     quantity: number
 }
 
+interface SelectedItem {
+    store_id: string,
+    item_id: string,
+    selected: boolean
+}
+
 export type {
-    GeneratedOrder
+    GeneratedOrder,
+    SelectedItem
 }

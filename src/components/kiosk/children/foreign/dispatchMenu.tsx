@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import {atom, useAtom, useAtomValue, useSetAtom} from "jotai"
 import {useCallback, useMemo, useState} from "react"
 import Image from "next/image"
 
@@ -20,6 +20,8 @@ import { GeneratedOrder } from "./common/generated"
 
 type DispatchPage = "origin" | "rate" | "edit"
 
+const generatedOrderAtom = atom<GeneratedOrder[]>([])
+
 export function DispatchMenu() {
     const [ orderState, setOrderState ] = useAtom(ordersAtom);
     const [ customerState, setCustomerState ] = useAtom(customerAtom);
@@ -27,7 +29,7 @@ export function DispatchMenu() {
     const [ pageState, setPageState ] =
         useState<DispatchPage>("origin");
     const [ generatedOrder, setGeneratedOrder ] =
-        useState<GeneratedOrder[]>([]);
+        useAtom(generatedOrderAtom);
 
     const currentStore = useAtomValue(masterStateAtom)
     const setKioskPanel = useSetAtom(kioskPanelLogAtom)
@@ -61,7 +63,7 @@ export function DispatchMenu() {
     const dispatchPage = useMemo(() => {
         if (pageState === "origin")
             return <DispatchProductSelector
-                generatedOrderPair={[generatedOrder, setGeneratedOrder]}
+                generatedOrderAtom={generatedOrderAtom}
                 setPageState={setPageState}
             />
         if (pageState === "rate")
