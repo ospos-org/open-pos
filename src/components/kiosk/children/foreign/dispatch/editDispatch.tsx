@@ -66,7 +66,7 @@ export default function EditDispatch({ callback }: EditDispatchProps) {
 				});
 			}
 
-			input_ref.current ? (input_ref.current.value = "") : {};
+			if (input_ref.current) input_ref.current.value = "";
 		},
 		[customerState, input_ref, setCustomerState],
 	);

@@ -37,7 +37,7 @@ function IndividualAddress({ callback, value, name }: IndividualAddressProps) {
 				<div className="text-white font-semibold inline-flex">{name}</div>
 			)}
 			<p className="font-normal text-gray-400">
-				{value.street.trim() == "0" ? "" : value.street} {value.street2}{" "}
+				{value.street.trim() === "0" ? "" : value.street} {value.street2}{" "}
 				{value.po_code}
 			</p>
 			<p className="text-gray-400">

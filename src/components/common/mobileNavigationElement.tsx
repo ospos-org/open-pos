@@ -27,7 +27,7 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 0 ? (
+					{page === 0 ? (
 						<Image
 							className="select-none svg cursor-pointer"
 							width={`${ICON_SIZE}`}
@@ -38,7 +38,7 @@ export function MobileNavigationElement() {
 								filter:
 									"invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)",
 							}}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none cursor-pointer"
@@ -50,10 +50,10 @@ export function MobileNavigationElement() {
 									"invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)",
 							}}
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 0 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 0 ? "" : "text-gray-300"}`}>
 						Cart
 					</p>
 				</div>
@@ -67,7 +67,7 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 1 ? (
+					{page === 1 ? (
 						<Image
 							className="select-none cursor-pointer"
 							width={`${ICON_SIZE}`}
@@ -78,7 +78,7 @@ export function MobileNavigationElement() {
 									"invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)",
 							}}
 							alt={""}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none cursor-pointer"
@@ -90,10 +90,10 @@ export function MobileNavigationElement() {
 									"invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)",
 							}}
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 1 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 1 ? "" : "text-gray-300"}`}>
 						Inventory
 					</p>
 				</div>
@@ -107,7 +107,7 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 2 ? (
+					{page === 2 ? (
 						<Image
 							className="select-none cursor-pointer"
 							width={`${ICON_SIZE}`}
@@ -118,7 +118,7 @@ export function MobileNavigationElement() {
 									"invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)",
 							}}
 							alt={""}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none cursor-pointer"
@@ -130,10 +130,10 @@ export function MobileNavigationElement() {
 									"invert(61%) sepia(16%) saturate(286%) hue-rotate(175deg) brightness(90%) contrast(90%)",
 							}}
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 2 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 2 ? "" : "text-gray-300"}`}>
 						Calendar
 					</p>
 				</div>
@@ -147,14 +147,14 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 3 ? (
+					{page === 3 ? (
 						<Image
 							className="select-none cursor-pointer"
 							width={`${ICON_SIZE}`}
 							height={`${ICON_SIZE}`}
 							src="/icons/arrow-square-up-right-filled.svg"
 							alt={""}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none cursor-pointer"
@@ -162,10 +162,10 @@ export function MobileNavigationElement() {
 							height={`${ICON_SIZE}`}
 							src="/icons/arrow-square-up-right.svg"
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 3 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 3 ? "" : "text-gray-300"}`}>
 						Deliverables
 					</p>
 				</div>
@@ -179,14 +179,14 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 4 ? (
+					{page === 4 ? (
 						<Image
 							className="select-none cursor-pointer"
 							width={`${ICON_SIZE}`}
 							height={`${ICON_SIZE}`}
 							src="/icons/arrow-square-down-right-filled.svg"
 							alt={""}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none cursor-pointer"
@@ -194,10 +194,10 @@ export function MobileNavigationElement() {
 							height={`${ICON_SIZE}`}
 							src="/icons/arrow-square-down-right.svg"
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 4 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 4 ? "" : "text-gray-300"}`}>
 						Incomings
 					</p>
 				</div>
@@ -210,14 +210,14 @@ export function MobileNavigationElement() {
 						setLowModeCartOn(false);
 					}}
 				>
-					{page == 5 ? (
+					{page === 5 ? (
 						<Image
 							className="select-none"
 							width={`${ICON_SIZE}`}
 							height={`${ICON_SIZE}`}
 							src="/icons/settings-04-filled.svg"
 							alt={""}
-						></Image>
+						/>
 					) : (
 						<Image
 							className="select-none"
@@ -225,10 +225,10 @@ export function MobileNavigationElement() {
 							height={`${ICON_SIZE}`}
 							src="/icons/settings-04.svg"
 							alt={""}
-						></Image>
+						/>
 					)}
 
-					<p className={`font-bold ${page == 5 ? "" : "text-gray-300"}`}>
+					<p className={`font-bold ${page === 5 ? "" : "text-gray-300"}`}>
 						Settings
 					</p>
 				</div>

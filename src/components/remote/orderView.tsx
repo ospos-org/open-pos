@@ -77,7 +77,7 @@ export default function OrderView({
 								filter:
 									"brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)",
 							}}
-						></Image>
+						/>
 					) : (
 						<Image
 							className=""
@@ -89,7 +89,7 @@ export default function OrderView({
 								filter:
 									"brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)",
 							}}
-						></Image>
+						/>
 					)}
 				</div>
 
@@ -123,7 +123,7 @@ export default function OrderView({
 									filter:
 										"brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)",
 								}}
-							></Image>
+							/>
 						</div>
 					) : completedPercentage === 100 ? (
 						<div
@@ -178,7 +178,7 @@ export default function OrderView({
 									filter:
 										"brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)",
 								}}
-							></Image>
+							/>
 						</div>
 					) : (
 						<div className="bg-green-600 rounded-md px-2 py-[0.125rem] flex flex-row items-center gap-2 cursor-pointer">
@@ -197,7 +197,7 @@ export default function OrderView({
 									filter:
 										"brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(36deg) brightness(106%) contrast(102%)",
 								}}
-							></Image>
+							/>
 						</div>
 					)
 				}
@@ -217,22 +217,22 @@ export default function OrderView({
 
 					return (
 						<div key={`${k.timestamp} ${k.item} ${k.reason}`}>
-							{indx == 0 ? (
-								<div className="h-4 w-[3px] rounded-sm rounded-b-none bg-gray-400 ml-5"></div>
+							{indx === 0 ? (
+								<div className="h-4 w-[3px] rounded-sm rounded-b-none bg-gray-400 ml-5" />
 							) : (
-								<div className="h-4 w-[3px] bg-gray-400 ml-5"></div>
+								<div className="h-4 w-[3px] bg-gray-400 ml-5" />
 							)}
 
 							<div className="flex flex-row items-center gap-4">
 								<div
 									className={`${
-										type == "queued"
+										type === "queued"
 											? "bg-gray-600"
-											: type == "processing"
+											: type === "processing"
 											  ? "bg-yellow-600"
-											  : type == "transit" || type == "instore"
+											  : type === "transit" || type === "instore"
 												  ? "bg-blue-600"
-												  : type == "failed"
+												  : type === "failed"
 													  ? "bg-red-600"
 													  : "bg-green-600"
 									} h-11 w-11 flex items-center justify-center rounded-full`}
@@ -330,7 +330,7 @@ export default function OrderView({
 													</div>
 												);
 											default:
-												return <div></div>;
+												return <div />;
 										}
 									})()}
 								</div>
@@ -376,8 +376,8 @@ export default function OrderView({
 								</div>
 							</div>
 
-							{indx != activeOrder?.status_history.length - 1 ? (
-								<div className="h-4 w-[3px] bg-gray-400 ml-5"></div>
+							{indx !== activeOrder?.status_history.length - 1 ? (
+								<div className="h-4 w-[3px] bg-gray-400 ml-5" />
 							) : (
 								<></>
 							)}
@@ -436,7 +436,7 @@ export default function OrderView({
 					className="gap-8 px-8 items-center"
 					style={{ display: "grid", gridTemplateColumns: "25px 1fr 75px" }}
 				>
-					<p className="text-gray-400"></p>
+					<p className="text-gray-400" />
 					<p className="text-white font-semibold">Total</p>
 					{/* {JSON.stringify(k.discount)} */}
 					<p className="text-white font-semibold">

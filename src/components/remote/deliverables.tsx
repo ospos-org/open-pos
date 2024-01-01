@@ -27,7 +27,7 @@ export default function Deliverables() {
 	const setProductCategories = useSetAtom(productCategoriesAtom);
 
 	useEffect(() => {
-		if (menuState != null && menuState?.product)
+		if (menuState?.product)
 			openStockClient.product.get(parseInt(menuState.product)).then((data) => {
 				if (data.data) setMenuInformation(data.data);
 			});

@@ -35,7 +35,7 @@ export const determineOptimalPromotionPathway = (
 		// Put all (for quantity) in list to analyze.
 		for (let i = 0; i < b.quantity; i++) {
 			analysis_list.push({
-				id: customAlphabet(`1234567890abcdef`, 10)(35),
+				id: customAlphabet("1234567890abcdef", 10)(35),
 				reference_field: {
 					barcode: b.variant_information.barcode,
 				},
@@ -53,7 +53,7 @@ export const determineOptimalPromotionPathway = (
 
 	while (product_queue.length > 0) {
 		const elem = product_queue.pop();
-		const indx_of = analysis_list.findIndex((k) => k.id == elem);
+		const indx_of = analysis_list.findIndex((k) => k.id === elem);
 
 		const point = analysis_list[indx_of];
 
@@ -79,12 +79,12 @@ export const determineOptimalPromotionPathway = (
 					const indx_of_other = analysis_list.findIndex(
 						(k) =>
 							k.id !== point.id &&
-							k.id == ref &&
+							k.id === ref &&
 							k.utilized == null &&
 							!k.is_joined,
 					);
 
-					if (indx_of_other == -1) return;
+					if (indx_of_other === -1) return;
 
 					const val = analysis_list[indx_of_other];
 
@@ -100,9 +100,9 @@ export const determineOptimalPromotionPathway = (
 								(optimal_promotion[0].buy.type === "specific" &&
 									products.find(
 										(b) =>
-											b.variant_information.barcode ==
+											b.variant_information.barcode ===
 											point.reference_field.barcode,
-									)?.product_sku == optimal_promotion[0].buy.value[0]))
+									)?.product_sku === optimal_promotion[0].buy.value[0]))
 						)
 							if (
 								optimal_promotion &&
@@ -126,13 +126,13 @@ export const determineOptimalPromotionPathway = (
 							) {
 								const product_ref = products.findIndex(
 									(b) =>
-										b.variant_information.barcode ==
+										b.variant_information.barcode ===
 										val.reference_field.barcode,
 								);
 
 								if (product_ref !== -1) {
 									if (
-										products[product_ref].product_sku ==
+										products[product_ref].product_sku ===
 										optimal_promotion[0].get.value[0]
 									) {
 										// Has the *specific* product in cart
@@ -165,9 +165,9 @@ export const determineOptimalPromotionPathway = (
 		) {
 			// && !point.is_joined
 			const external_indx = analysis_list.findIndex(
-				(k) => k.id == point.utilized?.utilizer,
+				(k) => k.id === point.utilized?.utilizer,
 			);
-			if (external_indx == -1) break;
+			if (external_indx === -1) break;
 
 			const external_ref = analysis_list[external_indx];
 
@@ -178,8 +178,8 @@ export const determineOptimalPromotionPathway = (
 				// Recursively delete and push
 				const delete_and_push = (id: string) => {
 					//console.log("DELETE EXTERN: ", id);
-					const ext = analysis_list.findIndex((k) => k.id == id);
-					if (ext == -1) return;
+					const ext = analysis_list.findIndex((k) => k.id === id);
+					if (ext === -1) return;
 
 					// Delete Fields...
 					analysis_list[ext].utilized = null;
@@ -190,9 +190,9 @@ export const determineOptimalPromotionPathway = (
 
 					if (
 						analysis_list[ext].utilized != null &&
-						analysis_list[ext]!.utilized!.utilizer !== null
+						analysis_list[ext]?.utilized?.utilizer !== null
 					)
-						delete_and_push(analysis_list[ext]!.utilized!.utilizer);
+						delete_and_push(analysis_list[ext]?.utilized?.utilizer ?? "");
 				};
 
 				delete_and_push(external_ref.id);
@@ -204,7 +204,7 @@ export const determineOptimalPromotionPathway = (
 		if (optimal_promotion && should_apply) {
 			if (external_source_id != null) {
 				const external_indx = analysis_list.findIndex(
-					(k) => k.id == external_source_id,
+					(k) => k.id === external_source_id,
 				);
 				analysis_list[indx_of].is_joined = true;
 

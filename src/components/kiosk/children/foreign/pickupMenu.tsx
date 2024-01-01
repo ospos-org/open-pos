@@ -22,7 +22,7 @@ export function PickupMenu() {
 
 	useEffect(() => {
 		const foundStore = currentStore?.store_lut?.find(
-			(k) => k.id == currentStore.store_id,
+			(k) => k.id === currentStore.store_id,
 		);
 		if (foundStore) setPickupStore(foundStore);
 	}, [currentStore]);

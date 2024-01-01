@@ -11,9 +11,9 @@ export default function OrderHeader({ currentOrder }: OrderHeaderProps) {
 			<OrderTypeIcon currentOrder={currentOrder} />
 
 			<div className="text-white font-semibold flex flex-row items-center gap-2">
-				{currentOrder.order_type == "pickup"
+				{currentOrder.order_type === "pickup"
 					? currentOrder.destination?.contact?.name
-					: currentOrder.order_type == "direct"
+					: currentOrder.order_type === "direct"
 					  ? "Instore Purchase"
 					  : currentOrder?.origin?.contact?.name}
 

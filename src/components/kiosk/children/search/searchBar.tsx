@@ -71,7 +71,7 @@ export function SearchBar() {
 						className="select-none"
 						alt={""}
 						draggable={false}
-					></Image>
+					/>
 				)}
 
 				<input
@@ -90,7 +90,7 @@ export function SearchBar() {
 					}}
 					tabIndex={0}
 					onKeyDown={(e) => {
-						if (e.key == "Escape") {
+						if (e.key === "Escape") {
 							e.preventDefault();
 							setSearchFocused(false);
 							e.currentTarget.blur();
@@ -111,11 +111,11 @@ export function SearchBar() {
 						alt={""}
 						style={{
 							filter:
-								searchType == "products"
+								searchType === "products"
 									? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)"
 									: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)",
 						}}
-					></Image>
+					/>
 					<Image
 						draggable={false}
 						onClick={() => {
@@ -128,11 +128,11 @@ export function SearchBar() {
 						alt={""}
 						style={{
 							filter:
-								searchType == "customers"
+								searchType === "customers"
 									? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)"
 									: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)",
 						}}
-					></Image>
+					/>
 					<Image
 						draggable={false}
 						onClick={() => {
@@ -145,11 +145,11 @@ export function SearchBar() {
 						alt={""}
 						style={{
 							filter:
-								searchType == "transactions"
+								searchType === "transactions"
 									? "invert(100%) sepia(0%) saturate(7441%) hue-rotate(38deg) brightness(112%) contrast(111%)"
 									: "invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)",
 						}}
-					></Image>
+					/>
 				</div>
 
 				{searchFocused ? (
@@ -161,7 +161,7 @@ export function SearchBar() {
 						alt={""}
 						draggable={false}
 						onClick={() => setSearchFocused(false)}
-					></Image>
+					/>
 				) : (
 					<Image
 						className="select-none"
@@ -170,7 +170,7 @@ export function SearchBar() {
 						src="/icons/scan.svg"
 						draggable={false}
 						alt={""}
-					></Image>
+					/>
 				)}
 			</div>
 		</div>

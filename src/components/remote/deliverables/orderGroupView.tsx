@@ -30,7 +30,7 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 						b.products.map((v) => {
 							total_products += v.quantity;
 							v?.instances?.map((k) => {
-								if (k.fulfillment_status?.pick_status == "Picked") {
+								if (k.fulfillment_status?.pick_status === "Picked") {
 									completed += 1;
 								}
 							});
@@ -41,7 +41,7 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 						b.products.map((n) => {
 							n?.instances?.map((l) => {
 								if (
-									pairings.get(l.fulfillment_status?.pick_status) == undefined
+									pairings.get(l.fulfillment_status?.pick_status) === undefined
 								) {
 									pairings.set(l.fulfillment_status?.pick_status, 1);
 								} else {
@@ -60,11 +60,11 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 						mapped.sort((a, b) => {
 							if (a.name < b.name) {
 								return -1;
-							} else if (a.name > b.name) {
-								return 1;
-							} else {
-								return 0;
 							}
+							if (a.name > b.name) {
+								return 1;
+							}
+							return 0;
 						});
 
 						return (
@@ -120,23 +120,23 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 																	switch (status.name) {
 																		case "Picked":
 																			return (
-																				<div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+																				<div className="border-green-400 bg-green-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full" />
 																			);
 																		case "Pending":
 																			return (
-																				<div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+																				<div className="border-gray-400 bg-gray-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full" />
 																			);
 																		case "Failed":
 																			return (
-																				<div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+																				<div className="border-red-400 bg-red-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full" />
 																			);
 																		case "Uncertain":
 																			return (
-																				<div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+																				<div className="border-orange-400 bg-orange-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full" />
 																			);
 																		case "Processing":
 																			return (
-																				<div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full"></div>
+																				<div className="border-blue-400 bg-blue-700 border-2 h-4 w-4 min-w-[16px] min-h-[16px] rounded-full" />
 																			);
 																		default:
 																			return <></>;
@@ -188,7 +188,7 @@ export function OrderGroupView({ setActiveCallback }: OrderGroupViewProps) {
 									)}
 								</div>
 
-								{indx == deliverables.length - 1 ? (
+								{indx === deliverables.length - 1 ? (
 									<></>
 								) : (
 									<hr className="border-gray-700" />

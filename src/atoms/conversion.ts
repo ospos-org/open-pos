@@ -21,7 +21,7 @@ const computeDatabaseOrderFormat = atom((get) => {
 	const transactionType = get(transactionTypeAtom);
 
 	return orderState.map((e) => {
-		if (e.order_type == "direct") {
+		if (e.order_type === "direct") {
 			return {
 				...e,
 				discount: toDbDiscount(e.discount),
@@ -46,7 +46,7 @@ const computeDatabaseOrderFormat = atom((get) => {
 						),
 						product_cost: k.variant_information.retail_price * 1.15,
 						product_code: k.product_code,
-						product_name: k.product.company + " " + k.product.name,
+						product_name: `${k.product.company} ${k.product.name}`,
 						product_variant_name: k.variant_information.name,
 						product_sku: k.product_sku,
 						quantity: k.quantity,
@@ -55,7 +55,7 @@ const computeDatabaseOrderFormat = atom((get) => {
 						tags: k.tags,
 					} as ProductPurchase;
 				}) as ProductPurchase[],
-				status: !(transactionType == "Saved" || transactionType == "Quote")
+				status: !(transactionType === "Saved" || transactionType === "Quote")
 					? {
 							status: {
 								type: "fulfilled",
@@ -77,7 +77,7 @@ const computeDatabaseOrderFormat = atom((get) => {
 							timestamp: date,
 					  },
 				status_history: !(
-					transactionType == "Saved" || transactionType == "Quote"
+					transactionType === "Saved" || transactionType === "Quote"
 				)
 					? [
 							...(e.status_history as HistoryForOrderStatusAssignment[]),
@@ -128,58 +128,57 @@ const computeDatabaseOrderFormat = atom((get) => {
 							},
 					  ],
 			} as Order;
-		} else {
-			return {
-				...e,
-				discount: toDbDiscount(e.discount),
+		}
+		return {
+			...e,
+			discount: toDbDiscount(e.discount),
+			status: {
 				status: {
-					status: {
-						type: "queued",
-						value: date,
-					},
-					assigned_products: e.products.map<string>((e) => {
-						return e.id;
-					}) as string[],
-					timestamp: date,
+					type: "queued",
+					value: date,
 				},
-				products: e.products.map((k) => {
-					return {
-						discount: toDbDiscount(
-							findMaxDiscount(
-								k.discount,
-								k.variant_information.retail_price * 1.15,
-								!!customerState,
-							)[0].value,
-						),
-						product_cost: k.variant_information.retail_price * 1.15,
-						product_code: k.product_code,
-						product_name: k.product.company + " " + k.product.name,
-						product_variant_name: k.variant_information.name,
-						quantity: k.quantity,
-						product_sku: k.product_sku,
-						id: k.id,
-						tags: k.tags,
-						transaction_type: k.transaction_type,
-					};
-				}) as ProductPurchase[],
-				status_history: [
-					{
-						item: {
-							status: {
-								type: "queued",
-								value: date,
-							},
-							assigned_products: e.products.map<string>((e) => {
-								return e.id;
-							}) as string[],
-							timestamp: date,
+				assigned_products: e.products.map<string>((e) => {
+					return e.id;
+				}) as string[],
+				timestamp: date,
+			},
+			products: e.products.map((k) => {
+				return {
+					discount: toDbDiscount(
+						findMaxDiscount(
+							k.discount,
+							k.variant_information.retail_price * 1.15,
+							!!customerState,
+						)[0].value,
+					),
+					product_cost: k.variant_information.retail_price * 1.15,
+					product_code: k.product_code,
+					product_name: `${k.product.company} ${k.product.name}`,
+					product_variant_name: k.variant_information.name,
+					quantity: k.quantity,
+					product_sku: k.product_sku,
+					id: k.id,
+					tags: k.tags,
+					transaction_type: k.transaction_type,
+				};
+			}) as ProductPurchase[],
+			status_history: [
+				{
+					item: {
+						status: {
+							type: "queued",
+							value: date,
 						},
-						reason: "Queued indirect purchase",
+						assigned_products: e.products.map<string>((e) => {
+							return e.id;
+						}) as string[],
 						timestamp: date,
 					},
-				],
-			} as Order;
-		}
+					reason: "Queued indirect purchase",
+					timestamp: date,
+				},
+			],
+		} as Order;
 	});
 });
 

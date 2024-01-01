@@ -33,7 +33,7 @@ export function ProductTitle({
 		const quantityConsumed =
 			currentOrder.products.reduce(
 				(t, i) =>
-					i.variant_information.barcode == product.variant_information.barcode
+					i.variant_information.barcode === product.variant_information.barcode
 						? i.quantity
 						: 0,
 				0,
@@ -56,7 +56,7 @@ export function ProductTitle({
 			</p>
 
 			{Boolean(
-				currentOrder.order_type == "direct" &&
+				currentOrder.order_type === "direct" &&
 					product.transaction_type === "Out" &&
 					outOfStock,
 			) && (

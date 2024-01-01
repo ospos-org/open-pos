@@ -26,14 +26,14 @@ const useDiscountHandler = () => {
 				const indx = clone.findIndex(
 					(a, ind) =>
 						a != null &&
-						i != ind &&
-						a.variant_information.barcode == e?.variant_information.barcode &&
+						i !== ind &&
+						a.variant_information.barcode === e?.variant_information.barcode &&
 						isEquivalentDiscount(
 							findMaxDiscount(
 								[
 									{
 										source: "user",
-										value: `${dcnt.type == "absolute" ? "a" : "p"}|${
+										value: `${dcnt.type === "absolute" ? "a" : "p"}|${
 											dcnt.value
 										}`,
 										applicable_quantity: -1,
@@ -47,14 +47,14 @@ const useDiscountHandler = () => {
 						),
 				);
 
-				if (indx != -1) {
+				if (indx !== -1) {
 					clone[indx].quantity += e.quantity;
 					//@ts-ignore
 					clone[i] = null;
 					continue;
 				}
 
-				if (e.variant_information.barcode == dcnt.product?.barcode) {
+				if (e.variant_information.barcode === dcnt.product?.barcode) {
 					clone[i] = {
 						...e,
 						discount: [
@@ -64,7 +64,7 @@ const useDiscountHandler = () => {
 							}),
 							{
 								source: "user",
-								value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+								value: `${dcnt.type === "absolute" ? "a" : "p"}|${dcnt.value}`,
 								applicable_quantity: -1,
 							} as ContextualDiscountValue,
 						],
@@ -88,7 +88,7 @@ const useDiscountHandler = () => {
 		return orderState.map((n) => {
 			//?? impl! Add option to only apply to a product in a SINGLE order, as opposed to the same item mirrored across multiple orders...?
 			const new_products = n.products.map((e) => {
-				if (e.variant_information.barcode == dcnt.product?.barcode) {
+				if (e.variant_information.barcode === dcnt.product?.barcode) {
 					if (e.quantity > 1) {
 						overflow_quantity = e.quantity - 1;
 						overflow_product = e;
@@ -104,12 +104,13 @@ const useDiscountHandler = () => {
 							}),
 							{
 								source: "user",
-								value: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+								value: `${dcnt.type === "absolute" ? "a" : "p"}|${dcnt.value}`,
 								applicable_quantity: -1,
 							} as ContextualDiscountValue,
 						],
 					};
-				} else return e;
+				}
+				return e;
 			});
 
 			// Merge any new duplicate products with the same discount.
@@ -118,7 +119,7 @@ const useDiscountHandler = () => {
 
 				const indx = new_products.findIndex(
 					(a) =>
-						a.variant_information.barcode == p.variant_information.barcode &&
+						a.variant_information.barcode === p.variant_information.barcode &&
 						isEquivalentDiscount(
 							findMaxDiscount(a.discount, a.product_cost, customerActive)[0],
 							findMaxDiscount(p.discount, p.product_cost, customerActive)[0],
@@ -126,22 +127,21 @@ const useDiscountHandler = () => {
 						),
 				);
 
-				if (indx != -1 && indx != i) {
+				if (indx !== -1 && indx !== i) {
 					//... Merge the values!
 					return {
 						...p,
 						quantity: p.quantity + new_products[indx].quantity,
 					};
-				} else {
-					return p;
 				}
+				return p;
 			});
 
 			if (overflow_product !== null) {
 				// !impl check and compare discount values so quantity does not increase for non-similar product
 				const indx = new_products.findIndex(
 					(a) =>
-						a.variant_information.barcode ==
+						a.variant_information.barcode ===
 							overflow_product?.variant_information.barcode &&
 						isEquivalentDiscount(
 							findMaxDiscount(a.discount, a.product_cost, customerActive)[0],
@@ -157,7 +157,7 @@ const useDiscountHandler = () => {
 				// console.log("Dealing with overflow value, ", indx);
 
 				// If overflow product already exists (in exact kind), increase quantity - otherwise ...
-				if (indx != -1) {
+				if (indx !== -1) {
 					merged[indx].quantity += overflow_quantity;
 				} else {
 					merged.push({
@@ -181,13 +181,13 @@ const useDiscountHandler = () => {
 		return orderState.map((n) => {
 			return {
 				...n,
-				discount: `${dcnt.type == "absolute" ? "a" : "p"}|${dcnt.value}`,
+				discount: `${dcnt.type === "absolute" ? "a" : "p"}|${dcnt.value}`,
 			};
 		});
 	};
 
 	const applyOrderUpdate = (dcnt: ActiveDiscountApplication) => {
-		if (dcnt.for == "product") {
+		if (dcnt.for === "product") {
 			if (dcnt.exclusive) {
 				setOrderState(calculateExclusiveProductDiscount(dcnt));
 			} else {

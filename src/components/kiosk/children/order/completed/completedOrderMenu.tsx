@@ -26,7 +26,7 @@ export function CompletedOrderMenu() {
 					${kioskState.order_total}
 				</p>
 
-				{kioskState.transaction_type == "Quote" ? <p>Quote</p> : <></>}
+				{kioskState.transaction_type === "Quote" ? <p>Quote</p> : <></>}
 			</div>
 
 			<div className="flex flex-col flex-1 gap-2">
@@ -39,7 +39,7 @@ export function CompletedOrderMenu() {
 				))}
 			</div>
 
-			{Boolean(kioskState.transaction_type != "Quote") && (
+			{Boolean(kioskState.transaction_type !== "Quote") && (
 				<>
 					<p className="text-gray-600">PAYMENT(S)</p>
 					<div className="flex flex-col gap-2 w-full">

@@ -46,7 +46,7 @@ const cookieAtom = atom(
 					if (token.ok) {
 						await hydrateState(token.data, rid, pass);
 					} else {
-						toast.error(`Failed to login, invalid credentials`);
+						toast.error("Failed to login, invalid credentials");
 					}
 				});
 	},

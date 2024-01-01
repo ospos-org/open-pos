@@ -24,7 +24,7 @@ export function PayPrice() {
 	const submitPayment = useCallback(() => {
 		const targetValue = reference.current?.value;
 
-		if (targetValue == "") {
+		if (targetValue === "") {
 			setEditPrice(false);
 			setProbingPrice(kioskState.order_total);
 		} else if (targetValue) {
@@ -33,7 +33,7 @@ export function PayPrice() {
 			if (p < (kioskState.order_total ?? 0)) {
 				setProbingPrice(p);
 				setEditPrice(false);
-			} else if (p == kioskState.order_total) {
+			} else if (p === kioskState.order_total) {
 				setEditPrice(false);
 				setProbingPrice(kioskState.order_total);
 			}
@@ -44,13 +44,12 @@ export function PayPrice() {
 		if (editPrice)
 			return (
 				<input
-					autoFocus
 					ref={reference}
 					className="bg-transparent w-fit text-center outline-none font-semibold text-3xl text-white"
 					placeholder={remainingDue.toFixed(2)}
 					onBlur={submitPayment}
 					onKeyDown={(e) => {
-						if (e.key == "Enter") submitPayment();
+						if (e.key === "Enter") submitPayment();
 					}}
 				/>
 			);

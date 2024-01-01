@@ -47,7 +47,7 @@ export default function KioskMenu() {
 		<div
 			className="flex flex-col justify-between h-[calc(100vh-18px)] max-h-[calc(100vh-18px)] min-h-[calc(100vh-18px)] overflow-hidden flex-1"
 			onKeyDownCapture={(e) => {
-				if (e.key == "Escape") setSearchFocused(false);
+				if (e.key === "Escape") setSearchFocused(false);
 			}}
 		>
 			<SearchBar />

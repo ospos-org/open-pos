@@ -10,7 +10,7 @@ function determineProductDirectionality(
 	if (transactionType === "In") return -1;
 	if (transactionType === "PendingOut") return 1;
 	if (transactionType === "PendingIn") return -1;
-	else return 0;
+	return 0;
 }
 
 // Describes the quantity of total products in the cart (i.e. 7 total items)

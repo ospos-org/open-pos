@@ -87,7 +87,7 @@ export function ExpandedCustomer() {
 									filter:
 										"invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)",
 								}}
-							></Image>
+							/>
 
 							<p className="text-gray-200 font-semibold">
 								{inspectingCustomer.contact.email.full}
@@ -104,7 +104,7 @@ export function ExpandedCustomer() {
 									filter:
 										"invert(58%) sepia(32%) saturate(152%) hue-rotate(176deg) brightness(91%) contrast(87%)",
 								}}
-							></Image>
+							/>
 
 							<p className="text-gray-200 font-semibold">
 								{(() => {
@@ -120,7 +120,7 @@ export function ExpandedCustomer() {
 				</div>
 
 				<div
-					className={`flex 2xl:flex-row flex-row items-center 2xl:gap-4 gap-2`}
+					className={"flex 2xl:flex-row flex-row items-center 2xl:gap-4 gap-2"}
 				>
 					<div>
 						{customerState ? (
@@ -139,7 +139,7 @@ export function ExpandedCustomer() {
 											"invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)",
 									}}
 									alt={""}
-								></Image>
+								/>
 								<p className="font-medium select-none">Remove Customer</p>
 							</div>
 						) : (
@@ -161,7 +161,7 @@ export function ExpandedCustomer() {
 											"invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)",
 									}}
 									alt={""}
-								></Image>
+								/>
 								<p className="font-medium select-none">Select Customer</p>
 							</div>
 						)}

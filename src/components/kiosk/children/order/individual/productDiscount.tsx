@@ -42,9 +42,13 @@ export function ProductDiscount({ product }: ProductDiscountProps) {
 				width={20}
 				alt="Discount"
 				src="/icons/sale-03.svg"
-				onMouseOver={(e) => (e.currentTarget.style.filter = WHITE_FILTER)}
-				onMouseLeave={(e) => (e.currentTarget.style.filter = GRAY_FILTER)}
-			></Image>
+				onMouseOver={(e) => {
+					e.currentTarget.style.filter = WHITE_FILTER;
+				}}
+				onMouseLeave={(e) => {
+					e.currentTarget.style.filter = GRAY_FILTER;
+				}}
+			/>
 		</div>
 	);
 }

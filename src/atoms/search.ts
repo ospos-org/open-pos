@@ -54,11 +54,11 @@ const searchFocusedAtom = atom<boolean>(false);
 const searchTermAtom = atom<string>("");
 
 const querySearchTerm = atom(undefined, async (get, set) => {
-	if (get(searchTermAtom) == "") {
+	if (get(searchTermAtom) === "") {
 		return;
 	}
 
-	var myHeaders = new Headers();
+	const myHeaders = new Headers();
 	myHeaders.append("Cookie", `${document.cookie}`);
 
 	const searchType = get(searchTypeAtom);

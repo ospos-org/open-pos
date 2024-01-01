@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 export default function CashSelect({
 	totalCost,
 	changeCallback,
-}: { totalCost: number; changeCallback: Function }) {
+}: {
+	totalCost: number;
+	changeCallback: (value: number, degree: number) => void;
+}) {
 	const [degreeOption, setDegreeOption] = useState(-1);
 	const [selectedValue, setSelectedValue] = useState(totalCost);
 
@@ -34,7 +37,7 @@ export default function CashSelect({
 							setSelectedValue(totalCost);
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 0 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 0 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
 						${totalCost?.toFixed(2)}
@@ -45,24 +48,24 @@ export default function CashSelect({
 						onClick={() => {
 							setDegreeOption(1);
 							setSelectedValue(
-								parseFloat((Math.ceil(totalCost * 10) / 10).toFixed(1) + "0"),
+								parseFloat(`${(Math.ceil(totalCost * 10) / 10).toFixed(1)}0`),
 							);
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 1 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 1 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
-						${(Math.ceil(totalCost * 10) / 10).toFixed(1) + "0"}
+						${`${(Math.ceil(totalCost * 10) / 10).toFixed(1)}0`}
 					</p>
 
 					{/* For countries with $1 accuracy */}
 					<p
 						onClick={() => {
 							setDegreeOption(2);
-							setSelectedValue(parseFloat(totalCost?.toFixed(0) + ".00"));
+							setSelectedValue(parseFloat(`${totalCost?.toFixed(0)}.00`));
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 2 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 2 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
 						${totalCost?.toFixed(0)}.00
@@ -75,7 +78,7 @@ export default function CashSelect({
 							setSelectedValue(Math.ceil(totalCost / 5) * 5);
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 3 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 3 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
 						${(Math.ceil(totalCost / 5) * 5)?.toFixed(0)}.00
@@ -88,7 +91,7 @@ export default function CashSelect({
 							setSelectedValue(Math.ceil(totalCost / 10) * 10);
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 4 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 4 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
 						${(Math.ceil(totalCost / 10) * 10)?.toFixed(0)}.00
@@ -101,7 +104,7 @@ export default function CashSelect({
 							setSelectedValue(Math.ceil(totalCost / 100) * 100);
 						}}
 						className={`select-none text-2xl font-bold ${
-							degreeOption == 5 ? "bg-blue-400 text-white" : "text-blue-100"
+							degreeOption === 5 ? "bg-blue-400 text-white" : "text-blue-100"
 						} px-2 py-1 rounded-sm cursor-pointer`}
 					>
 						${(Math.ceil(totalCost / 100) * 100)?.toFixed(0)}.00

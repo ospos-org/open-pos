@@ -44,7 +44,7 @@ export function SwitchViews() {
 			<div className="flex w-full max-w-full flex-row items-center gap-2 bg-gray-400 bg-opacity-10 p-2 rounded-md">
 				<div
 					className={`text-white ${
-						viewingMode == 0 ? "bg-gray-500" : " bg-transparent"
+						viewingMode === 0 ? "bg-gray-500" : " bg-transparent"
 					} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`}
 					onClick={() => setViewingMode(0)}
 				>
@@ -52,7 +52,7 @@ export function SwitchViews() {
 				</div>
 				<div
 					className={`text-white ${
-						viewingMode == 1 ? "bg-gray-500" : " bg-transparent"
+						viewingMode === 1 ? "bg-gray-500" : " bg-transparent"
 					} p-2 rounded-md px-4 w-full flex flex-1 text-center justify-center cursor-pointer`}
 					onClick={() => setViewingMode(1)}
 				>
@@ -79,7 +79,7 @@ export function SwitchViews() {
 						else setMenuState(null);
 					}}
 					className="bg-black h-[100vh] sm:w-[calc(100dw-62px)] sm:left-[62px] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 left-0 fixed z-5 opacity-40"
-				></div>
+				/>
 			) : (
 				<></>
 			)}

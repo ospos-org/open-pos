@@ -23,10 +23,10 @@ export default function TransactionTitle() {
 
 	useEffect(() => {
 		setActiveTransaction(
-			transaction?.item?.products.find((k) => k.id == transaction?.identifier),
+			transaction?.item?.products.find((k) => k.id === transaction?.identifier),
 		);
 
-		if (transaction?.item.customer.customer_type != "Store") {
+		if (transaction?.item.customer.customer_type !== "Store") {
 			if (transaction?.item.customer.customer_id)
 				openStockClient.customer
 					.get(transaction?.item.customer.customer_id)
@@ -56,7 +56,7 @@ export default function TransactionTitle() {
 					</p>
 				</div>
 
-				{Boolean(transaction.item.transaction_type == "Quote") && (
+				{Boolean(transaction.item.transaction_type === "Quote") && (
 					<p
 						className={
 							"flex flex-row items-center gap-[0.75rem] bg-gray-800 " +

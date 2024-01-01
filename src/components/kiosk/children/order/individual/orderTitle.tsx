@@ -19,7 +19,7 @@ export function OrderTitle({ currentOrder, index }: OrderTitleProps) {
 		return (
 			<div
 				className={`flex select-none flex-row w-full justify-between gap-2 ${
-					index == 0 ? "" : "mt-4"
+					index === 0 ? "" : "mt-4"
 				}`}
 			>
 				<div className="flex flex-col gap-1">

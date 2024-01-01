@@ -69,7 +69,7 @@ export function DispatchHandler({ children, title }: DispatchProps) {
 							filter:
 								"invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)",
 						}}
-					></Image>
+					/>
 				</div>
 			</div>
 		</div>

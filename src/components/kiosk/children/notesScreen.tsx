@@ -48,7 +48,7 @@ export function NotesScreen() {
 						};
 
 						const new_order_state = orderState.map((e) =>
-							e.id == activeOrder
+							e.id === activeOrder
 								? { ...e, order_notes: [...e.order_notes, note_obj] }
 								: e,
 						);

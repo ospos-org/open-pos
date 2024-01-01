@@ -95,7 +95,7 @@ function CustomerLocation({
 				},
 			});
 
-			input_ref.current ? (input_ref.current.value = "") : {};
+			if (input_ref.current) input_ref.current.value = "";
 		},
 		[input_ref, updateCustomer, workingCustomer],
 	);
@@ -109,7 +109,7 @@ function CustomerLocation({
 					key={`${k.city}-${k.country}-${k.po_code}-${k.street}-${k.street2}`}
 				>
 					<p className="text-white font-semibold">
-						{k.street.trim() == "0" ? "" : k.street} {k.street2} {k.po_code}
+						{k.street.trim() === "0" ? "" : k.street} {k.street2} {k.po_code}
 					</p>
 					<p className="text-gray-400">
 						{k.city} - {k.country}
@@ -144,7 +144,7 @@ function CustomerLocation({
 					<p className="text-gray-400 self-center">Loading...</p>
 				</div>
 			);
-		else if (searching)
+		if (searching)
 			return suggestions.length > 0 ? suggestionsList : noAddressFound;
 
 		return workingCustomer?.contact.address.street === ""
@@ -178,7 +178,7 @@ function CustomerLocation({
 				</div>
 			</div>
 
-			<div className={`flex flex-col gap-2 flex-1 py-2 bg-gray-800`}>
+			<div className={"flex flex-col gap-2 flex-1 py-2 bg-gray-800"}>
 				{searchElement}
 			</div>
 		</div>

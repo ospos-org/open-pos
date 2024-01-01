@@ -45,7 +45,7 @@ export function KioskBlocks() {
 								"invert(86%) sepia(34%) saturate(4038%) hue-rotate(295deg) brightness(88%) contrast(86%)",
 						}}
 						alt={""}
-					></Image>
+					/>
 					<p className="font-medium select-none">Remove Customer</p>
 				</div>
 			) : (
@@ -66,7 +66,7 @@ export function KioskBlocks() {
 								"invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)",
 						}}
 						alt={""}
-					></Image>
+					/>
 					<p className="font-medium select-none">Select Customer</p>
 				</div>
 			)}
@@ -83,23 +83,24 @@ export function KioskBlocks() {
 							barcode: "CART",
 							marginal_price: orderState.reduce(
 								(p, c) =>
-									(p += c.products?.reduce(
+									p +
+									c.products?.reduce(
 										(prev, curr) =>
-											(prev +=
-												curr.quantity *
-												curr.variant_information.marginal_price),
+											prev +
+											curr.quantity * curr.variant_information.marginal_price,
 										0,
-									)),
+									),
 								0,
 							),
 							retail_price: orderState.reduce(
 								(p, c) =>
-									(p += c.products?.reduce(
+									p +
+									c.products?.reduce(
 										(prev, curr) =>
-											(prev +=
-												curr.quantity * curr.variant_information.retail_price),
+											prev +
+											curr.quantity * curr.variant_information.retail_price,
 										0,
-									)),
+									),
 								0,
 							),
 						},
@@ -119,7 +120,7 @@ export function KioskBlocks() {
 							"invert(67%) sepia(16%) saturate(975%) hue-rotate(95deg) brightness(93%) contrast(92%)",
 					}}
 					alt={""}
-				></Image>
+				/>
 				<p className="font-medium select-none">Add Cart Discount</p>
 			</div>
 
@@ -142,7 +143,7 @@ export function KioskBlocks() {
 							: "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)",
 					}}
 					alt={""}
-				></Image>
+				/>
 				<p
 					className={`select-none ${
 						customerState ? "text-white" : "text-gray-500"
@@ -153,9 +154,7 @@ export function KioskBlocks() {
 			</div>
 
 			<div
-				onClick={() => {
-					setKioskPanel("note");
-				}}
+				onClick={() => setKioskPanel("note")}
 				className={`flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit cursor-pointer`}
 			>
 				<Image
@@ -168,7 +167,7 @@ export function KioskBlocks() {
 							"invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)",
 					}}
 					alt={""}
-				></Image>
+				/>
 				<p className="font-medium select-none">Add Note</p>
 			</div>
 
@@ -191,7 +190,7 @@ export function KioskBlocks() {
 							: "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)",
 					}}
 					alt={""}
-				></Image>
+				/>
 				<p
 					className={`select-none ${
 						customerState ? "text-white" : "text-gray-500"
@@ -223,7 +222,7 @@ export function KioskBlocks() {
 								: "invert(46%) sepia(7%) saturate(675%) hue-rotate(182deg) brightness(94%) contrast(93%)",
 					}}
 					alt={""}
-				></Image>
+				/>
 				<p className="font-medium select-none">Save Cart</p>
 			</div>
 		</div>

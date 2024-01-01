@@ -50,7 +50,7 @@ export function ItemCustomer({ value, index }: ItemCustomerProps) {
 				className="select-none grid items-center md:gap-4 gap-2 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer"
 				style={{
 					gridTemplateColumns:
-						(windowSize.width ?? 0) >= 640 ? "150px 1fr 250px" : `1fr 100px`,
+						(windowSize.width ?? 0) >= 640 ? "150px 1fr 250px" : "1fr 100px",
 				}}
 			>
 				<div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
@@ -59,7 +59,7 @@ export function ItemCustomer({ value, index }: ItemCustomerProps) {
 						{(value?.transactions?.split(",")?.length ?? 0) > 0
 							? value?.transactions?.split(",")?.length
 							: "No"}{" "}
-						Past Order{value?.transactions?.split(",")?.length != 1 ? "s" : ""}
+						Past Order{value?.transactions?.split(",")?.length !== 1 ? "s" : ""}
 					</p>
 				</div>
 
@@ -103,7 +103,7 @@ export function ItemCustomer({ value, index }: ItemCustomerProps) {
 				</div>
 			</div>
 
-			{index == searchResults.length - 1 ? (
+			{index === searchResults.length - 1 ? (
 				<></>
 			) : (
 				<hr className="border-gray-500" />

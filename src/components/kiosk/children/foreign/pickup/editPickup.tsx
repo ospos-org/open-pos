@@ -63,7 +63,7 @@ export default function EditPickup({
 			setSearching(false);
 			setPickupStore(store);
 
-			input_ref.current ? (input_ref.current.value = "") : {};
+			if (input_ref.current) input_ref.current.value = "";
 		},
 		[input_ref, setPickupStore],
 	);

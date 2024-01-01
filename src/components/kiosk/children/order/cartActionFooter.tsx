@@ -35,12 +35,11 @@ export function CartActionFooter() {
 
 			<div
 				onClick={moveToCheckout}
-				className={
-					(orderProductQuantity > 0
+				className={`${
+					orderProductQuantity > 0
 						? "bg-blue-700 cursor-pointer"
-						: "bg-blue-700 bg-opacity-10 opacity-20") +
-					" w-full rounded-md p-4 flex items-center justify-center"
-				}
+						: "bg-blue-700 bg-opacity-10 opacity-20"
+				} w-full rounded-md p-4 flex items-center justify-center`}
 			>
 				<p className="text-white font-semibold">Checkout</p>
 			</div>

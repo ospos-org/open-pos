@@ -81,7 +81,7 @@ export default function DispatchProductSelector({
 						className="grid items-center justify-center text-gray-300 gap-4 "
 						style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}
 					>
-						<p className="font-semibold flex-1"></p>
+						<p className="font-semibold flex-1" />
 						<p className="font-semibold flex-1">Product</p>
 						<p className="font-semibold content-center self-center flex">
 							Quantity
@@ -108,7 +108,7 @@ export default function DispatchProductSelector({
 									onClick={() => {
 										setGeneratedOrder(
 											generatedOrder.map((b) =>
-												b?.item?.id == k?.item?.id && b.store == k.store
+												b?.item?.id === k?.item?.id && b.store === k.store
 													? {
 															...b,
 															ship: !b.ship,
@@ -154,7 +154,7 @@ export default function DispatchProductSelector({
 								</div>
 
 								<div className="self-center content-center items-center justify-center flex">
-									<p className="font-semibold text-white"></p>
+									<p className="font-semibold text-white" />
 									{k.quantity}
 									<p className="font-semibold text-gray-400">
 										/{k.item?.quantity}

@@ -57,7 +57,7 @@ export function DispatchHandler({ inputRef }: DispatchProps) {
 						clearSearchResults();
 						setSearchType("customers");
 
-						inputRef.current?.value ? (inputRef.current.value = "") : {};
+						if (inputRef.current?.value) inputRef.current.value = "";
 						inputRef.current?.focus();
 					}}
 					className="bg-gray-800 text-white rounded-md px-2 py-[0.1rem] flex flex-row items-center gap-2 cursor-pointer"
@@ -73,7 +73,7 @@ export function DispatchHandler({ inputRef }: DispatchProps) {
 							filter:
 								"invert(100%) sepia(5%) saturate(7417%) hue-rotate(235deg) brightness(118%) contrast(101%)",
 						}}
-					></Image>
+					/>
 				</div>
 			</div>
 		</div>

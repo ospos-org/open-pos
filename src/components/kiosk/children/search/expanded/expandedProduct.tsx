@@ -52,7 +52,7 @@ export function ExpandedProduct() {
 							height={150}
 							width={150}
 							alt={inspectingProduct.activeProduct?.name ?? ""}
-						></Image>
+						/>
 					</div>
 
 					<div className="flex flex-col flex-1">
@@ -96,7 +96,7 @@ export function ExpandedProduct() {
 							<div>
 								<div className="flex flex-col items-start md:items-end 2xl:flex-row 2xl:items-center gap-2">
 									{(inspectingProduct.activeProductVariant?.stock.find(
-										(e) => e.store.store_id == currentStore.store_id,
+										(e) => e.store.store_id === currentStore.store_id,
 									)?.quantity?.quantity_sellable ?? 0) <= 0 ? (
 										<p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">
 											Out of stock
@@ -109,10 +109,9 @@ export function ExpandedProduct() {
 
 									{(inspectingProduct.activeProductVariant?.stock.reduce(
 										(p, c) =>
-											(p +=
-												c.store.store_id !== currentStore.store_id
-													? c.quantity.quantity_sellable
-													: 0),
+											p + c.store.store_id !== currentStore.store_id
+												? c.quantity.quantity_sellable
+												: 0,
 										0,
 									) ?? 0) <= 0 ? (
 										<p className="text-red-200 bg-red-800 bg-opacity-40 px-4 w-fit h-fit rounded-full">
@@ -153,7 +152,7 @@ export function ExpandedProduct() {
 							className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
 							onClick={() => {
 								if (inspectingProduct.activeProductVariant) {
-									let cOs = orderState.find((e) => e.order_type == "direct");
+									let cOs = orderState.find((e) => e.order_type === "direct");
 
 									if (!cOs?.products) {
 										const new_pdt_list = addToCart([]);
@@ -180,7 +179,7 @@ export function ExpandedProduct() {
 											order_history: [],
 											order_notes: orderState.flatMap((b) => b.order_notes),
 											reference: `RF${customAlphabet(
-												`1234567890abcdef`,
+												"1234567890abcdef",
 												10,
 											)(8)}`,
 											creation_date: getDate(),
@@ -192,7 +191,7 @@ export function ExpandedProduct() {
 									} else {
 										const new_pdt_list = addToCart(cOs.products);
 										const new_order_state = orderState.map((e) =>
-											e.id == cOs?.id ? { ...cOs, products: new_pdt_list } : e,
+											e.id === cOs?.id ? { ...cOs, products: new_pdt_list } : e,
 										);
 
 										setOrderState(sortOrders(new_order_state));
@@ -209,7 +208,7 @@ export function ExpandedProduct() {
 										"invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)",
 								}}
 								alt={""}
-							></Image>
+							/>
 							<p className="font-medium">Add to cart</p>
 						</div>
 
@@ -225,7 +224,7 @@ export function ExpandedProduct() {
 										"invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)",
 								}}
 								alt={""}
-							></Image>
+							/>
 							<p className="font-medium">Related Orders</p>
 						</div>
 					</div>
@@ -248,13 +247,13 @@ export function ExpandedProduct() {
 									<div className="flex flex-row items-center gap-2 select-none flex-wrap">
 										{e.variants.map((k) => {
 											const match = inspectingProduct.activeVariant?.find(
-												(o) => o.variant.variant_code == k.variant_code,
+												(o) => o.variant.variant_code === k.variant_code,
 											);
 
 											const new_vlist: StrictVariantCategory[] = [];
 
 											inspectingProduct.activeVariant?.map((j) => {
-												if (j.category == e.category) {
+												if (j.category === e.category) {
 													new_vlist.push({
 														category: j.category,
 														variant: k,
@@ -294,7 +293,7 @@ export function ExpandedProduct() {
 																inspectingProduct.activeVariantPossibilities?.[
 																	i
 																]?.map((j) => {
-																	if (j.category == e.category) {
+																	if (j.category === e.category) {
 																		new_vlist.push({
 																			category: j.category,
 																			variant: k,
@@ -337,35 +336,34 @@ export function ExpandedProduct() {
 														{k.name}
 													</p>
 												);
-											} else {
-												return (
-													<p
-														onClick={() => {
-															const new_vlist: StrictVariantCategory[] = [];
-
-															inspectingProduct.activeVariant?.map((j) => {
-																if (j.category == e.category) {
-																	new_vlist.push({
-																		category: j.category,
-																		variant: k,
-																	});
-																} else {
-																	new_vlist.push(j);
-																}
-															});
-
-															setInspectingProduct((currentProduct) => ({
-																...currentProduct,
-																activeVariant: new_vlist,
-															}));
-														}}
-														className="bg-gray-600 whitespace-nowrap hover:cursor-pointer text-gray-500 hover:text-gray-400 py-1 px-4 w-fit rounded-md"
-														key={k.variant_code}
-													>
-														{k.name}
-													</p>
-												);
 											}
+											return (
+												<p
+													onClick={() => {
+														const new_vlist: StrictVariantCategory[] = [];
+
+														inspectingProduct.activeVariant?.map((j) => {
+															if (j.category === e.category) {
+																new_vlist.push({
+																	category: j.category,
+																	variant: k,
+																});
+															} else {
+																new_vlist.push(j);
+															}
+														});
+
+														setInspectingProduct((currentProduct) => ({
+															...currentProduct,
+															activeVariant: new_vlist,
+														}));
+													}}
+													className="bg-gray-600 whitespace-nowrap hover:cursor-pointer text-gray-500 hover:text-gray-400 py-1 px-4 w-fit rounded-md"
+													key={k.variant_code}
+												>
+													{k.name}
+												</p>
+											);
 										})}
 									</div>
 								</div>
@@ -416,7 +414,7 @@ export function ExpandedProduct() {
 												)?.contact.name
 											}
 										</p>
-										<div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full"></div>
+										<div className="flex-1 h-[2px] rounded-full bg-gray-400 w-full" />
 										<p>{e.quantity.quantity_sellable}</p>
 										<p className="text-gray-400">
 											({e.quantity.quantity_unsellable} Unsellable)
@@ -438,7 +436,7 @@ export function ExpandedProduct() {
 								className={`select-none cursor-pointer flex flex-col justify-between gap-8 bg-[#243a4e] backdrop-blur-sm p-4 ${BLOCK_SIZE} rounded-md text-white max-w-fit`}
 								onClick={() => {
 									if (inspectingProduct.activeProductVariant) {
-										let cOs = orderState.find((e) => e.order_type == "direct");
+										let cOs = orderState.find((e) => e.order_type === "direct");
 
 										if (!cOs?.products) {
 											const new_pdt_list = addToCart([]);
@@ -465,7 +463,7 @@ export function ExpandedProduct() {
 												order_history: [],
 												order_notes: [],
 												reference: `RF${customAlphabet(
-													`1234567890abcdef`,
+													"1234567890abcdef",
 													10,
 												)(8)}`,
 												creation_date: getDate(),
@@ -477,7 +475,7 @@ export function ExpandedProduct() {
 										} else {
 											const new_pdt_list = addToCart(cOs.products);
 											const new_order_state = orderState.map((e) =>
-												e.id == cOs?.id
+												e.id === cOs?.id
 													? { ...cOs, products: new_pdt_list }
 													: e,
 											);
@@ -496,7 +494,7 @@ export function ExpandedProduct() {
 											"invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)",
 									}}
 									alt={""}
-								></Image>
+								/>
 								<p className="font-medium">Add to cart</p>
 							</div>
 
@@ -515,7 +513,7 @@ export function ExpandedProduct() {
 											"invert(70%) sepia(24%) saturate(4431%) hue-rotate(178deg) brightness(86%) contrast(78%)",
 									}}
 									alt={""}
-								></Image>
+								/>
 								<p className="font-medium">Related Orders</p>
 							</div>
 						</div>
@@ -527,9 +525,9 @@ export function ExpandedProduct() {
 						<div className="p-[0.7rem] w-full bg-gray-700 rounded-md gap-2 flex flex-col">
 							{inspectingProduct?.activeProduct?.variants.map((e, indx) => {
 								const active =
-									inspectingProduct.activeProductVariant?.barcode == e.barcode;
+									inspectingProduct.activeProductVariant?.barcode === e.barcode;
 								const qua = e.stock.find(
-									(e) => e.store.store_id == currentStore.store_id,
+									(e) => e.store.store_id === currentStore.store_id,
 								);
 
 								return (
@@ -570,7 +568,7 @@ export function ExpandedProduct() {
 												<p className="text-gray-300">
 													{e.stock
 														.map((e) =>
-															e.store.store_id == currentStore.store_id
+															e.store.store_id === currentStore.store_id
 																? 0
 																: e.quantity.quantity_sellable,
 														)
@@ -582,7 +580,7 @@ export function ExpandedProduct() {
 											<p>${(e.retail_price * 1.15).toFixed(2)}</p>
 										</div>
 
-										{indx ==
+										{indx ===
 										(inspectingProduct.activeProduct?.variants.length ?? 0) -
 											1 ? (
 											<></>
