@@ -101,6 +101,7 @@ export function PasswordInput({
 			<input
 				type="text"
 				readOnly={true}
+				autoFocus
 				className="bg-transparent outline-none text-gray-800"
 				ref={inputRef}
 				onBlur={(e) => {

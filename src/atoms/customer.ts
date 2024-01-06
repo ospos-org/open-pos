@@ -45,11 +45,13 @@ const createCustomer = () => {
 };
 
 const inspectingCustomerAtom = createCustomer();
+const isInspectingCustomerAtom = atom(false)
 
 export {
 	customerAtom,
 	aCustomerActiveAtom,
 	inspectingCustomerAtom,
+	isInspectingCustomerAtom,
 	createCustomer,
 	initialCustomer,
 };
