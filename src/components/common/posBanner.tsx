@@ -16,7 +16,7 @@ export function POSBanner() {
 	return (
 		<div
 			className={`${
-				process.env.NEXT_PUBLIC_DEMO?.trim() == "True"
+				process.env.NEXT_PUBLIC_DEMO?.trim() === "True"
 					? "bg-[#f70]"
 					: "bg-black"
 			} h-[18px] flex flex-row justify-between items-center px-2 sm:gap-8 gap-0`}
@@ -40,7 +40,7 @@ export function POSBanner() {
 				)}
 			</div>
 
-			{process.env.NEXT_PUBLIC_DEMO?.trim() == "True" ? (
+			{process.env.NEXT_PUBLIC_DEMO?.trim() === "True" ? (
 				<p className="text-xs text-white font-bold hidden sm:flex">DEMO</p>
 			) : (
 				<></>
@@ -66,7 +66,7 @@ export function POSBanner() {
 					) : (
 						<>
 							<p className="text-xs text-white font-bold">ONLINE</p>
-							<div className="h-2 w-2 bg-green-500 rounded-full"></div>
+							<div className="h-2 w-2 bg-green-500 rounded-full" />
 						</>
 					)}
 				</div>
@@ -79,7 +79,7 @@ export function POSBanner() {
 					) : (
 						<>
 							<p className="text-xs text-white font-bold">PRINTER</p>
-							<div className="h-2 w-2 bg-green-500 rounded-full"></div>
+							<div className="h-2 w-2 bg-green-500 rounded-full" />
 						</>
 					)}
 				</div>
@@ -92,7 +92,7 @@ export function POSBanner() {
 					) : (
 						<>
 							<p className="text-xs text-white font-bold">TERMINAL</p>
-							<div className="h-2 w-2 bg-green-500 rounded-full"></div>
+							<div className="h-2 w-2 bg-green-500 rounded-full" />
 						</>
 					)}
 				</div>

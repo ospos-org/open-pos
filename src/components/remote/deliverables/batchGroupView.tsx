@@ -57,7 +57,7 @@ export function BatchGroupView() {
 										.map((k) => {
 											const b = k.instances.filter(
 												(n) =>
-													n.state.fulfillment_status?.pick_status == "Picked",
+													n.state.fulfillment_status?.pick_status === "Picked",
 											);
 											return (
 												<div
@@ -85,7 +85,7 @@ export function BatchGroupView() {
 
 													<p
 														className={`${
-															b.length == k.instances.length
+															b.length === k.instances.length
 																? "text-gray-600"
 																: " text-gray-400"
 														} text-end w-full font-bold md:text-center`}

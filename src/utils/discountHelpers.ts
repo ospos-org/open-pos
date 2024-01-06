@@ -11,7 +11,7 @@ export function isValidVariant(
 ) {
 	return activeProduct.variants.find((e) => {
 		const comparative_map = e.variant_code.map((b) => {
-			return activeVariant?.find((c) => c.variant.variant_code == b);
+			return activeVariant?.find((c) => c.variant.variant_code === b);
 		});
 
 		const filtered = comparative_map.filter((s) => !s);
@@ -25,6 +25,8 @@ export function applyDiscountsConsiderateOfQuantity(
 	price: number,
 	customerActive: boolean,
 ) {
+	let quantityCurrent = currentQuantity;
+
 	// Here we have the following:
 	// ---
 	// Each discount has its own "applicable quantity". When this is 0,
@@ -37,12 +39,12 @@ export function applyDiscountsConsiderateOfQuantity(
 	let savings = 0;
 	let exhaustiblePromotions: ContextualDiscountValue[] = JSON.parse(
 		JSON.stringify(
-			discounts.filter((b) => b.source == "promotion" || b.source == "user"),
+			discounts.filter((b) => b.source === "promotion" || b.source === "user"),
 		),
 	);
 
 	// While we have quantity to serve, and promotions to apply...
-	while (currentQuantity > 0 && exhaustiblePromotions.length > 0) {
+	while (quantityCurrent > 0 && exhaustiblePromotions.length > 0) {
 		const maximumDiscountFound = findMaxDiscount(
 			exhaustiblePromotions,
 			price,
@@ -51,13 +53,13 @@ export function applyDiscountsConsiderateOfQuantity(
 
 		// While we can apply the promotion
 		while (
-			(currentQuantity > 0 &&
+			(quantityCurrent > 0 &&
 				maximumDiscountFound[0].applicable_quantity > 0) ||
 			maximumDiscountFound[0].applicable_quantity === -1
 		) {
 			// Reduce both applicable and current quantities
 			maximumDiscountFound[0].applicable_quantity -= 1;
-			currentQuantity -= 1;
+			quantityCurrent -= 1;
 
 			const discount = maximumDiscountFound[0].value;
 			savings += price - applyDiscount(price, discount);
@@ -71,7 +73,7 @@ export function applyDiscountsConsiderateOfQuantity(
 
 	if (savings === 0) {
 		// We have no savings, lets try default to non-"promotion" sources.
-		const otherPromotions = discounts.filter((b) => b.source == "loyalty");
+		const otherPromotions = discounts.filter((b) => b.source === "loyalty");
 
 		// Only applies ONE, loop this if needed.
 		const maximumDiscountFound = findMaxDiscount(
@@ -86,15 +88,16 @@ export function applyDiscountsConsiderateOfQuantity(
 }
 
 export function applyDiscount(price: number, discount: string) {
-	if (discount == "") discount = "a|0";
+	const discountAsString = discount === "" ? "a|0" : discount;
 
-	const d = discount.split("|");
+	const d = discountAsString.split("|");
 
-	if (d[0] == "a" || d[0] == "A") {
+	if (d[0] === "a" || d[0] === "A") {
 		// Absolute value
 		const discount_absolute = parseInt(d[1]);
 		return price - discount_absolute;
-	} else if (d[0] == "p" || d[0] == "P") {
+	}
+	if (d[0] === "p" || d[0] === "P") {
 		// Percentage value
 		const discount_percentage = parseInt(d[1]);
 		return price - price * (discount_percentage / 100);
@@ -117,11 +120,12 @@ export function isGreaterDiscount(
 export function parseDiscount(discount: string) {
 	const d = discount.split("|");
 
-	if (d[0] == "a" || d[0] == "A") {
+	if (d[0] === "a" || d[0] === "A") {
 		// Absolute value
 		const discount_absolute = parseFloat(d[1]);
 		return `$${discount_absolute.toFixed(2)}`;
-	} else if (d[0] == "p" || d[0] == "P") {
+	}
+	if (d[0] === "p" || d[0] === "P") {
 		// Percentage value
 		const discount_percentage = parseFloat(d[1]);
 		return `${discount_percentage.toFixed(2)}%`;
@@ -134,9 +138,8 @@ export function fromDbDiscount(dbDiscount: {
 }) {
 	if (dbDiscount.Absolute) {
 		return `a|${dbDiscount.Absolute ?? 0}`;
-	} else {
-		return `p|${dbDiscount.Percentage ?? 0}`;
 	}
+	return `p|${dbDiscount.Percentage ?? 0}`;
 }
 
 export function toDbDiscount(discount: string): {
@@ -145,11 +148,12 @@ export function toDbDiscount(discount: string): {
 } {
 	const d = discount.split("|");
 
-	if (d[0] == "a" || d[0] == "A") {
+	if (d[0] === "a" || d[0] === "A") {
 		return {
 			Absolute: parseFloat(d[1] ?? "0"),
 		};
-	} else if (d[0] == "p" || d[0] == "P") {
+	}
+	if (d[0] === "p" || d[0] === "P") {
 		return {
 			Percentage: parseFloat(d[1] ?? "0"),
 		};
@@ -174,7 +178,7 @@ export function findMaxDiscount(
 	let index = 0;
 
 	for (let i = 0; i < discountValues.length; i++) {
-		if (discountValues[i].source == "loyalty" && !loyalty) {
+		if (discountValues[i].source === "loyalty" && !loyalty) {
 			continue;
 		}
 
@@ -225,27 +229,25 @@ export function stringValueToObj(discount: string): {
 } {
 	const d = discount.split("|");
 
-	if (d[0] == "a" || d[0] == "A") {
+	if (d[0] === "a" || d[0] === "A") {
 		return {
 			value: parseFloat(d[1]),
 			type: "absolute",
 		};
-	} else {
-		return {
-			value: parseFloat(d[1]),
-			type: "percentage",
-		};
 	}
+	return {
+		value: parseFloat(d[1]),
+		type: "percentage",
+	};
 }
 
 export function toAbsoluteDiscount(discount: string, price: number) {
 	const d = discount.split("|");
 
-	if (d[0] == "a" || d[0] == "A") {
+	if (d[0] === "a" || d[0] === "A") {
 		return `a|${parseFloat(d[1])}`;
-	} else {
-		return `a|${(parseFloat(d[1]) / 100) * price}`;
 	}
+	return `a|${(parseFloat(d[1]) / 100) * price}`;
 }
 
 export function applyPromotion(
@@ -254,7 +256,9 @@ export function applyPromotion(
 	pdt_map: Map<string, ContextualProductPurchase>,
 ): number {
 	let total_quantity = 0;
-	pdt_map.forEach((b) => (total_quantity += b.quantity));
+	pdt_map.forEach((b) => {
+		total_quantity += b.quantity;
+	});
 
 	// If the product does not match the BUY criterion
 	if (promo.get.type === "specific" && !pdt_map.get(promo.get.value[0]))
@@ -264,11 +268,10 @@ export function applyPromotion(
 		!pdt.product.tags.includes(promo.get.value?.[0])
 	)
 		return 0;
-	// If promotion is a SoloThis or This type and the bought product is not <pdt>
-	else if (
+	if (
 		(promo.get.type === "solothis" || promo.get.type === "this") &&
 		promo.buy.type === "specific" &&
-		pdt.id != promo.buy.value[0]
+		pdt.id !== promo.buy.value[0]
 	)
 		return 0;
 
@@ -276,7 +279,7 @@ export function applyPromotion(
 	// Note: Any will only match the current product, and will not incur a search for another matching product as the function is called in a search-pattern.
 
 	// Determine if product in the BUY condition is in the cart, if instead fits <promo.buy.Any>, no condition is necessary as the product is within categoric bounds.
-	if (promo.buy.type == "specific" && !pdt_map.get(promo.buy.value[0]))
+	if (promo.buy.type === "specific" && !pdt_map.get(promo.buy.value[0]))
 		return 0;
 
 	// Check matches quantity condition for buy
@@ -286,7 +289,7 @@ export function applyPromotion(
 		promo.buy.value > total_quantity
 	)
 		return 0;
-	else if (
+	if (
 		promo.buy.type === "specific" &&
 		promo.buy.value[1] > (pdt_map.get(promo.buy.value[0])?.quantity ?? 0)
 	)
@@ -297,7 +300,7 @@ export function applyPromotion(
 	// Is promotion for THIS or for ANOTHER?
 	if (
 		promo.get.type === "specific" &&
-		pdt.product.sku == promo.get.value?.[0]
+		pdt.product.sku === promo.get.value?.[0]
 	) {
 		// is for THIS
 		const normal_price = pdt.variant_information.retail_price * 1.15;
@@ -306,24 +309,25 @@ export function applyPromotion(
 			fromDbDiscount(discount),
 		);
 		return normal_price - discounted_price;
-	} else if (promo.get.type === "specific" && pdt_map.get(promo.get.value[0])) {
+	}
+	if (promo.get.type === "specific" && pdt_map.get(promo.get.value[0])) {
 		// is for ANOTHER
 		const prd_pur = pdt_map.get(promo.get.value[0]);
-		const normal_price = prd_pur!.variant_information.retail_price * 1.15;
-		const discounted_price = applyDiscount(
-			normal_price,
-			fromDbDiscount(discount),
-		);
-		return normal_price - discounted_price;
-	} else {
-		// impl! Handle category case?
-		const normal_price = pdt.variant_information.retail_price * 1.15;
+		const normal_price =
+			(prd_pur?.variant_information.retail_price ?? 0) * 1.15;
 		const discounted_price = applyDiscount(
 			normal_price,
 			fromDbDiscount(discount),
 		);
 		return normal_price - discounted_price;
 	}
+	// impl! Handle category case?
+	const normal_price = pdt.variant_information.retail_price * 1.15;
+	const discounted_price = applyDiscount(
+		normal_price,
+		fromDbDiscount(discount),
+	);
+	return normal_price - discounted_price;
 }
 
 export function discountFromPromotion(promo: Promotion): {
@@ -348,8 +352,8 @@ export const isEquivalentDiscount = (
 	b: ContextualDiscountValue,
 	product_cost: number,
 ) =>
-	a.value == b.value &&
-	applyDiscount(product_cost, a.value) == applyDiscount(product_cost, b.value);
+	a.value === b.value &&
+	applyDiscount(product_cost, a.value) === applyDiscount(product_cost, b.value);
 
 export function generateProductInfo(
 	product: ContextualProductPurchase,

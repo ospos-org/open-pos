@@ -76,7 +76,8 @@ const priceAtom = atom(
 
 		const total = applied_promotions.reduce(
 			(p, c) =>
-				(p += applyDiscount(
+				p +
+				applyDiscount(
 					get(c).products.reduce(
 						(prev, curr) =>
 							prev +
@@ -90,7 +91,7 @@ const priceAtom = atom(
 						0,
 					),
 					get(c).discount,
-				)),
+				),
 			0,
 		);
 

@@ -37,7 +37,7 @@ export const ReactBarcodeReader = ({ onScan }: ReactBarcodeReaderProps) => {
 			onKeyDetect={(e: any) => {
 				e.preventDefault();
 
-				if (e.key == "Enter") {
+				if (e.key === "Enter") {
 					setStr("");
 				}
 			}}

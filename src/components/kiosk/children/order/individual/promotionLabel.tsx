@@ -14,7 +14,7 @@ export function PromotionLabel({ currentOrder }: PromotionLabelProps) {
 				$
 			</div>
 
-			<div></div>
+			<div />
 
 			<p className="text-white font-bold">
 				{parseDiscount(currentOrder.discount)}

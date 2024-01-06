@@ -42,12 +42,13 @@ export function DispatchShippingRate({
 
 		generatedOrder.map((k) => {
 			const found = inverse_order.find(
-				(e) => e.store == k.store && e.type == (k.ship ? "shipment" : "direct"),
+				(e) =>
+					e.store === k.store && e.type === (k.ship ? "shipment" : "direct"),
 			);
 
 			if (found && k.item) {
 				inverse_order = inverse_order.map((e) =>
-					e.store == k.store && e.type == (k.ship ? "pickup" : "direct")
+					e.store === k.store && e.type === (k.ship ? "pickup" : "direct")
 						? {
 								...e,
 								items: [...e.items, { ...k.item!, quantity: k.quantity }],
@@ -59,7 +60,7 @@ export function DispatchShippingRate({
 					store: k.store,
 					store_code:
 						currentStore.store_lut?.length > 0
-							? currentStore.store_lut?.find((b: Store) => k.store == b.id)
+							? currentStore.store_lut?.find((b: Store) => k.store === b.id)
 									?.code ?? k.store
 							: k.store,
 					items: [{ ...k.item, quantity: k.quantity }],
@@ -99,14 +100,14 @@ export function DispatchShippingRate({
 						status_history: [],
 						order_history: [],
 						order_notes: orderState.flatMap((b) => b.order_notes),
-						reference: `DP${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+						reference: `DP${customAlphabet("1234567890abcdef", 10)(8)}`,
 						creation_date: getDate(),
 						discount: "a|0",
 						order_type: k.type,
 					};
 			}),
 		).then((k) => {
-			const job = orderState.filter((k) => k.order_type != "direct");
+			const job = orderState.filter((k) => k.order_type !== "direct");
 			k.map((b) => job.push(b as ContextualOrder));
 
 			setOrderState(job);

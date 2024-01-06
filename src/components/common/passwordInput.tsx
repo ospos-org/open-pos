@@ -15,11 +15,11 @@ export function PasswordInput({
 
 			<div className="flex flex-row items-center gap-4 flex-wrap max-w-[240px] md:max-w-full">
 				{codeInput.map((k, indx) => {
-					return ((indx == codeInput.length - 1 && k == "") ||
-						(k == "" && codeInput[indx + 1] == "")) &&
+					return ((indx === codeInput.length - 1 && k === "") ||
+						(k === "" && codeInput[indx + 1] === "")) &&
 						(codeInput[indx - 1] !== "" ||
-							indx == 0 ||
-							indx == codeInput.length) ? (
+							indx === 0 ||
+							indx === codeInput.length) ? (
 						<div
 							key={`${indx}-INPUT+VAL`}
 							className="select-none p-4 py-6 h-12 bg-white rounded-xl flex items-center justify-center font-bold border-blue-500 border-[3px] text-white font-mono"
@@ -46,15 +46,15 @@ export function PasswordInput({
 
 			<div className="flex flex-row flex-wrap max-w-[300px] items-center justify-center select-none gap-4 font-mono">
 				{[1, 2, 3, 4, 5, 6, 7, 8, 9, "x", 0, "b"].map((k) => {
-					return k == "x" ? (
+					return k === "x" ? (
 						<div
 							key={`${k}-INPUT`}
 							className="bg-transparent p-8 rounded-full h-10 w-10 flex items-center justify-center text-white text-2xl"
-						></div>
-					) : k == "b" ? (
+						/>
+					) : k === "b" ? (
 						<div
 							onClick={() => {
-								const indx = codeInput.findIndex((b) => b == "");
+								const indx = codeInput.findIndex((b) => b === "");
 
 								if (indx >= 0) {
 									const new_input = codeInput;
@@ -83,7 +83,7 @@ export function PasswordInput({
 					) : (
 						<div
 							onClick={() => {
-								const indx = codeInput.findIndex((b) => b == "");
+								const indx = codeInput.findIndex((b) => b === "");
 								const new_input = codeInput;
 								new_input[indx] = k.toString();
 
@@ -101,15 +101,15 @@ export function PasswordInput({
 			<input
 				type="text"
 				readOnly={true}
-				className="bg-transparent outline-none text-gray-800"
 				autoFocus
+				className="bg-transparent outline-none text-gray-800"
 				ref={inputRef}
 				onBlur={(e) => {
 					e.currentTarget.focus();
 				}}
 				onKeyDown={(e) => {
-					if (e.key == "Backspace") {
-						const indx = codeInput.findIndex((b) => b == "");
+					if (e.key === "Backspace") {
+						const indx = codeInput.findIndex((b) => b === "");
 
 						if (indx >= 0) {
 							const new_input = codeInput;
@@ -120,8 +120,8 @@ export function PasswordInput({
 							new_input[new_input.length - 1] = "";
 							setCodeInput([...new_input]);
 						}
-					} else if (!isNaN(parseInt(e.key))) {
-						const indx = codeInput.findIndex((b) => b == "");
+					} else if (!Number.isNaN(parseInt(e.key))) {
+						const indx = codeInput.findIndex((b) => b === "");
 						const new_input = codeInput;
 						new_input[indx] = e.key.toString();
 

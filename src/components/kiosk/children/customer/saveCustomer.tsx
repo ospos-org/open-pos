@@ -33,7 +33,7 @@ export default function SaveCustomer({ workingCustomer }: SaveCustomerProps) {
 				toast.promise(
 					openStockClient.customer.update(customerObject.id, customerObject),
 					{
-						loading: `Saving customer details...`,
+						loading: "Saving customer details...",
 						error: (data) => {
 							setLoading(false);
 							return `Failed. ${
@@ -46,7 +46,7 @@ export default function SaveCustomer({ workingCustomer }: SaveCustomerProps) {
 							setCustomerState(data.data);
 							setKioskPanel("cart");
 
-							return `Saved customer.`;
+							return "Saved customer.";
 						},
 					},
 				);

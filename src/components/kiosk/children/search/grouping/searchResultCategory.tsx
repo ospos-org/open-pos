@@ -27,17 +27,16 @@ export function SearchResultCategory({
 	console.log(value);
 
 	if (value.results.length === 0) return nullComponent;
-	else
-		return (
-			<>
-				{value.results.map((item: ItemUnion, index) => (
-					<ItemComponent
-						key={hashedSearch[index]}
-						value={item}
-						index={index}
-						searchLength={value.results.length}
-					/>
-				))}
-			</>
-		);
+	return (
+		<>
+			{value.results.map((item: ItemUnion, index) => (
+				<ItemComponent
+					key={hashedSearch[index]}
+					value={item}
+					index={index}
+					searchLength={value.results.length}
+				/>
+			))}
+		</>
+	);
 }

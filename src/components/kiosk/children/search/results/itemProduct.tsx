@@ -40,7 +40,7 @@ export function ItemProduct({
 						// Replace the variant code with the variant itself.
 						return product.variant_groups.map((c) => {
 							const nc = c.variants.map((l) =>
-								k == l.variant_code
+								k === l.variant_code
 									? { category: c.category, variant: l }
 									: undefined,
 							);
@@ -85,7 +85,7 @@ export function ItemProduct({
 					alt=""
 					src={product.images[0]}
 					className="rounded-sm"
-				></Image>
+				/>
 
 				<div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
 					<p>{product.name}</p>
@@ -103,9 +103,9 @@ export function ItemProduct({
 
 								<div className="text-gray-300">
 									{variantGroup.variants.map((k, i) => {
-										return i == variantGroup.variants.length - 1
+										return i === variantGroup.variants.length - 1
 											? k.name
-											: k.name + ", ";
+											: `${k.name}, `;
 									})}
 								</div>
 							</div>
@@ -131,7 +131,7 @@ export function ItemProduct({
 									.map((b) => {
 										let total = 0;
 
-										if (b.store.store_id == currentStore.store_id) {
+										if (b.store.store_id === currentStore.store_id) {
 											total += b.quantity.quantity_sellable;
 										}
 
@@ -164,21 +164,19 @@ export function ItemProduct({
 						const min_total = Math.min(...flat_map);
 						const max_total = Math.max(...flat_map);
 
-						if (max_total == min_total) {
+						if (max_total === min_total) {
 							return <p>${(max_total * 1.15).toFixed(2)}</p>;
-						} else {
-							return (
-								<p>
-									${(min_total * 1.15).toFixed(2)}-
-									{(max_total * 1.15).toFixed(2)}
-								</p>
-							);
 						}
+						return (
+							<p>
+								${(min_total * 1.15).toFixed(2)}-{(max_total * 1.15).toFixed(2)}
+							</p>
+						);
 					})()}
 				</div>
 			</div>
 
-			{index == searchResults.length - 1 ? (
+			{index === searchResults.length - 1 ? (
 				<></>
 			) : (
 				<hr className="border-gray-500" />

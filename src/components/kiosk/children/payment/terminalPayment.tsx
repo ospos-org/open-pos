@@ -41,7 +41,7 @@ export function TerminalPayment() {
 		// Unless the transaction is a quote, then proceed as normal regardless.
 		if (
 			quantityPaid < (kioskState.order_total ?? 0) &&
-			kioskState.transaction_type != "Quote"
+			kioskState.transaction_type !== "Quote"
 		) {
 			setProbingPrice((kioskState.order_total ?? 0) - quantityPaid);
 			setKioskPanel("select-payment-method");

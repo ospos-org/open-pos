@@ -95,22 +95,22 @@ export default function PickupProductSelector({
 		generatedOrder.map((k) => {
 			const found = inverse_order.find(
 				(e) =>
-					e.store == k.store &&
-					e.type ==
+					e.store === k.store &&
+					e.type ===
 						(k.ship
 							? "pickup"
-							: k.ship && k.store != currentStore.store_id
+							: k.ship && k.store !== currentStore.store_id
 							  ? "shipment"
 							  : "direct"),
 			);
 
 			if (found && k.item) {
 				inverse_order = inverse_order.map((e) =>
-					e.store == k.store &&
-					e.type ==
+					e.store === k.store &&
+					e.type ===
 						(k.ship
 							? "pickup"
-							: k.ship && k.store != currentStore.store_id
+							: k.ship && k.store !== currentStore.store_id
 							  ? "shipment"
 							  : "direct")
 						? {
@@ -124,7 +124,7 @@ export default function PickupProductSelector({
 					store: k.store,
 					store_code:
 						currentStore.store_lut?.length > 0
-							? currentStore.store_lut?.find((b: Store) => k.store == b.id)
+							? currentStore.store_lut?.find((b: Store) => k.store === b.id)
 									?.code ?? k.store
 							: k.store,
 					items: [
@@ -135,7 +135,7 @@ export default function PickupProductSelector({
 					],
 					type: k.ship
 						? "pickup"
-						: k.ship && k.store != currentStore.store_id
+						: k.ship && k.store !== currentStore.store_id
 						  ? "shipment"
 						  : "direct",
 				});
@@ -150,7 +150,7 @@ export default function PickupProductSelector({
 					return {
 						id: v4(),
 						destination:
-							k.type == "pickup"
+							k.type === "pickup"
 								? {
 										store_code: pickupStore?.code,
 										store_id: pickupStore?.id,
@@ -175,14 +175,14 @@ export default function PickupProductSelector({
 						status_history: [],
 						order_history: [],
 						order_notes: orderState.flatMap((b) => b.order_notes),
-						reference: `PU${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+						reference: `PU${customAlphabet("1234567890abcdef", 10)(8)}`,
 						creation_date: getDate(),
 						discount: "a|0",
 						order_type: k.type,
 					} as ContextualOrder;
 			}),
 		).then((k) => {
-			const job = orderState.filter((k) => k.order_type != "direct");
+			const job = orderState.filter((k) => k.order_type !== "direct");
 			k.map((b) => job.push(b as ContextualOrder));
 
 			setOrderState(job);
@@ -212,7 +212,7 @@ export default function PickupProductSelector({
 							className="grid items-center justify-center text-gray-300 gap-4"
 							style={{ gridTemplateColumns: "25px 1fr 75px 80px" }}
 						>
-							<p className="font-semibold flex-1"></p>
+							<p className="font-semibold flex-1" />
 							<p className="font-semibold flex-1">Product</p>
 							<p className="font-semibold content-center self-center flex">
 								Quantity
@@ -246,7 +246,7 @@ export default function PickupProductSelector({
 										onClick={() => {
 											setGeneratedOrder(
 												generatedOrder.map((b) =>
-													b?.item?.id == k?.item?.id && b.store == k.store
+													b?.item?.id === k?.item?.id && b.store === k.store
 														? { ...b, ship: !k.ship }
 														: b,
 												),
@@ -289,7 +289,7 @@ export default function PickupProductSelector({
 									</div>
 
 									<div className="self-center content-center items-center justify-center flex">
-										<p className="font-semibold text-white"></p>
+										<p className="font-semibold text-white" />
 										{k.quantity}
 										<p className="font-semibold text-gray-400">
 											/{k.item?.quantity}

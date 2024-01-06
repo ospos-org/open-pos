@@ -60,9 +60,9 @@ export function DesktopNavigationElement() {
 		<div className="hidden md:flex bg-gray-900 flex-col p-4 h-full justify-between items-center flex-shrink-0">
 			<div className="flex flex-col h-full gap-12 items-center">
 				{/* Kiosk */}
-				<OTooltip name={`Kiosk`}>
+				<OTooltip name={"Kiosk"}>
 					<div>
-						{page == 0 ? (
+						{page === 0 ? (
 							<Image
 								className="select-none svg cursor-pointer"
 								width={`${ICON_SIZE}`}
@@ -74,7 +74,7 @@ export function DesktopNavigationElement() {
 										"invert(100%) sepia(0%) saturate(7484%) hue-rotate(116deg) brightness(96%) contrast(101%)",
 								}}
 								onClick={() => setPage(0)}
-							></Image>
+							/>
 						) : (
 							<Image
 								className="select-none cursor-pointer"
@@ -87,7 +87,7 @@ export function DesktopNavigationElement() {
 								}}
 								alt={""}
 								onClick={() => setPage(0)}
-							></Image>
+							/>
 						)}
 					</div>
 				</OTooltip>
@@ -112,9 +112,9 @@ export function DesktopNavigationElement() {
 
 				<div className="flex flex-col gap-4">
 					{/* Deliverables - Deliveries and Outgoing Orders */}
-					<OTooltip name={`Deliverables`}>
+					<OTooltip name={"Deliverables"}>
 						<div>
-							{page == 3 ? (
+							{page === 3 ? (
 								<Image
 									className="select-none cursor-pointer"
 									width={`${ICON_SIZE}`}
@@ -122,7 +122,7 @@ export function DesktopNavigationElement() {
 									src="/icons/arrow-square-up-right-filled.svg"
 									alt={""}
 									onClick={() => setPage(3)}
-								></Image>
+								/>
 							) : (
 								<Image
 									className="select-none cursor-pointer"
@@ -131,15 +131,15 @@ export function DesktopNavigationElement() {
 									src="/icons/arrow-square-up-right.svg"
 									alt={""}
 									onClick={() => setPage(3)}
-								></Image>
+								/>
 							)}
 						</div>
 					</OTooltip>
 
 					{/* Receivables - Incoming Orders */}
-					<OTooltip name={`Receivables`}>
+					<OTooltip name={"Receivables"}>
 						<div>
-							{page == 4 ? (
+							{page === 4 ? (
 								<Image
 									className="select-none cursor-pointer"
 									width={`${ICON_SIZE}`}
@@ -147,7 +147,7 @@ export function DesktopNavigationElement() {
 									src="/icons/arrow-square-down-right-filled.svg"
 									alt={""}
 									onClick={() => setPage(4)}
-								></Image>
+								/>
 							) : (
 								<Image
 									className="select-none cursor-pointer"
@@ -156,7 +156,7 @@ export function DesktopNavigationElement() {
 									src="/icons/arrow-square-down-right.svg"
 									alt={""}
 									onClick={() => setPage(4)}
-								></Image>
+								/>
 							)}
 						</div>
 					</OTooltip>
@@ -175,7 +175,7 @@ export function DesktopNavigationElement() {
 									src="/icons/alarm-clock-minus.svg"
 									alt={""}
 									onClick={toggleClockStatus}
-								></Image>
+								/>
 							) : (
 								<Image
 									className="select-none cursor-pointer"
@@ -184,17 +184,17 @@ export function DesktopNavigationElement() {
 									src="/icons/alarm-clock-plus.svg"
 									alt={""}
 									onClick={toggleClockStatus}
-								></Image>
+								/>
 							)
 						) : (
-							<Skeleton className="h-6 w-6 opacity-20"></Skeleton>
+							<Skeleton className="h-6 w-6 opacity-20" />
 						)}
 					</div>
 				</OTooltip>
 
 				<OTooltip name="Settings">
 					<div>
-						{page == 5 ? (
+						{page === 5 ? (
 							<Image
 								className="select-none cursor-pointer"
 								width={`${ICON_SIZE}`}
@@ -202,7 +202,7 @@ export function DesktopNavigationElement() {
 								src="/icons/settings-04-filled.svg"
 								alt={""}
 								onClick={() => setPage(5)}
-							></Image>
+							/>
 						) : (
 							<Image
 								className="select-none cursor-pointer"
@@ -211,7 +211,7 @@ export function DesktopNavigationElement() {
 								src="/icons/settings-04.svg"
 								alt={""}
 								onClick={() => setPage(5)}
-							></Image>
+							/>
 						)}
 					</div>
 				</OTooltip>

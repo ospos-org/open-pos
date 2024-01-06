@@ -7,7 +7,7 @@ interface OrderDestinationProps {
 export default function OrderDestination({
 	currentOrder,
 }: OrderDestinationProps) {
-	if (currentOrder.order_type == "pickup")
+	if (currentOrder.order_type === "pickup")
 		return (
 			<p className="text-gray-400">
 				{currentOrder.destination?.contact.address.street},{" "}
@@ -15,12 +15,11 @@ export default function OrderDestination({
 				{currentOrder.destination?.contact.address.po_code}
 			</p>
 		);
-	else
-		return (
-			<p className="text-gray-400">
-				{currentOrder.origin?.contact.address.street},{" "}
-				{currentOrder.origin?.contact.address.street2},{" "}
-				{currentOrder.origin?.contact.address.po_code}
-			</p>
-		);
+	return (
+		<p className="text-gray-400">
+			{currentOrder.origin?.contact.address.street},{" "}
+			{currentOrder.origin?.contact.address.street2},{" "}
+			{currentOrder.origin?.contact.address.po_code}
+		</p>
+	);
 }

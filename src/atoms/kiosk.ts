@@ -108,7 +108,7 @@ const currentOrderAtom = atomWithReset<ContextualOrder>({
 	status_history: [],
 	order_history: [],
 	order_notes: [],
-	reference: `RF${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+	reference: `RF${customAlphabet("1234567890abcdef", 10)(8)}`,
 	creation_date: getDate(),
 	discount: "a|0",
 	order_type: OrderType.Direct,
@@ -209,27 +209,29 @@ const addToCartAtom = atom(
 		} = get(inspectingProductAtom);
 
 		const existing_product = orderProducts.find(
-			(k) => k.product_code == variant?.barcode,
+			(k) => k.product_code === variant?.barcode,
 		); // && isEqual(k.variant, variant?.variant_code)
 		let new_order_products_state: ContextualProductPurchase[] = [];
 
 		if (existing_product && variant && product) {
 			const matching_product = orderProducts.find(
-				(e) => e.product_code == variant?.barcode,
-			); // && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
+				(e) => e.product_code === variant?.barcode,
+			);
+			// && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
 
 			if (matching_product) {
 				const total_stock = matching_product.variant_information.stock.reduce(
-					(p, c) => (p += c.quantity.quantity_sellable),
+					(p, c) => p + c.quantity.quantity_sellable,
 					0,
 				);
 				// If a matching product exists; apply emendation
 				new_order_products_state = orderProducts.map((e) => {
 					if (total_stock <= e.quantity) return e;
 
-					return e.product_code == variant.barcode
+					return e.product_code === variant.barcode
 						? { ...e, quantity: e.quantity + 1 }
-						: e; //  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
+						: e;
+					//  && (applyDiscount(1, findMaxDiscount(e.discount, e.variant_information.retail_price, false).value) == 1)
 				});
 			} else {
 				const po: ContextualProductPurchase = {
@@ -243,7 +245,7 @@ const addToCartAtom = atom(
 						},
 					],
 					product_cost: variant?.retail_price ?? 0,
-					product_name: product.company + " " + product.name,
+					product_name: `${product.company} ${product.name}`,
 					product_variant_name: variant.name,
 					product_sku: product.sku,
 					quantity: 1,
@@ -273,7 +275,7 @@ const addToCartAtom = atom(
 				],
 				instances: [],
 				product_cost: variant?.retail_price ?? 0,
-				product_name: product.company + " " + product.name,
+				product_name: `${product.company} ${product.name}`,
 				product_variant_name: variant.name,
 				product_sku: product.sku,
 				quantity: 1,

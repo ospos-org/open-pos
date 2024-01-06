@@ -29,7 +29,7 @@ export function ContentPage() {
 							setMenuOpen(false);
 						}}
 						className="bg-black h-[100vh] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 fixed z-5 opacity-40"
-					></div>
+					/>
 
 					<MobileNavigationElement />
 				</>

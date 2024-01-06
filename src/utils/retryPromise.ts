@@ -15,7 +15,7 @@ export function retryPromise<T>(
 	} = options;
 	let _promise = promise();
 
-	for (var i = 1; i < retries; i++)
+	for (let i = 1; i < retries; i++)
 		_promise = _promise
 			.catch((value) =>
 				retryCatchIf(value) ? promise() : Promise.reject(value),

@@ -30,7 +30,7 @@ export function ItemTransaction({
 	const setInspectingTransaction = useSetAtom(inspectingTransactionAtom);
 
 	const reachedEnd = useMemo(
-		() => !(index == searchLength - 1 || searchLength == 1),
+		() => !(index === searchLength - 1 || searchLength === 1),
 		[searchLength, index],
 	);
 
@@ -46,7 +46,7 @@ export function ItemTransaction({
 	const windowSize = useWindowSize();
 
 	useEffect(() => {
-		if (value.customer.customer_type != "Store") {
+		if (value.customer.customer_type !== "Store") {
 			openStockClient.customer
 				.get(value.customer.customer_id)
 				.then((data) => data.ok && setCustomer(data.data));
@@ -58,79 +58,78 @@ export function ItemTransaction({
 	}, [value]);
 
 	if (!filteredOrders) return <></>;
-	else
-		return (
-			<div>
-				{filteredOrders.map((b) => (
+	return (
+		<div>
+			{filteredOrders.map((b) => (
+				<div
+					key={b.id}
+					onClick={() => {
+						setKioskPanel("inv-transaction");
+						setInspectingTransaction({ item: value, identifier: b.id });
+					}}
+					className="flex flex-col overflow-hidden h-fit"
+				>
 					<div
-						key={b.id}
-						onClick={() => {
-							setKioskPanel("inv-transaction");
-							setInspectingTransaction({ item: value, identifier: b.id });
+						className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer"
+						style={{
+							gridTemplateColumns: `25px minmax(150px, 175px) 150px ${
+								(windowSize.width ?? 0) >= 1578 ? "minmax(300px, 2fr)" : ""
+							}  75px`,
 						}}
-						className="flex flex-col overflow-hidden h-fit"
 					>
-						<div
-							className="grid items-center gap-4 p-4 hover:bg-gray-400 hover:bg-opacity-10 cursor-pointer"
-							style={{
-								gridTemplateColumns: `25px minmax(150px, 175px) 150px ${
-									(windowSize.width ?? 0) >= 1578 ? "minmax(300px, 2fr)" : ""
-								}  75px`,
-							}}
-						>
-							<div>
-								{b.order_type == "pickup" ? (
-									<Image
-										src="/icons/building-02.svg"
-										alt=""
-										height={20}
-										width={20}
-										style={{ filter: WHITE_FILTER }}
-									/>
-								) : b.order_type == "quote" ? (
-									<Image
-										src="/icons/globe-05.svg"
-										alt=""
-										height={20}
-										width={20}
-										style={{ filter: WHITE_FILTER }}
-									/>
-								) : b.order_type == "shipment" ? (
-									<Image
-										src="/icons/globe-05.svg"
-										alt=""
-										height={20}
-										width={20}
-										style={{ filter: WHITE_FILTER }}
-									/>
-								) : (
-									<Image
-										src="/icons/shopping-bag-01-filled.svg"
-										alt=""
-										height={20}
-										width={20}
-										style={{ filter: WHITE_FILTER }}
-									/>
-								)}
-							</div>
-
-							<div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
-								<p className="font-bold">{b.reference}</p>
-								<p>{moment(b.creation_date).format("DD/MM/YY hh:ss")}</p>
-							</div>
-
-							<div>{customer?.name}</div>
-
-							<div className="text-sm text-gray-400 2xl:flex hidden">
-								{b.products.map((k) => k.product_name).join(", ")}
-							</div>
-
-							<div>${value.order_total.toFixed(2)}</div>
+						<div>
+							{b.order_type === "pickup" ? (
+								<Image
+									src="/icons/building-02.svg"
+									alt=""
+									height={20}
+									width={20}
+									style={{ filter: WHITE_FILTER }}
+								/>
+							) : b.order_type === "quote" ? (
+								<Image
+									src="/icons/globe-05.svg"
+									alt=""
+									height={20}
+									width={20}
+									style={{ filter: WHITE_FILTER }}
+								/>
+							) : b.order_type === "shipment" ? (
+								<Image
+									src="/icons/globe-05.svg"
+									alt=""
+									height={20}
+									width={20}
+									style={{ filter: WHITE_FILTER }}
+								/>
+							) : (
+								<Image
+									src="/icons/shopping-bag-01-filled.svg"
+									alt=""
+									height={20}
+									width={20}
+									style={{ filter: WHITE_FILTER }}
+								/>
+							)}
 						</div>
 
-						{Boolean(reachedEnd) && <hr className="border-gray-500" />}
+						<div className="flex flex-col gap-0 max-w-[26rem] w-full flex-1">
+							<p className="font-bold">{b.reference}</p>
+							<p>{moment(b.creation_date).format("DD/MM/YY hh:ss")}</p>
+						</div>
+
+						<div>{customer?.name}</div>
+
+						<div className="text-sm text-gray-400 2xl:flex hidden">
+							{b.products.map((k) => k.product_name).join(", ")}
+						</div>
+
+						<div>${value.order_total.toFixed(2)}</div>
 					</div>
-				))}
-			</div>
-		);
+
+					{Boolean(reachedEnd) && <hr className="border-gray-500" />}
+				</div>
+			))}
+		</div>
+	);
 }

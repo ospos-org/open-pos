@@ -105,7 +105,7 @@ export default function TransactionRefundItems() {
 							...activeTransaction,
 							products: products,
 							discount: "a|0",
-							reference: `CT${customAlphabet(`1234567890abcdef`, 10)(8)}`,
+							reference: `CT${customAlphabet("1234567890abcdef", 10)(8)}`,
 						};
 
 						setOrderState([newOrder]);

@@ -20,14 +20,15 @@ export function ProductElement({ product, currentOrder }: ProductElementProps) {
 
 	// Find the variant of the product for name and other information...
 	const totalStock = useMemo(() => {
-		return product.variant_information.stock.reduce((prev, curr) => {
-			return (prev += curr.quantity.quantity_sellable);
-		}, 0);
+		return product.variant_information.stock.reduce(
+			(prev, curr) => prev + curr.quantity.quantity_sellable,
+			0,
+		);
 	}, [product.variant_information.stock]);
 
 	const quantityHere = useMemo(() => {
 		return product.variant_information.stock.find(
-			(e) => e.store.store_id == currentStore.store_id,
+			(e) => e.store.store_id === currentStore.store_id,
 		);
 	}, [currentStore.store_id, product.variant_information.stock]);
 

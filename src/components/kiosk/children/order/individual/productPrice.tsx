@@ -38,9 +38,9 @@ export function ProductPrice({ product }: ProductPriceProps) {
 				<div
 					className={`
                     text-gray-500 text-sm ${
-											maxDiscount.source == "loyalty"
+											maxDiscount.source === "loyalty"
 												? "text-gray-500"
-												: maxDiscount.source == "promotion"
+												: maxDiscount.source === "promotion"
 												  ? "text-blue-500 opacity-75"
 												  : "text-red-500"
 										} flex flex-row items-center gap-2`}
@@ -53,7 +53,7 @@ export function ProductPrice({ product }: ProductPriceProps) {
 					{parsedDiscount}
 				</div>
 
-				<p className={maxDiscount.source == "loyalty" ? "text-gray-300" : ""}>
+				<p className={maxDiscount.source === "loyalty" ? "text-gray-300" : ""}>
 					{product.transaction_type === "In" ? "-" : ""}$
 					{(
 						quantityConsiderateTotalWithTax -

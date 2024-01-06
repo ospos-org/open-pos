@@ -30,7 +30,7 @@ export function ProductImage({
 			currentOrder.order_type === "direct" &&
 			totalProductQuantitySelected(product) >
 				(quantityHere?.quantity.quantity_sellable ?? 0) &&
-			product.transaction_type == "Out"
+			product.transaction_type === "Out"
 		)
 			return "bg-red-500";
 

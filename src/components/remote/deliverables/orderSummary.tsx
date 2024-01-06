@@ -21,13 +21,13 @@ const parseDeliverables = (deliverables: Order[]) => {
 		k.products.map((b) => {
 			// For each product, try place it
 			for (let i = 0; i < b.tags.length; i++) {
-				const match = categories.findIndex((e) => e.name == b.tags[i]);
+				const match = categories.findIndex((e) => e.name === b.tags[i]);
 
-				if (match != -1) {
+				if (match !== -1) {
 					const loc = categories[match].items.findIndex(
-						(k) => k.barcode == b.product_code,
+						(k) => k.barcode === b.product_code,
 					);
-					if (loc != -1) {
+					if (loc !== -1) {
 						categories[match].items[loc].instances.push(
 							...(b?.instances ?? [])
 								.filter((n) => n.fulfillment_status?.pick_status !== "Picked")
@@ -77,7 +77,7 @@ const parseDeliverables = (deliverables: Order[]) => {
 						barcode: b.product_code,
 						// Length of instances is quantity.
 						instances: (b?.instances ?? [])
-							.filter((n) => n.fulfillment_status?.pick_status != "Picked")
+							.filter((n) => n.fulfillment_status?.pick_status !== "Picked")
 							.map((n) => {
 								return {
 									state: n,
@@ -132,7 +132,7 @@ export function OrderSummary() {
 								<p className="text-gray-400 text-sm font-bold">VARIANT</p>
 								{menuInformation?.variants ? (
 									menuInformation?.variants
-										.filter((k) => k.barcode == menuState.barcode)
+										.filter((k) => k.barcode === menuState.barcode)
 										.map((k) => {
 											return (
 												<div
@@ -163,14 +163,14 @@ export function OrderSummary() {
 								<Image
 									src={
 										menuInformation?.variants.find(
-											(k) => k.barcode == menuState.barcode,
+											(k) => k.barcode === menuState.barcode,
 										)?.images?.[0] ?? menuInformation.images?.[0]
 									}
 									className="rounded-md"
 									height={150}
 									width={150}
 									alt={menuInformation?.name}
-								></Image>
+								/>
 							</div>
 						) : (
 							<div className="pr-4">
@@ -194,26 +194,26 @@ export function OrderSummary() {
 												switch (k.state.fulfillment_status?.pick_status) {
 													case "pending":
 														return (
-															<div className="bg-gray-400 h-3 w-3 rounded-full"></div>
+															<div className="bg-gray-400 h-3 w-3 rounded-full" />
 														);
 													case "picked":
 														return (
-															<div className="bg-green-600 h-3 w-3 rounded-full"></div>
+															<div className="bg-green-600 h-3 w-3 rounded-full" />
 														);
 													case "failed":
 														return (
-															<div className="bg-red-600 h-3 w-3 rounded-full"></div>
+															<div className="bg-red-600 h-3 w-3 rounded-full" />
 														);
 													case "uncertain":
 														return (
-															<div className="bg-blue-400 h-3 w-3 rounded-full"></div>
+															<div className="bg-blue-400 h-3 w-3 rounded-full" />
 														);
 													case "processing":
 														return (
-															<div className="bg-orange-400 h-3 w-3 rounded-full"></div>
+															<div className="bg-orange-400 h-3 w-3 rounded-full" />
 														);
 													default:
-														return <div className="bg-gray"></div>;
+														return <div className="bg-gray" />;
 												}
 											})()}
 
@@ -269,15 +269,15 @@ export function OrderSummary() {
 									<p
 										key={JSON.stringify(k)}
 										className={` p-2 rounded-md px-4 w-fit ${
-											k == stateChange.state.fulfillment_status?.pick_status
+											k === stateChange.state.fulfillment_status?.pick_status
 												? "bg-white bg-opacity-20"
-												: k == pendingStatus
+												: k === pendingStatus
 												  ? "bg-blue-400 bg-opacity-40"
 												  : "bg-gray-200 bg-opacity-10"
 										}`}
 										onClick={() => {
 											if (
-												k == stateChange.state.fulfillment_status?.pick_status
+												k === stateChange.state.fulfillment_status?.pick_status
 											)
 												setPendingStatus(null);
 											else setPendingStatus(k);
@@ -347,7 +347,7 @@ export function OrderSummary() {
 
 												data.data.products.map((b) => {
 													abn = deliverables.map((k) => {
-														return b.id == k.id ? b : k;
+														return b.id === k.id ? b : k;
 													}) as Order[];
 												});
 
@@ -357,7 +357,7 @@ export function OrderSummary() {
 
 												categories.map((c) => {
 													c.items.map((k) => {
-														if (k.barcode == menuState?.barcode) {
+														if (k.barcode === menuState?.barcode) {
 															setMenuState({
 																instances: k.instances,
 																product: k.sku,

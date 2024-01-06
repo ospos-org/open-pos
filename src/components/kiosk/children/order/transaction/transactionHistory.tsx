@@ -46,7 +46,7 @@ export default function TransactionHistory() {
 									</p>
 								</div>
 
-								{Boolean(type == "transit") && (
+								{Boolean(type === "transit") && (
 									<Link
 										target="_blank"
 										rel="noopener noreferrer"
@@ -75,8 +75,8 @@ export default function TransactionHistory() {
 							</div>
 						</div>
 
-						{Boolean(indx != activeTransaction?.status_history.length - 1) && (
-							<div className="h-4 w-[3px] bg-gray-400 ml-5"></div>
+						{Boolean(indx !== activeTransaction?.status_history.length - 1) && (
+							<div className="h-4 w-[3px] bg-gray-400 ml-5" />
 						)}
 					</div>
 				);

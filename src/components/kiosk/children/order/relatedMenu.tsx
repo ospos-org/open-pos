@@ -17,7 +17,7 @@ function orderType(order: Order, transaction: Transaction) {
 			return `${order.origin.contact.name} (${order.origin.store_code})`;
 		case "quote":
 			return `By ${transaction.salesperson} at ${order.origin.contact.name} (${order.origin.store_code})`;
-		case "shipment":
+		case "shipment": {
 			const origin = `${order.origin.contact.name} (${order.origin.store_code})`;
 			const destination = `${
 				order.destination?.store_code !== "000"
@@ -30,6 +30,7 @@ function orderType(order: Order, transaction: Transaction) {
 			}`;
 
 			return `${origin} -> ${destination}`;
+		}
 		default:
 			return "";
 	}
@@ -86,7 +87,7 @@ export function RelatedOrders() {
 			</div>
 
 			<div className="flex flex-col flex-1 gap-8 h-full max-h-fit overflow-hidden">
-				{suggestions.length == 0 ? (
+				{suggestions.length === 0 ? (
 					<div className="flex flex-col flex-1 items-center justify-center">
 						<p className="text-gray-400">
 							No transactions containing this product variant

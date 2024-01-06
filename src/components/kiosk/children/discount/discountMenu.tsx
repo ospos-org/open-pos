@@ -3,7 +3,7 @@ import Image from "next/image";
 import { FC, createRef, useMemo } from "react";
 
 import { totalProductQuantityAtom } from "@atoms/cart";
-import { activeDiscountAtom } from "@atoms/kiosk";
+import { ActiveDiscountApplication, activeDiscountAtom } from "@atoms/kiosk";
 import { applyDiscount } from "@utils/discountHelpers";
 import { useAtomValue } from "jotai/index";
 
@@ -12,7 +12,9 @@ const WHITE_FILTER =
 const GRAY_FILTER =
 	"invert(78%) sepia(15%) saturate(224%) hue-rotate(179deg) brightness(82%) contrast(84%)";
 
-const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
+const DiscountMenu: FC<{
+	callback: (value: ActiveDiscountApplication) => void;
+}> = ({ callback }) => {
 	const productQuantity = useAtomValue(totalProductQuantityAtom);
 
 	const [discount, setDiscount] = useAtom(activeDiscountAtom);
@@ -34,7 +36,7 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 		() =>
 			applyDiscount(
 				retailPrice,
-				`${discount?.type == "absolute" ? "a" : "p"}|${discount?.value}`,
+				`${discount?.type === "absolute" ? "a" : "p"}|${discount?.value}`,
 			),
 		[discount, retailPrice],
 	);
@@ -58,21 +60,20 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 
 					<div className="flex flex-row items-center text-white">
 						<p className="text-2xl font-semibold">
-							-{discount.type == "absolute" ? "$" : ""}
+							-{discount.type === "absolute" ? "$" : ""}
 						</p>
 
 						<input
 							style={{
-								width: (discount.value.toFixed(2).length ?? 1) + "ch",
+								width: `${discount.value.toFixed(2).length ?? 1}ch`,
 							}}
-							autoFocus
 							className="bg-transparent text-center outline-none font-semibold text-3xl"
 							defaultValue={
 								discount.value !== 0 ? discount.value.toFixed(2) : ""
 							}
 							placeholder={discount.value.toFixed(2)}
 							onChange={(e) => {
-								e.target.style.width = (e.target.value.length ?? 1) + "ch";
+								e.target.style.width = `${e.target.value.length ?? 1}ch`;
 
 								setDiscount({
 									...discount,
@@ -82,26 +83,27 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 							onBlur={(e) => {
 								const possible = parseFloat(e.currentTarget.value);
 
-								if (isNaN(possible)) {
+								if (Number.isNaN(possible)) {
 									e.currentTarget.value = (0).toFixed(2);
-									e.target.style.width = (4 - 0.5 ?? 1) + "ch";
+									e.target.style.width = `${4 - 0.5 ?? 1}ch`;
 								} else {
 									e.currentTarget.value = possible.toFixed(2);
-									e.target.style.width =
-										(possible.toFixed(2).length - 0.5 ?? 1) + "ch";
+									e.target.style.width = `${
+										possible.toFixed(2).length - 0.5 ?? 1
+									}ch`;
 								}
 							}}
 							onKeyDown={(e) => {
-								if (e.key == "Enter") {
+								if (e.key === "Enter") {
 									click_ref.current?.click();
-								} else if (e.key == "p" || e.key == "P") {
+								} else if (e.key === "p" || e.key === "P") {
 									setDiscount({
 										...discount,
 										type: "percentage",
 									});
 									e.preventDefault();
 									e.stopPropagation();
-								} else if (e.key == "a" || e.key == "A") {
+								} else if (e.key === "a" || e.key === "A") {
 									setDiscount({
 										...discount,
 										type: "absolute",
@@ -109,18 +111,18 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 									e.preventDefault();
 									e.stopPropagation();
 								} else if (
-									e.key == "Backspace" ||
-									e.key == "ArrowRight" ||
-									e.key == "ArrowLeft"
+									e.key === "Backspace" ||
+									e.key === "ArrowRight" ||
+									e.key === "ArrowLeft"
 								) {
 								} else if (!Number.isInteger(parseInt(e.key))) {
 									e.preventDefault();
 									e.stopPropagation();
 								}
 							}}
-						></input>
+						/>
 						<p className="text-2xl font-semibold">
-							{discount.type == "percentage" ? "%" : ""}
+							{discount.type === "percentage" ? "%" : ""}
 						</p>
 					</div>
 				</div>
@@ -138,12 +140,12 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 							className="text-white"
 							style={{
 								filter:
-									discount.type == "absolute" ? WHITE_FILTER : GRAY_FILTER,
+									discount.type === "absolute" ? WHITE_FILTER : GRAY_FILTER,
 							}}
 						/>
 						<p
 							className={
-								discount.type == "absolute" ? "text-white" : "text-gray-400"
+								discount.type === "absolute" ? "text-white" : "text-gray-400"
 							}
 						>
 							Absolute
@@ -162,12 +164,12 @@ const DiscountMenu: FC<{ callback: Function }> = ({ callback }) => {
 							className="text-white"
 							style={{
 								filter:
-									discount.type == "percentage" ? WHITE_FILTER : GRAY_FILTER,
+									discount.type === "percentage" ? WHITE_FILTER : GRAY_FILTER,
 							}}
 						/>
 						<p
 							className={
-								discount.type == "percentage" ? "text-white" : "text-gray-400"
+								discount.type === "percentage" ? "text-white" : "text-gray-400"
 							}
 						>
 							Percentage

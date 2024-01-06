@@ -5,7 +5,7 @@ function generateProductMap(orders: ContextualOrder[]) {
 	const pdt_map: ContextualProductPurchase[] = [];
 
 	for (let i = 0; i < orders.length; i++) {
-		if (orders[i].order_type == "direct") {
+		if (orders[i].order_type === "direct") {
 			orders[i].products.map((e) => {
 				pdt_map.push(e);
 			});
@@ -90,22 +90,23 @@ function generateOrders(
 		items: { item_id: string; quantity: number }[];
 	}[] = [];
 
-	const total_items = product_map.reduce((p, c) => (p += c.quantity), 0);
+	const total_items = product_map.reduce((p, c) => p + c.quantity, 0);
 
 	map.forEach((val, key) => {
 		const item_weighting =
 			(val.items.reduce((p, e) => {
 				const n =
 					e.quantity -
-					(product_map.find((k) => k.id == e.item_id)?.quantity ?? 0);
-				return (p += n);
+					(product_map.find((k) => k.id === e.item_id)?.quantity ?? 0);
+				return p + n;
 			}, 0) +
 				1) /
 			total_items;
 
 		const distance_weighting =
 			smallest_distance /
-			(distance_data.find((k) => k.store_code == key)?.distance ?? 12756000.01);
+			(distance_data.find((k) => k.store_code === key)?.distance ??
+				12756000.01);
 
 		val.weighting = 0.1 * item_weighting + 0.9 * distance_weighting;
 		// console.log(`${key}:: ${val.weighting} 0.1x${item_weighting} and 0.9x${distance_weighting}`)
@@ -125,9 +126,9 @@ function generateOrders(
 	weighted_vector.map((k) => {
 		k.items.map((b) => {
 			const required_quantity =
-				product_map.find((n) => n.id == b.item_id)?.quantity ?? 0;
+				product_map.find((n) => n.id === b.item_id)?.quantity ?? 0;
 			const fulfilled = product_assignment.reduce(
-				(p, c) => (c[0] == b.item_id ? p + c[2] : p + 0),
+				(p, c) => (c[0] === b.item_id ? p + c[2] : p + 0),
 				0,
 			);
 			const net_required = required_quantity - fulfilled;
@@ -139,11 +140,11 @@ function generateOrders(
 
 				// Reduce the quantity the store has...
 				weighted_vector.map((z) =>
-					z.store_id == k.store_id
+					z.store_id === k.store_id
 						? {
 								...z,
 								items: z.items.map((n) =>
-									n.item_id == b.item_id
+									n.item_id === b.item_id
 										? { ...n, quantity: n.quantity - net_required }
 										: n,
 								),
@@ -160,11 +161,11 @@ function generateOrders(
 
 				product_assignment.push([b.item_id, k.store_id, b.quantity]);
 				weighted_vector.map((z) =>
-					z.store_id == k.store_id
+					z.store_id === k.store_id
 						? {
 								...z,
 								items: z.items.map((n) =>
-									n.item_id == b.item_id ? { ...n, quantity: 0 } : n,
+									n.item_id === b.item_id ? { ...n, quantity: 0 } : n,
 								),
 						  }
 						: z,
@@ -180,26 +181,26 @@ function generateOrders(
 	return {
 		assignment_sheet: product_assignment.map((e) => {
 			return {
-				item: product_map.find((k) => k.id == e[0]),
+				item: product_map.find((k) => k.id === e[0]),
 				store: e[1],
 				alt_stores: [
 					product_map
-						.find((k) => k.id == e[0])
-						?.variant_information.stock.find((b) => b.store.store_id == e[1])!,
+						.find((k) => k.id === e[0])
+						?.variant_information.stock.find((b) => b.store.store_id === e[1])!,
 					...(product_map
-						.find((k) => k.id == e[0])
+						.find((k) => k.id === e[0])
 						?.variant_information.stock.filter(
 							(n) =>
 								n.store.store_id !== e[1] &&
 								n.quantity.quantity_sellable -
 									product_assignment.reduce(
-										(p, c) => (c[1] == n.store.store_id ? p + c[2] : p),
+										(p, c) => (c[1] === n.store.store_id ? p + c[2] : p),
 										0,
 									) >=
 									e[2],
 						) ?? []),
 				],
-				ship: !(e[1] == currentStore),
+				ship: !(e[1] === currentStore),
 				quantity: e[2],
 			};
 		}),

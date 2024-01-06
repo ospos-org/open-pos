@@ -96,7 +96,9 @@ export default function TransactionProductList() {
 						<div className="flex flex-row items-center gap-2 w-fit">
 							<div
 								onClick={() => selectProduct(k)}
-								className={`flex items-center justify-center h-[20px] w-[20px] cursor-pointer`}
+								className={
+									"flex items-center justify-center h-[20px] w-[20px] cursor-pointer"
+								}
 							>
 								{matchingItem !== -1 ? (
 									<Image

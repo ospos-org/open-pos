@@ -22,14 +22,14 @@ const NotesMenu: FC<{
 
 	useEffect(() => {
 		setActiveOrder(
-			orderState.find((k) => k.id == activeOrder?.id) ?? orderState[0],
+			orderState.find((k) => k.id === activeOrder?.id) ?? orderState[0],
 		);
 	}, [orderState, activeOrder?.id]);
 
 	return (
 		<div className="flex flex-1 flex-col gap-8  overflow-y-hidden">
 			<div className="relative inline-block w-fit">
-				{orderState.length != 1 ? (
+				{orderState.length !== 1 ? (
 					<div
 						className={`bg-gray-800 select-none text-white flex flex-row w-fit gap-4 cursor-pointer px-4 py-2 ${
 							selectorOpen ? "rounded-t-md rounded-b-none" : "rounded-md"
@@ -55,7 +55,7 @@ const NotesMenu: FC<{
 							alt=""
 							height={18}
 							width={18}
-						></Image>
+						/>
 					</div>
 				) : (
 					<></>
@@ -82,7 +82,7 @@ const NotesMenu: FC<{
 			</div>
 
 			<div className="flex flex-col flex-1 items-center overflow-y-scroll max-h-full gap-4">
-				{activeOrder?.order_notes.length == 0 ? (
+				{activeOrder?.order_notes.length === 0 ? (
 					<p className="text-gray-400">No notes yet</p>
 				) : (
 					activeOrder?.order_notes.map((e) => {
@@ -103,14 +103,13 @@ const NotesMenu: FC<{
 					<input
 						ref={input_ref}
 						onKeyDown={(e) => {
-							if (e.key == "Enter") {
+							if (e.key === "Enter") {
 								if (activeOrder)
 									callback(activeOrder.id, input_ref.current?.value ?? "");
 								if (input_ref.current) input_ref.current.value = "";
 							}
 						}}
 						placeholder={"Order Note"}
-						autoFocus={autoFocus ?? true}
 						className="flex-1 text-white py-4 px-2 rounded-md bg-transparent outline-none"
 						type="text"
 					/>
@@ -130,7 +129,7 @@ const NotesMenu: FC<{
 						className="select-none"
 						alt={""}
 						draggable={false}
-					></Image>
+					/>
 				</div>
 			</div>
 		</div>

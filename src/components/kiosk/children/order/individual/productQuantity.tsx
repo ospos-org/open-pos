@@ -38,7 +38,7 @@ export function ProductQuantity({
 	const validProductQuantity = useMemo(
 		() =>
 			!(totalProductQuantitySelected(product) >= totalStock) ||
-			product.transaction_type == "In",
+			product.transaction_type === "In",
 		[product, totalProductQuantitySelected, totalStock],
 	);
 
@@ -54,7 +54,7 @@ export function ProductQuantity({
 				if (!decreaseQuantityRef.current) return;
 
 				if (
-					(currentOrder.products.find((k) => k.id == product.id)?.quantity ??
+					(currentOrder.products.find((k) => k.id === product.id)?.quantity ??
 						1) <= 1
 				)
 					decreaseQuantityRef.current.style.filter =
@@ -89,7 +89,7 @@ export function ProductQuantity({
 			if (validProductQuantity) {
 				const productList = currentOrder.products
 					.map((productPurchase) => {
-						if (productPurchase.id == product.id) {
+						if (productPurchase.id === product.id) {
 							if (productPurchase.quantity <= 1) return null;
 
 							return {
@@ -99,15 +99,14 @@ export function ProductQuantity({
 										? productPurchase.quantity + 1
 										: productPurchase.quantity - 1,
 							};
-						} else {
-							return productPurchase;
 						}
+						return productPurchase;
 					})
 					.filter((k) => k) as ContextualProductPurchase[];
 
 				const newOrderState = orderState
 					.map((order) =>
-						order.id == currentOrder.id
+						order.id === currentOrder.id
 							? productList.length === 0
 								? { ...order, products: productList }
 								: null

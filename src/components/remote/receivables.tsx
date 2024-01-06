@@ -108,7 +108,7 @@ export default function Receivables() {
 												)}
 											</div>
 
-											{indx == receivables.length - 1 ? (
+											{indx === receivables.length - 1 ? (
 												<></>
 											) : (
 												<hr className="border-gray-700" />
@@ -128,7 +128,7 @@ export default function Receivables() {
 								else setMenuState(null);
 							}}
 							className="bg-black h-[100vh] sm:w-[calc(100dw-62px)] sm:left-[62px] w-[100dw] min-h-[100vh] min-w-[100vw] top-0 left-0 fixed z-5 opacity-40"
-						></div>
+						/>
 					) : (
 						<></>
 					)}

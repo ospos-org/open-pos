@@ -34,7 +34,8 @@ const ordersAtom = atom(
 					for (let i = 0; i < k.quantity; i++) {
 						// Find relevant in optimal list
 						const exists = optimal_queue.findIndex(
-							(n) => n.reference_field.barcode == k.variant_information.barcode,
+							(n) =>
+								n.reference_field.barcode === k.variant_information.barcode,
 						);
 
 						// console.log("::index::", exists, optimal_queue[exists]);
@@ -49,10 +50,10 @@ const ordersAtom = atom(
 								source: "promotion",
 								value: fromDbDiscount(
 									discountFromPromotion(
-										optimal_queue[exists].chosen_promotion!.promotion!,
+										optimal_queue[exists].chosen_promotion?.promotion!,
 									),
 								),
-								promotion: optimal_queue[exists].chosen_promotion!.promotion,
+								promotion: optimal_queue[exists].chosen_promotion?.promotion,
 								applicable_quantity: 1,
 							} as ContextualDiscountValue;
 

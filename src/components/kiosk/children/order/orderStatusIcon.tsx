@@ -9,13 +9,13 @@ export default function OrderStatusIcon({ type }: OrderStatusIconProps) {
 	return (
 		<div
 			className={`${
-				type == "queued"
+				type === "queued"
 					? "bg-gray-600"
-					: type == "processing"
+					: type === "processing"
 					  ? "bg-yellow-600"
-					  : type == "transit" || type == "instore"
+					  : type === "transit" || type === "instore"
 						  ? "bg-blue-600"
-						  : type == "failed"
+						  : type === "failed"
 							  ? "bg-red-600"
 							  : "bg-green-600"
 			} h-11 w-11 flex items-center justify-center rounded-full`}
@@ -113,7 +113,7 @@ export default function OrderStatusIcon({ type }: OrderStatusIconProps) {
 							</div>
 						);
 					default:
-						return <div></div>;
+						return <div />;
 				}
 			})()}
 		</div>
